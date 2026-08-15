@@ -1,4 +1,4 @@
-name: Restore planner app
+name: Update live planner
 
 on:
   push:
@@ -8,49 +8,67 @@ permissions:
   contents: write
 
 jobs:
-  restore:
-    if: ${{ github.event.head_commit.message != 'Restore stable planner files' }}
+  patch-live-planner:
+    if: ${{ github.event.head_commit.message != 'Patch live planner directly for mood and removable habits' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout current live planner
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Restore stable planner files
-        run: |
-          git show dfe957d5291b346d55866a8091a6c66da954859c:docs/v9.html > planner-app.html
-          git show 2c89094c297c154da4cb2b2e23d60076018836f4:docs/index.html > docs/index.html
-      - name: Repair planner JavaScript and publish iframe copy
+
+      - name: Patch the actual deployed planner file
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
-          p=Path('planner-app.html'); s=p.read_text()
-          fixed=r'''function cleanLines(t){return t.split(/\r?\n/).map(x=>x.trim().replace(/^\s*(?:[-*•◦☐☑✓✔️]\s*|\d+[.)]\s*)/,'')).filter(Boolean)}function openPaste'''
-          s,n=re.subn(r"function cleanLines\(t\)\{.*?\}function openPaste",lambda _:fixed,s,count=1,flags=re.S)
-          if n!=1: raise SystemExit(f'cleanLines repair failed: {n}')
-          p.write_text(s); Path('docs/planner-app.html').write_text(s)
+
+          p = Path('docs/planner-app.html')
+          s = p.read_text()
+
+          # Repair the known broken line-cleaning regex without replacing the whole app.
+          s, n = re.subn(
+              r"function cleanLines\(t\)\{.*?\}function openPaste",
+              r"function cleanLines(t){return t.split(/\\r?\\n/).map(x=>x.trim().replace(/^\\s*(?:[-*•◦☐☑✓✔️]\\s*|\\d+[.)]\\s*)/,'')).filter(Boolean)}function openPaste",
+              s, count=1, flags=re.S
+          )
+          if n != 1:
+              raise SystemExit(f'cleanLines repair expected 1 replacement, got {n}')
+
+          # Add a real remove-habit action next to the existing habit toggle.
+          if 'function removeHabit(i)' not in s:
+              s = s.replace(
+                  "function addHabit(){",
+                  "function removeHabit(i){d.habits.splice(i,1);save();render()}function addHabit(){",
+                  1
+              )
+
+          old_habits = "$('todayHabits').innerHTML=$('habits').innerHTML=d.habits.map((x,i)=>`<div class=item><input type=checkbox ${x[1][DAY()]?'checked':''} onchange=\"habitToggle(${i})\"><span class=${x[1][DAY()]?'done':''}>${esc(x[0])}</span></div>`).join('');"
+          new_habits = "$('todayHabits').innerHTML=$('habits').innerHTML=d.habits.map((x,i)=>`<div class=item><input type=checkbox ${x[1][DAY()]?'checked':''} onchange=\"habitToggle(${i})\"><span class=${x[1][DAY()]?'done':''}>${esc(x[0])}</span><button class=x type=button onclick=\"removeHabit(${i})\" title=\"Remove habit\">×</button></div>`).join('');"
+          if old_habits not in s:
+              raise SystemExit('Could not find live habit renderer')
+          s = s.replace(old_habits, new_habits, 1)
+
+          old_mood = "$('moods').innerHTML=['😄','🙂','😐','😕','😴'].map(x=>`<button class=${d.mood===x?'sel':''} onclick=\"moodPick('${x}')\">${x}</button>`).join('');"
+          moods = "[['🥰','Loved'],['😊','Happy'],['😌','Calm'],['🥹','Tender'],['🤩','Excited'],['😎','Confident'],['🙂','Okay'],['😐','Meh'],['😶','Blank'],['😴','Sleepy'],['🥱','Drained'],['😮‍💨','Overwhelmed'],['😔','Sad'],['🥺','Sensitive'],['😣','Frustrated'],['😤','Irritated'],['🤯','Overloaded'],['🫠','Melting'],['🧸','Need comfort'],['🌱','Hopeful'],['🧠','Focused'],['🎀','Feeling cute']]"
+          new_mood = "$('moods').className='smMoodGrid';$('moods').innerHTML=" + moods + ".map(x=>`<button type=button class=smMood ${hist().mood===x[1]?'on':''} onclick=\"moodPick('${x[1]}')\"><b>${x[0]}</b><small>${x[1]}</small></button>`).join('')+'<div class=smMoodNote>Pick what feels true. There is no wrong mood. ♡</div>';"
+          if old_mood not in s:
+              raise SystemExit('Could not find live mood renderer')
+          s = s.replace(old_mood, new_mood, 1)
+
+          # Keep the mood styles, and add the small habit/remove affordance styling.
+          extra_css = ".smMoodGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.smMood{border:1px solid var(--line);background:#fff;border-radius:15px;padding:9px 5px;min-height:58px;font:inherit;color:var(--ink);cursor:pointer}.smMood b{display:block;font-size:22px}.smMood small{font-size:9px}.smMood.on{background:var(--soft);border-color:#e98eaf;box-shadow:0 0 0 2px #f5c6d7}.smMoodNote{font-size:10px;color:var(--muted);margin-top:7px}.item .x{margin-left:auto}"
+          if 'smMoodGrid{display:grid!important' not in s:
+              s = s.replace('</style></head>', extra_css + '</style></head>', 1)
+
+          p.write_text(s)
           PY
-      - name: Add Pick for Me and mood palette without touching core navigation
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('planner-app.html'); s=p.read_text()
-          card='''<section class="card" id="pickCard"><div class="section"><div><h3>🍓 Pick for Me</h3><span class="label">ONE TINY NEXT STEP</span></div><button class="btn primary" onclick="pickForMe()">✨ Pick for me</button></div><div id="pickResult" class="mini">Need a starting point? I'll choose one gentle next action for you. ♡</div></section>'''
-          anchor='<h2>☀️ Today, not everything.</h2>'
-          if 'id="pickCard"' not in s:s=s.replace(anchor,anchor+card,1)
-          style='''<style>.smMoodGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.smMood{border:1px solid var(--line);background:#fff;border-radius:15px;padding:9px 5px;min-height:58px;font:inherit;color:var(--ink);cursor:pointer}.smMood b{display:block;font-size:22px}.smMood small{font-size:9px}.smMood.on{background:var(--soft);border-color:#e98eaf;box-shadow:0 0 0 2px #f5c6d7}.smMoodNote{font-size:10px;color:var(--muted);margin-top:7px}</style>'''
-          js=r'''<script>(function(){const M=[['🥰','Loved'],['😊','Happy'],['😌','Calm'],['🥹','Tender'],['🤩','Excited'],['😎','Confident'],['🙂','Okay'],['😐','Meh'],['😶','Blank'],['😴','Sleepy'],['🥱','Drained'],['😮‍💨','Overwhelmed'],['😔','Sad'],['🥺','Sensitive'],['😣','Frustrated'],['😤','Irritated'],['🤯','Overloaded'],['🫠','Melting'],['🧸','Need comfort'],['🌱','Hopeful'],['🧠','Focused'],['🎀','Feeling cute']];function patch(){const box=document.getElementById('moods');if(!box||box.dataset.smMoodReady)return;box.dataset.smMoodReady='1';box.className='smMoodGrid';const day=typeof DAY==='function'?DAY():new Date().toISOString().slice(0,10);d.moodLog=d.moodLog||{};const cur=d.moodLog[day]||'';box.innerHTML=M.map(x=>'<button type="button" class="smMood '+(x[1]===cur?'on':'')+'" data-m="'+x[1]+'"><b>'+x[0]+'</b><small>'+x[1]+'</small></button>').join('')+'<div class="smMoodNote">Pick what feels true. There is no wrong mood. ♡</div>';box.onclick=e=>{const b=e.target.closest('.smMood');if(!b)return;d.moodLog[day]=b.dataset.m;box.querySelectorAll('.smMood').forEach(x=>x.classList.remove('on'));b.classList.add('on');if(typeof save==='function')save();};}setTimeout(patch,100);setInterval(patch,1000)})();</script>'''
-          if 'smMoodGrid' not in s:s=s.replace('</body></html>',style+js+'</body></html>',1)
-          pickjs='''function pickForMe(){let pool=d.tasks.filter(x=>x.date===DAY()&&!x.done).map(x=>({text:x.text,why:'It is already on today\\'s list.'}));let pri=d.priorities.filter(Boolean).map(x=>({text:x,why:'You marked this as important today.'}));let all=pool.concat(pri);if(!all.length){$('pickResult').innerHTML='🌷 You are caught up! Your next step can be <b>rest</b>. That counts too. ♡';return}let x=all[Math.floor(Math.random()*all.length)];$('pickResult').innerHTML='✨ <b>Start here:</b> '+esc(x.text)+'<br><span class="muted">'+esc(x.why)+'</span><div class="row"><button class="btn primary" onclick="pickForMe()">🎲 Pick another</button></div>'}'''
-          if 'function pickForMe()' not in s:s=s.replace('</script></body></html>',pickjs+'</script></body></html>',1)
-          p.write_text(s); Path('docs/planner-app.html').write_text(s)
-          PY
-      - name: Commit restored files
+
+      - name: Commit the live planner patch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add planner-app.html docs/planner-app.html docs/index.html
+          git add docs/planner-app.html
           git diff --cached --quiet && exit 0
-          git commit -m "Restore stable planner files"
+          git commit -m "Patch live planner directly for mood and removable habits"
           git push
