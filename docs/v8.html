@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Strawberry Mocha Planner 🍓</title><style>body{margin:0;background:#fbf4f1;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;color:#674941}.loading{min-height:100vh;display:grid;place-items:center;font-weight:800;color:#bd6686;font-size:20px}</style></head><body><div class="loading">🍓 Waking up the Strawberry Mocha Planner…</div><script>
+fetch('v7.html').then(r=>r.text()).then(html=>{
+  html=html.replace('</main><main id="today"', '<section class="card" id="homeGoalsCard"><div class="section"><div><h3>🌱 Goals Garden</h3><span class="label">WHAT ARE YOU GROWING?</span></div><button class="btn primary" onclick="show(\'goals\')">✨ Open Goals</button></div><div id="homeGoals"></div></section></main><main id="today"');
+  html=html.replace(/<main id="goals" class="page">[\s\S]*?<\/main><\/div><div id="pasteModal"/, '<main id="goals" class="page"><section class="card"><div class="section"><div><div class="ey">GOALS GARDEN</div><h2>✨ Plant a Goal</h2><p class="muted">Give your goals a home, a little progress bar, and a next step.</p></div></div><div class="goalplant"><div class="two"><input id="goalIn" class="input" placeholder="What are you growing?"><input id="goalWhy" class="input" placeholder="Why does this matter to you?"></div><div class="two"><input id="goalDeadline" type="date" class="input"><input id="goalNext" class="input" placeholder="Next tiny step…"></div><div class="row"><button class="btn primary" onclick="addGoal()">🌱 Plant Goal</button></div></div><div id="goals"></div></section></main></div><div id="pasteModal"');
+  html=html.replace('</style></head>', '</style><style>.goalplant{background:linear-gradient(135deg,#fff0f5,#fffaf5);border:1px dashed #e8a7bd;border-radius:20px;padding:15px;margin:12px 0}.goalcard{background:#fff;border:1px solid #ead7d2;border-radius:20px;padding:16px;margin:9px 0}.goalhead{display:flex;gap:10px;align-items:flex-start}.goalhead>div:first-child{flex:1}.goalpercent{font-size:12px;font-weight:900;color:#bd6686}.goalactions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.goalmeta{display:flex;gap:6px;flex-wrap:wrap;margin:7px 0}.goalstep{background:#fff0f5;border-radius:12px;padding:8px;font-size:12px}.goalhome{background:#fff0f5;border-radius:16px;padding:11px;margin:7px 0}.goalhome .progress{margin-top:6px}</style></head>');
+  html=html.replace('</script></body></html>', `<script>
+(function(){
+ window.addGoal=function(){
+   const name=(document.getElementById('goalIn')?.value||'').trim();
+   if(!name)return;
+   d.goals=d.goals||[];
+   d.goals.push({name,why:(document.getElementById('goalWhy')?.value||'').trim(),deadline:document.getElementById('goalDeadline')?.value||'',next:(document.getElementById('goalNext')?.value||'').trim(),progress:0,created:DAY()});
+   ['goalIn','goalWhy','goalDeadline','goalNext'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+   save(); render();
+ };
+ window.updateGoal=function(i,k,v){d.goals[i][k]=v;save();renderGoals();renderHomeGoals()};
+ window.bumpGoal=function(i,amount){d.goals[i].progress=Math.max(0,Math.min(100,(+d.goals[i].progress||0)+amount));save();renderGoals();renderHomeGoals()};
+ window.deleteGoal=function(i){if(confirm('Remove this goal from your garden?')){d.goals.splice(i,1);save();render();}};
+ window.renderGoals=function(){
+   const el=document.getElementById('goals'); if(!el)return;
+   el.innerHTML=(d.goals||[]).map((g,i)=>{
+     const p=+g.progress||0;
+     const deadline=g.deadline?new Date(g.deadline+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'';
+     return `<div class="goalcard"><div class="goalhead"><div><h3 style="margin:0">🌱 ${esc(g.name)}</h3>${g.why?`<div class="muted">${esc(g.why)}</div>`:''}</div><span class="goalpercent">${p}%</span><button class="x" onclick="deleteGoal(${i})">×</button></div><div class="goalmeta">${deadline?`<span class="pill">📅 ${deadline}</span>`:''}<span class="pill">🌷 ${p===100?'Bloomed!':'Growing'}</span></div><div class="progress"><i style="width:${p}%"></i></div><div class="goalactions"><button class="btn" onclick="bumpGoal(${i},10)">＋10%</button><button class="btn" onclick="bumpGoal(${i},-10)">−10%</button><label class="btn">🎚️ <input type="range" min="0" max="100" value="${p}" oninput="updateGoal(${i},'progress',this.value)" style="vertical-align:middle"></label></div><div class="two" style="margin-top:9px"><input class="input" value="${esc(g.next||'')}" placeholder="Next tiny step…" onchange="updateGoal(${i},'next',this.value)"><div class="goalstep">${g.next?'🌱 '+esc(g.next):'Add your next tiny step.'}</div></div></div>`;
+   }).join('')||'<div class="empty">Your garden is waiting for its first seed. 🌱</div>';
+ };
+ window.renderHomeGoals=function(){
+   const el=document.getElementById('homeGoals'); if(!el)return;
+   el.innerHTML=(d.goals||[]).slice(0,4).map(g=>`<div class="goalhome"><div class="section"><b>🌱 ${esc(g.name)}</b><span class="goalpercent">${+g.progress||0}%</span></div><div class="progress"><i style="width:${+g.progress||0}%"></i></div>${g.next?`<div class="muted" style="margin-top:6px">Next: ${esc(g.next)}</div>`:''}</div>`).join('')||'<div class="empty">Nothing planted yet. Click “Open Goals” to plant your first one. 🌱</div>';
+ };
+ const oldRender=window.render;
+ window.render=function(){oldRender();renderGoals();renderHomeGoals();};
+ setTimeout(()=>{renderGoals();renderHomeGoals();},0);
+})();
+</script></body></html>`);
+  document.open();document.write(html);document.close();
+}).catch(e=>{document.body.innerHTML='<div class="loading">🍓 The planner got sleepy. Refresh and try again.</div>'});
+</script></body></html>
