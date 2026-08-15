@@ -1,0 +1,15 @@
+// V17 tab router
+export const TABS = ['home','planner','tasks','garden','school','money','reminders','brain','wellness','goals','wins','archive'];
+
+export function createRouter({ onChange, initial = 'home' }) {
+  let current = TABS.includes(initial) ? initial : 'home';
+  return {
+    get page() { return current; },
+    go(page) {
+      if (!TABS.includes(page)) return;
+      current = page;
+      history.replaceState({}, '', `#${page}`);
+      onChange?.(current);
+    }
+  };
+}
