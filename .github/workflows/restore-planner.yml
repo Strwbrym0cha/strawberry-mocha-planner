@@ -22,7 +22,7 @@ jobs:
           git show dfe957d5291b346d55866a8091a6c66da954859c:docs/v9.html > planner-app.html
           git show 2c89094c297c154da4cb2b2e23d60076018836f4:docs/index.html > docs/index.html
 
-      - name: Repair planner JavaScript and publish the iframe copy
+      - name: Repair planner JavaScript and publish iframe copy
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -30,12 +30,13 @@ jobs:
 
           p = Path('planner-app.html')
           s = p.read_text()
-          fixed = "function cleanLines(t){return t.split(/\\r?\\n/).map(x=>x.trim().replace(/^\\s*(?:[-*•◦☐☑✓✔️]\\s*|\\d+[.)]\\s*)/,'')).filter(Boolean)}function openPaste"
-          s, n = re.subn(r"function cleanLines\(t\)\{.*?\}function openPaste", fixed, s, count=1, flags=re.S)
+          fixed = r"""function cleanLines(t){return t.split(/\r?\n/).map(x=>x.trim().replace(/^\s*(?:[-*•◦☐☑✓✔️]\s*|\d+[.)]\s*)/,'')).filter(Boolean)}function openPaste"""
+          pattern = r"function cleanLines\(t\)\{.*?\}function openPaste"
+          s, n = re.subn(pattern, lambda _: fixed, s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit(f'Could not repair cleanLines function; replacements={n}')
-          Path('docs/planner-app.html').write_text(s)
           p.write_text(s)
+          Path('docs/planner-app.html').write_text(s)
           PY
 
       - name: Add Pick for Me helper
@@ -48,7 +49,7 @@ jobs:
           anchor='<h2>☀️ Today, not everything.</h2>'
           if 'id="pickCard"' not in s:
               s=s.replace(anchor,anchor+card,1)
-          js='''function pickForMe(){let pool=d.tasks.filter(x=>x.date===DAY()&&!x.done).map(x=>({text:x.text,why:'It is already on today\'s list.'}));let pri=d.priorities.filter(Boolean).map(x=>({text:x,why:'You marked this as important today.'}));let habits=d.habits.filter(x=>!x[1][DAY()]).map(x=>({text:x[0],why:'A tiny habit counts as progress.'}));let all=pool.concat(pri,habits);if(!all.length){$('pickResult').innerHTML='🌷 You are caught up! Your next step can be <b>rest</b>. That counts too. ♡';return}let x=all[Math.floor(Math.random()*all.length)];$('pickResult').innerHTML='✨ <b>Start here:</b> '+esc(x.text)+'<br><span class="muted">'+esc(x.why)+'</span><div class="row"><button class="btn primary" onclick="pickForMe()">🎲 Pick another</button></div>'}'''
+          js='''function pickForMe(){let pool=d.tasks.filter(x=>x.date===DAY()&&!x.done).map(x=>({text:x.text,why:'It is already on today\\'s list.'}));let pri=d.priorities.filter(Boolean).map(x=>({text:x,why:'You marked this as important today.'}));let habits=d.habits.filter(x=>!x[1][DAY()]).map(x=>({text:x[0],why:'A tiny habit counts as progress.'}));let all=pool.concat(pri,habits);if(!all.length){$('pickResult').innerHTML='🌷 You are caught up! Your next step can be <b>rest</b>. That counts too. ♡';return}let x=all[Math.floor(Math.random()*all.length)];$('pickResult').innerHTML='✨ <b>Start here:</b> '+esc(x.text)+'<br><span class="muted">'+esc(x.why)+'</span><div class="row"><button class="btn primary" onclick="pickForMe()">🎲 Pick another</button></div>'}'''
           if 'function pickForMe()' not in s:
               s=s.replace('</script></body></html>',js+'</script></body></html>',1)
           Path('docs/planner-app.html').write_text(s)
@@ -58,7 +59,7 @@ jobs:
       - name: Commit restored files
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add planner-app.html docs/planner-app.html docs/index.html
           git diff --cached --quiet && exit 0
           git commit -m "Restore stable planner files"
