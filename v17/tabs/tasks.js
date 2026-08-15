@@ -2,96 +2,14 @@ const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'
 const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const today=()=>new Date().toISOString().slice(0,10);
 const pct=(done,total)=>total?Math.round(done/total*100):0;
-
-function routineCard(r,day){
-  const steps=Array.isArray(r.steps)?r.steps:[];
-  const checks=(r.checks&&r.checks[day])||{};
-  const done=steps.filter((_,i)=>!!checks[i]).length;
-  const stepMarkup=steps.map((step,i)=>`<label class="v17-routine-step"><input type="checkbox" data-routine="${esc(r.id)}" data-step="${i}" ${checks[i]?'checked':''}><span>${esc(step)}</span></label>`).join('');
-  return `<article class="v17-routine-card"><header><div><h3>🌷 ${esc(r.name||'Routine')}</h3><span class="v17-muted">${done}/${steps.length} steps • ${pct(done,steps.length)}%</span></div><button type="button" class="v17-delete-task" data-delete-routine="${esc(r.id)}" aria-label="Delete routine">×</button></header><div class="v17-progress"><i style="width:${pct(done,steps.length)}%"></i></div><div class="v17-routine-steps">${stepMarkup||'<div class="v17-empty">No steps yet.</div>'}</div><div class="v17-add-step"><input data-step-input="${esc(r.id)}" placeholder="Add one more step…"><button type="button" data-add-step="${esc(r.id)}">＋ Step</button></div></article>`;
-}
-
+function routineCard(r,day){const steps=Array.isArray(r.steps)?r.steps:[],checks=(r.checks&&r.checks[day])||{},done=steps.filter((_,i)=>!!checks[i]).length,stepMarkup=steps.map((step,i)=>`<label class="v17-routine-step"><input type="checkbox" data-routine="${esc(r.id)}" data-step="${i}" ${checks[i]?'checked':''}><span>${esc(step)}</span></label>`).join('');return `<article class="v17-routine-card"><header><div><h3>🌷 ${esc(r.name||'Routine')}</h3><span class="v17-muted">${done}/${steps.length} steps • ${pct(done,steps.length)}%</span></div><button type="button" class="v17-delete-task" data-delete-routine="${esc(r.id)}" aria-label="Delete routine">×</button></header><div class="v17-progress"><i style="width:${pct(done,steps.length)}%"></i></div><div class="v17-routine-steps">${stepMarkup||'<div class="v17-empty">No steps yet.</div>'}</div><div class="v17-add-step"><input data-step-input="${esc(r.id)}" placeholder="Add one more step…"><button type="button" data-add-step="${esc(r.id)}">＋ Step</button></div></article>`}
 function renderTasks({root,store}){
-  let view='today';
-  let routineModalOpen=false;
-
-  const closeRoutineModal=box=>{
-    if(!box)return;
-    routineModalOpen=false;
-    box.remove();
-    document.documentElement.classList.remove('v18-event-open');
-    document.body.classList.remove('v18-event-open');
-  };
-
-  const openRoutineModal=()=>{
-    if(routineModalOpen)return;
-    routineModalOpen=true;
-    const box=document.createElement('div');
-    box.className='v18-event-modal';
-    box.setAttribute('role','dialog');
-    box.setAttribute('aria-modal','true');
-    box.innerHTML=`<div class="v18-event-modal-box"><button type="button" id="closeRoutine" class="v17-modal-close" aria-label="Close">×</button><div class="v17-eyebrow">🍓 STRAWBERRY MOCHA • V18</div><h2>🌷 Add Routine</h2><p class="v17-muted">Build a routine from tiny steps. One line becomes one checkbox.</p><label class="v17-modal-field"><span>Routine name</span><input id="routineName" autocomplete="off" placeholder="e.g. Morning routine"></label><label class="v17-modal-field"><span>Routine steps</span><textarea id="routineSteps" rows="9" placeholder="Wake up\nTake medication\nBrush teeth\nSkincare\nGet dressed\nBreakfast"></textarea></label><p class="v17-muted">Tip: keep each step on its own line. You can add more steps later.</p><div class="v17-modal-actions"><button type="button" id="cancelRoutine">Cancel</button><button type="button" id="saveRoutine" class="primary">♡ Save Routine</button></div></div>`;
-    document.body.appendChild(box);
-    document.documentElement.classList.add('v18-event-open');
-    document.body.classList.add('v18-event-open');
-    box.querySelector('#closeRoutine').onclick=()=>closeRoutineModal(box);
-    box.querySelector('#cancelRoutine').onclick=()=>closeRoutineModal(box);
-    box.addEventListener('click',e=>{if(e.target===box)closeRoutineModal(box)});
-    box.querySelector('#saveRoutine').onclick=()=>{
-      const name=box.querySelector('#routineName').value.trim()||'New routine';
-      const steps=box.querySelector('#routineSteps').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);
-      if(!steps.length){box.querySelector('#routineSteps').focus();return}
-      store.update(x=>({...x,routines:[...(x.routines||[]),{id:makeId(),name,steps,checks:{}}]}));
-      closeRoutineModal(box);
-      draw();
-    };
-  };
-
-  const draw=()=>{
-    const d=store.get();
-    const day=today();
-    const all=d.tasks||[];
-    const tasks=view==='today'?all.filter(t=>!t.date||t.date===day):all;
-    const routines=d.routines||[];
-    const done=tasks.filter(t=>t.done).length;
-    const taskRows=tasks.map(t=>`<div class="v17-task-row"><label class="v17-check"><input type="checkbox" data-task="${esc(t.id)}" ${t.done?'checked':''}><span><b>${esc(t.text||t.title||'Untitled task')}</b>${t.date&&view==='all'?`<small>${esc(t.date)}</small>`:''}</span></label><button type="button" class="v17-delete-task" data-delete-task="${esc(t.id)}" aria-label="Delete task">×</button></div>`).join('');
-    const routineRows=routines.map(r=>routineCard(r,day)).join('');
-
-    root.innerHTML=`<section class="v17-card"><div class="v17-home-hero"><div class="v17-eyebrow">🍓 STRAWBERRY MOCHA • V18 • TASKS</div><h1>📝 Tasks & Routines</h1><p>Turn the giant blob of “everything” into tiny checkboxes. ♡</p></div><div class="v17-task-tabs"><button type="button" data-view="today" class="${view==='today'?'active':''}">☀️ Today</button><button type="button" data-view="all" class="${view==='all'?'active':''}">📋 All tasks</button></div><section class="v17-card"><header><div><h2>${view==='today'?'☑️ Today':'📋 All tasks'}</h2><p class="v17-muted">${done}/${tasks.length} complete</p></div><span class="v17-pill">${pct(done,tasks.length)}%</span></header><div class="v17-progress"><i style="width:${pct(done,tasks.length)}%"></i></div><div class="v17-task-list">${taskRows||'<div class="v17-empty">✨ No tasks here yet.</div>'}</div><div class="v17-add-task"><input id="newTask" placeholder="Add a task…"><input id="taskDate" type="date" value="${day}"><button type="button" class="primary" id="addTask">＋ Add task</button></div></section><section class="v17-card"><header><div><h2>🎀 Routine Garden</h2><p class="v17-muted">Break your routines into every tiny step, then check off what you actually did each day.</p></div><button type="button" class="primary" id="newRoutine">＋ Routine</button></header><div class="v17-routine-list">${routineRows||'<div class="v17-empty">🌷 No routines yet. Add your first one and paste the steps below.</div>'}</div></section></section>`;
-
-    root.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;draw()});
-
-    root.querySelector('#addTask').onclick=()=>{
-      const input=root.querySelector('#newTask');
-      const text=input.value.trim();
-      if(!text)return;
-      const date=root.querySelector('#taskDate').value||day;
-      store.update(x=>({...x,tasks:[...(x.tasks||[]),{id:makeId(),text,date,done:false}]}));
-    };
-
-    root.querySelectorAll('[data-task]').forEach(c=>c.onchange=()=>store.update(x=>({...x,tasks:(x.tasks||[]).map(t=>String(t.id)===String(c.dataset.task)?{...t,done:c.checked}:t)})));
-    root.querySelectorAll('[data-delete-task]').forEach(b=>b.onclick=()=>store.update(x=>({...x,tasks:(x.tasks||[]).filter(t=>String(t.id)!==String(b.dataset.deleteTask))})));
-    root.querySelectorAll('[data-delete-routine]').forEach(b=>b.onclick=()=>store.update(x=>({...x,routines:(x.routines||[]).filter(r=>String(r.id)!==String(b.dataset.deleteRoutine))})));
-
-    root.querySelectorAll('[data-routine]').forEach(c=>c.onchange=()=>{
-      const rid=String(c.dataset.routine);
-      const idx=Number(c.dataset.step);
-      store.update(x=>({...x,routines:(x.routines||[]).map(r=>String(r.id)!==rid?r:{...r,checks:{...(r.checks||{}),[day]:{...((r.checks||{})[day]||{}),[idx]:c.checked}}})}));
-    });
-
-    root.querySelectorAll('[data-add-step]').forEach(b=>b.onclick=()=>{
-      const rid=String(b.dataset.addStep);
-      const input=root.querySelector(`[data-step-input="${CSS.escape(rid)}"]`);
-      const text=input?.value.trim();
-      if(!text)return;
-      store.update(x=>({...x,routines:(x.routines||[]).map(r=>String(r.id)===rid?{...r,steps:[...(r.steps||[]),text]}:r)}));
-    });
-
-    root.querySelector('#newRoutine').onclick=()=>openRoutineModal();
-  };
-
-  store.subscribe(draw);
-  draw();
-}
-
+ let view='today',routineModalOpen=false,taskModalOpen=false;
+ const lock=()=>{document.documentElement.classList.add('v18-event-open');document.body.classList.add('v18-event-open')};
+ const unlock=()=>{document.documentElement.classList.remove('v18-event-open');document.body.classList.remove('v18-event-open')};
+ const closeBox=box=>{box?.remove();routineModalOpen=false;taskModalOpen=false;unlock()};
+ const openTaskModal=(task)=>{if(taskModalOpen)return;taskModalOpen=true;const box=document.createElement('div');box.className='v18-event-modal';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.innerHTML=`<div class="v18-event-modal-box"><button type="button" id="closeTask" class="v17-modal-close" aria-label="Close">×</button><div class="v17-eyebrow">🍓 STRAWBERRY MOCHA • V18</div><h2>✎ Edit Task</h2><p class="v17-muted">Make the task fit your actual day. ♡</p><label class="v17-modal-field"><span>Task</span><input id="editTaskText" autocomplete="off" value="${esc(task.text||task.title||'')}"></label><label class="v17-modal-field"><span>Date</span><input id="editTaskDate" type="date" value="${esc(task.date||today())}"></label><div class="v17-modal-actions"><button type="button" id="cancelTask">Cancel</button><button type="button" id="saveTask" class="primary">♡ Save changes</button></div></div>`;document.body.appendChild(box);lock();box.querySelector('#closeTask').onclick=()=>closeBox(box);box.querySelector('#cancelTask').onclick=()=>closeBox(box);box.addEventListener('click',e=>{if(e.target===box)closeBox(box)});box.querySelector('#saveTask').onclick=()=>{const text=box.querySelector('#editTaskText').value.trim();if(!text){box.querySelector('#editTaskText').focus();return}const date=box.querySelector('#editTaskDate').value||today();store.update(x=>({...x,tasks:(x.tasks||[]).map(t=>String(t.id)===String(task.id)?{...t,text,date}:t)}));closeBox(box);draw()}};
+ const openRoutineModal=()=>{if(routineModalOpen)return;routineModalOpen=true;const box=document.createElement('div');box.className='v18-event-modal';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.innerHTML=`<div class="v18-event-modal-box"><button type="button" id="closeRoutine" class="v17-modal-close" aria-label="Close">×</button><div class="v17-eyebrow">🍓 STRAWBERRY MOCHA • V18</div><h2>🌷 Add Routine</h2><p class="v17-muted">Build a routine from tiny steps. One line becomes one checkbox.</p><label class="v17-modal-field"><span>Routine name</span><input id="routineName" autocomplete="off" placeholder="e.g. Morning routine"></label><label class="v17-modal-field"><span>Routine steps</span><textarea id="routineSteps" rows="9" placeholder="Wake up\nTake medication\nBrush teeth\nSkincare\nGet dressed\nBreakfast"></textarea></label><p class="v17-muted">Tip: keep each step on its own line. You can add more steps later.</p><div class="v17-modal-actions"><button type="button" id="cancelRoutine">Cancel</button><button type="button" id="saveRoutine" class="primary">♡ Save Routine</button></div></div>`;document.body.appendChild(box);lock();box.querySelector('#closeRoutine').onclick=()=>closeBox(box);box.querySelector('#cancelRoutine').onclick=()=>closeBox(box);box.addEventListener('click',e=>{if(e.target===box)closeBox(box)});box.querySelector('#saveRoutine').onclick=()=>{const name=box.querySelector('#routineName').value.trim()||'New routine';const steps=box.querySelector('#routineSteps').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);if(!steps.length){box.querySelector('#routineSteps').focus();return}store.update(x=>({...x,routines:[...(x.routines||[]),{id:makeId(),name,steps,checks:{}}]}));closeBox(box);draw()}};
+ const draw=()=>{const d=store.get(),day=today(),all=d.tasks||[],tasks=view==='today'?all.filter(t=>!t.date||t.date===day):all,routines=d.routines||[],done=tasks.filter(t=>t.done).length;const taskRows=tasks.map(t=>`<div class="v17-task-row"><label class="v17-check"><input type="checkbox" data-task="${esc(t.id)}" ${t.done?'checked':''}><span><b>${esc(t.text||t.title||'Untitled task')}</b>${t.date&&view==='all'?`<small>${esc(t.date)}</small>`:''}</span></label><button type="button" class="v17-link" data-edit-task="${esc(t.id)}" aria-label="Edit task">✎</button><button type="button" class="v17-delete-task" data-delete-task="${esc(t.id)}" aria-label="Delete task">×</button></div>`).join(''),routineRows=routines.map(r=>routineCard(r,day)).join('');root.innerHTML=`<section class="v17-card"><div class="v17-home-hero"><div class="v17-eyebrow">🍓 STRAWBERRY MOCHA • V18 • TASKS</div><h1>📝 Tasks & Routines</h1><p>Turn the giant blob of “everything” into tiny checkboxes. ♡</p></div><div class="v17-task-tabs"><button type="button" data-view="today" class="${view==='today'?'active':''}">☀️ Today</button><button type="button" data-view="all" class="${view==='all'?'active':''}">📋 All tasks</button></div><section class="v17-card"><header><div><h2>${view==='today'?'☑️ Today':'📋 All tasks'}</h2><p class="v17-muted">${done}/${tasks.length} complete</p></div><span class="v17-pill">${pct(done,tasks.length)}%</span></header><div class="v17-progress"><i style="width:${pct(done,tasks.length)}%"></i></div><div class="v17-task-list">${taskRows||'<div class="v17-empty">✨ No tasks here yet.</div>'}</div><div class="v17-add-task"><input id="newTask" placeholder="Add a task…"><input id="taskDate" type="date" value="${day}"><button type="button" class="primary" id="addTask">＋ Add task</button></div></section><section class="v17-card"><header><div><h2>🎀 Routine Garden</h2><p class="v17-muted">Break your routines into every tiny step, then check off what you actually did each day.</p></div><button type="button" class="primary" id="newRoutine">＋ Routine</button></header><div class="v17-routine-list">${routineRows||'<div class="v17-empty">🌷 No routines yet. Add your first one and paste the steps below.</div>'}</div></section></section>`;
+ root.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;draw()});root.querySelector('#addTask').onclick=()=>{const input=root.querySelector('#newTask'),text=input.value.trim();if(!text)return;const date=root.querySelector('#taskDate').value||day;store.update(x=>({...x,tasks:[...(x.tasks||[]),{id:makeId(),text,date,done:false}]}))};root.querySelectorAll('[data-edit-task]').forEach(b=>b.onclick=()=>{const task=(store.get().tasks||[]).find(t=>String(t.id)===String(b.dataset.editTask));if(task)openTaskModal(task)});root.querySelectorAll('[data-task]').forEach(c=>c.onchange=()=>store.update(x=>({...x,tasks:(x.tasks||[]).map(t=>String(t.id)===String(c.dataset.task)?{...t,done:c.checked}:t)})));root.querySelectorAll('[data-delete-task]').forEach(b=>b.onclick=()=>store.update(x=>({...x,tasks:(x.tasks||[]).filter(t=>String(t.id)!==String(b.dataset.deleteTask))})));root.querySelectorAll('[data-delete-routine]').forEach(b=>b.onclick=()=>store.update(x=>({...x,routines:(x.routines||[]).filter(r=>String(r.id)!==String(b.dataset.deleteRoutine))})));root.querySelectorAll('[data-routine]').forEach(c=>c.onchange=()=>{const rid=String(c.dataset.routine),idx=Number(c.dataset.step);store.update(x=>({...x,routines:(x.routines||[]).map(r=>String(r.id)!==rid?r:{...r,checks:{...(r.checks||{}),[day]:{...((r.checks||{})[day]||{}),[idx]:c.checked}}})}))});root.querySelectorAll('[data-add-step]').forEach(b=>b.onclick=()=>{const rid=String(b.dataset.addStep),input=root.querySelector(`[data-step-input="${CSS.escape(rid)}"]`),text=input?.value.trim();if(!text)return;store.update(x=>({...x,routines:(x.routines||[]).map(r=>String(r.id)===rid?{...r,steps:[...(r.steps||[]),text]}:r)}))});root.querySelector('#newRoutine').onclick=()=>openRoutineModal()};store.subscribe(draw);draw()}
 export{renderTasks};
