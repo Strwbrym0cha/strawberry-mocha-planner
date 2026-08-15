@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Strawberry Mocha Planner 🍓</title>
+<style>
+:root{--pink:#e98eaf;--soft:#fff0f5;--bg:#fbf4f1;--ink:#674941;--line:#ead7d2}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif}
+.app{max-width:1180px;margin:auto;padding:12px 15px 18px}
+.tabs{display:flex;gap:7px;overflow:auto;position:sticky;top:0;z-index:20;padding:8px 0 12px;background:#fbf4f1ee;backdrop-filter:blur(12px)}
+button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:14px;padding:10px 14px;font-weight:800;white-space:nowrap;cursor:pointer}
+button.on{background:var(--soft);border-color:#efbfd0;color:#bd6686}
+.view{display:none;width:100%}.view.on{display:block}
+.frame{width:100%;height:calc(100vh - 82px);min-height:700px;border:0;border-radius:24px;background:var(--bg);display:block}
+@media(max-width:480px){button{font-size:11px;padding:8px 10px}.frame{height:calc(100vh - 74px);min-height:650px}}
+</style>
+</head>
+<body>
+<div class="app">
+<nav class="tabs" aria-label="Planner tabs">
+<button class="on" data-view="planner">🍓 Planner</button>
+<button data-view="garden">🌷 Habit Garden</button>
+</nav>
+<main id="planner" class="view on"><iframe class="frame" src="./v9.html" title="Strawberry Mocha Planner"></iframe></main>
+<main id="garden" class="view"><iframe class="frame" src="./habit-tracker.html" title="Habit Tracker Garden"></iframe></main>
+</div>
+<script>
+const buttons=document.querySelectorAll('.tabs button');
+const views=document.querySelectorAll('.view');
+buttons.forEach(button=>button.addEventListener('click',()=>{
+  const target=button.dataset.view;
+  buttons.forEach(b=>b.classList.toggle('on',b===button));
+  views.forEach(v=>v.classList.toggle('on',v.id===target));
+  window.scrollTo(0,0);
+}));
+</script>
+</body>
+</html>
