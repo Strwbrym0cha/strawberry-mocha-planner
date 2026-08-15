@@ -1,0 +1,30 @@
+// V17 shared data layer
+export const DATA_KEY = 'sm_v16';
+
+export const DEFAULT_DATA = {
+  events: [], reminders: [], tasks: [], routines: [], habits: [], goals: [],
+  wins: [], courses: [], archive: [], days: {}, money: {}, brain: '', totalClasses: 0
+};
+
+export function loadLocalData(storage = localStorage) {
+  try {
+    const saved = JSON.parse(storage.getItem(DATA_KEY) || '{}');
+    return normalize(saved.data || saved);
+  } catch {
+    return structuredClone(DEFAULT_DATA);
+  }
+}
+
+export function normalize(input = {}) {
+  const data = { ...structuredClone(DEFAULT_DATA), ...input };
+  for (const key of ['events','reminders','tasks','routines','habits','goals','wins','courses','archive']) {
+    if (!Array.isArray(data[key])) data[key] = [];
+  }
+  if (!data.days || typeof data.days !== 'object') data.days = {};
+  if (!data.money || typeof data.money !== 'object') data.money = {};
+  return data;
+}
+
+export function saveLocalData(data, storage = localStorage) {
+  storage.setItem(DATA_KEY, JSON.stringify({ data: normalize(data) }));
+}
