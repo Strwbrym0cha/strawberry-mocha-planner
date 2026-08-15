@@ -1,0 +1,27 @@
+name: Sync live planner source
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: ${{ github.event.head_commit.message != 'Sync live planner from docs source' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Copy latest planner into the live iframe source
+        run: cp docs/planner-app.html planner-app.html
+      - name: Commit live source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add planner-app.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Sync live planner from docs source"
+          git push
