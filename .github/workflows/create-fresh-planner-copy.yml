@@ -1,0 +1,21 @@
+name: Create fresh planner copy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy current live planner to a fresh filename
+        run: |
+          cp docs/planner-app.html docs/planner-app-fresh.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/planner-app-fresh.html
+          git commit -m "Create fresh planner filename" || true
+          git push
