@@ -17,54 +17,39 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Patch the actual deployed planner file
+      - name: Apply mood and habit fixes only when needed
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
+          p=Path('docs/planner-app.html')
+          s=p.read_text()
+          changed=False
 
-          p = Path('docs/planner-app.html')
-          s = p.read_text()
+          if "function removeHabit(i)" not in s and "function addHabit(){" in s:
+              s=s.replace("function addHabit(){","function removeHabit(i){d.habits.splice(i,1);save();render()}function addHabit(){",1)
+              changed=True
 
-          # Repair the known broken line-cleaning regex without replacing the whole app.
-          s, n = re.subn(
-              r"function cleanLines\(t\)\{.*?\}function openPaste",
-              r"function cleanLines(t){return t.split(/\\r?\\n/).map(x=>x.trim().replace(/^\\s*(?:[-*•◦☐☑✓✔️]\\s*|\\d+[.)]\\s*)/,'')).filter(Boolean)}function openPaste",
-              s, count=1, flags=re.S
-          )
-          if n != 1:
-              raise SystemExit(f'cleanLines repair expected 1 replacement, got {n}')
+          old_h="$('todayHabits').innerHTML=$('habits').innerHTML=d.habits.map((x,i)=>`<div class=item><input type=checkbox ${x[1][DAY()]?'checked':''} onchange=\"habitToggle(${i})\"><span class=${x[1][DAY()]?'done':''}>${esc(x[0])}</span></div>`).join('');"
+          new_h="$('todayHabits').innerHTML=$('habits').innerHTML=d.habits.map((x,i)=>`<div class=item><input type=checkbox ${x[1][DAY()]?'checked':''} onchange=\"habitToggle(${i})\"><span class=${x[1][DAY()]?'done':''}>${esc(x[0])}</span><button class=x type=button onclick=\"removeHabit(${i})\" title=\"Remove habit\">×</button></div>`).join('');"
+          if old_h in s:
+              s=s.replace(old_h,new_h,1);changed=True
 
-          # Add a real remove-habit action next to the existing habit toggle.
-          if 'function removeHabit(i)' not in s:
-              s = s.replace(
-                  "function addHabit(){",
-                  "function removeHabit(i){d.habits.splice(i,1);save();render()}function addHabit(){",
-                  1
-              )
+          old_m="$('moods').innerHTML=['😄','🙂','😐','😕','😴'].map(x=>`<button class=${d.mood===x?'sel':''} onclick=\"moodPick('${x}')\">${x}</button>`).join('');"
+          moods="[['🥰','Loved'],['😊','Happy'],['😌','Calm'],['🥹','Tender'],['🤩','Excited'],['😎','Confident'],['🙂','Okay'],['😐','Meh'],['😶','Blank'],['😴','Sleepy'],['🥱','Drained'],['😮‍💨','Overwhelmed'],['😔','Sad'],['🥺','Sensitive'],['😣','Frustrated'],['😤','Irritated'],['🤯','Overloaded'],['🫠','Melting'],['🧸','Need comfort'],['🌱','Hopeful'],['🧠','Focused'],['🎀','Feeling cute']]"
+          new_m="$('moods').className='smMoodGrid';$('moods').innerHTML="+moods+".map(x=>`<button type=button class=smMood ${hist().mood===x[1]?'on':''} onclick=\"moodPick('${x[1]}')\"><b>${x[0]}</b><small>${x[1]}</small></button>`).join('')+'<div class=smMoodNote>Pick what feels true. There is no wrong mood. ♡</div>';"
+          if old_m in s:
+              s=s.replace(old_m,new_m,1);changed=True
 
-          old_habits = "$('todayHabits').innerHTML=$('habits').innerHTML=d.habits.map((x,i)=>`<div class=item><input type=checkbox ${x[1][DAY()]?'checked':''} onchange=\"habitToggle(${i})\"><span class=${x[1][DAY()]?'done':''}>${esc(x[0])}</span></div>`).join('');"
-          new_habits = "$('todayHabits').innerHTML=$('habits').innerHTML=d.habits.map((x,i)=>`<div class=item><input type=checkbox ${x[1][DAY()]?'checked':''} onchange=\"habitToggle(${i})\"><span class=${x[1][DAY()]?'done':''}>${esc(x[0])}</span><button class=x type=button onclick=\"removeHabit(${i})\" title=\"Remove habit\">×</button></div>`).join('');"
-          if old_habits not in s:
-              raise SystemExit('Could not find live habit renderer')
-          s = s.replace(old_habits, new_habits, 1)
-
-          old_mood = "$('moods').innerHTML=['😄','🙂','😐','😕','😴'].map(x=>`<button class=${d.mood===x?'sel':''} onclick=\"moodPick('${x}')\">${x}</button>`).join('');"
-          moods = "[['🥰','Loved'],['😊','Happy'],['😌','Calm'],['🥹','Tender'],['🤩','Excited'],['😎','Confident'],['🙂','Okay'],['😐','Meh'],['😶','Blank'],['😴','Sleepy'],['🥱','Drained'],['😮‍💨','Overwhelmed'],['😔','Sad'],['🥺','Sensitive'],['😣','Frustrated'],['😤','Irritated'],['🤯','Overloaded'],['🫠','Melting'],['🧸','Need comfort'],['🌱','Hopeful'],['🧠','Focused'],['🎀','Feeling cute']]"
-          new_mood = "$('moods').className='smMoodGrid';$('moods').innerHTML=" + moods + ".map(x=>`<button type=button class=smMood ${hist().mood===x[1]?'on':''} onclick=\"moodPick('${x[1]}')\"><b>${x[0]}</b><small>${x[1]}</small></button>`).join('')+'<div class=smMoodNote>Pick what feels true. There is no wrong mood. ♡</div>';"
-          if old_mood not in s:
-              raise SystemExit('Could not find live mood renderer')
-          s = s.replace(old_mood, new_mood, 1)
-
-          # Keep the mood styles, and add the small habit/remove affordance styling.
-          extra_css = ".smMoodGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.smMood{border:1px solid var(--line);background:#fff;border-radius:15px;padding:9px 5px;min-height:58px;font:inherit;color:var(--ink);cursor:pointer}.smMood b{display:block;font-size:22px}.smMood small{font-size:9px}.smMood.on{background:var(--soft);border-color:#e98eaf;box-shadow:0 0 0 2px #f5c6d7}.smMoodNote{font-size:10px;color:var(--muted);margin-top:7px}.item .x{margin-left:auto}"
+          css=".smMoodGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}.smMood{border:1px solid var(--line);background:#fff;border-radius:15px;padding:9px 5px;min-height:58px;font:inherit;color:var(--ink);cursor:pointer}.smMood b{display:block;font-size:22px}.smMood small{font-size:9px}.smMood.on{background:var(--soft);border-color:#e98eaf;box-shadow:0 0 0 2px #f5c6d7}.smMoodNote{font-size:10px;color:var(--muted);margin-top:7px}.item .x{margin-left:auto}"
           if 'smMoodGrid{display:grid!important' not in s:
-              s = s.replace('</style></head>', extra_css + '</style></head>', 1)
+              s=s.replace('</style></head>',css+'</style></head>',1);changed=True
 
           p.write_text(s)
+          print('planner changed:',changed)
           PY
 
-      - name: Commit the live planner patch
+      - name: Commit planner fixes if needed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
