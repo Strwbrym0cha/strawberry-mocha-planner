@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   restore:
-    if: ${{ github.event.head_commit.message != 'Restore planner app' }}
+    if: ${{ github.event.head_commit.message != 'Restore stable planner files' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -17,14 +17,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Restore stable V9 planner
-        run: git show dfe957d5291b346d55866a8091a6c66da954859c:docs/v9.html > planner-app.html
+      - name: Restore stable planner files
+        run: |
+          git show dfe957d5291b346d55866a8091a6c66da954859c:docs/v9.html > planner-app.html
+          git show 2c89094c297c154da4cb2b2e23d60076018836f4:docs/index.html > docs/index.html
 
-      - name: Commit restored planner
+      - name: Commit restored files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add planner-app.html
+          git add planner-app.html docs/index.html
           git diff --cached --quiet && exit 0
-          git commit -m "Restore planner app"
+          git commit -m "Restore stable planner files"
           git push
