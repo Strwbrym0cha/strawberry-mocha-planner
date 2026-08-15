@@ -39,19 +39,47 @@ jobs:
           Path('docs/planner-app.html').write_text(s)
           PY
 
-      - name: Add Pick for Me helper
+      - name: Add Pick for Me, mood palette, and removable habits
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('planner-app.html')
           s=p.read_text()
+
+          # Pick for Me
           card='''<section class="card" id="pickCard"><div class="section"><div><h3>🍓 Pick for Me</h3><span class="label">ONE TINY NEXT STEP</span></div><button class="btn primary" onclick="pickForMe()">✨ Pick for me</button></div><div id="pickResult" class="mini">Need a starting point? I'll choose one gentle next action for you. ♡</div></section>'''
           anchor='<h2>☀️ Today, not everything.</h2>'
           if 'id="pickCard"' not in s:
               s=s.replace(anchor,anchor+card,1)
-          js='''function pickForMe(){let pool=d.tasks.filter(x=>x.date===DAY()&&!x.done).map(x=>({text:x.text,why:'It is already on today\\'s list.'}));let pri=d.priorities.filter(Boolean).map(x=>({text:x,why:'You marked this as important today.'}));let habits=d.habits.filter(x=>!x[1][DAY()]).map(x=>({text:x[0],why:'A tiny habit counts as progress.'}));let all=pool.concat(pri,habits);if(!all.length){$('pickResult').innerHTML='🌷 You are caught up! Your next step can be <b>rest</b>. That counts too. ♡';return}let x=all[Math.floor(Math.random()*all.length)];$('pickResult').innerHTML='✨ <b>Start here:</b> '+esc(x.text)+'<br><span class="muted">'+esc(x.why)+'</span><div class="row"><button class="btn primary" onclick="pickForMe()">🎲 Pick another</button></div>'}'''
+
+          # Mood palette + habit controls are injected after the existing app script,
+          # so they do not replace or wrap any core planner functions.
+          patch=r'''<style>
+          .smMoodGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}
+          .smMood{border:1px solid var(--line);background:#fff;border-radius:15px;padding:9px 5px;min-height:58px;font:inherit;color:var(--ink);cursor:pointer}
+          .smMood b{display:block;font-size:22px}.smMood small{font-size:9px}.smMood.on{background:var(--soft);border-color:#e98eaf;box-shadow:0 0 0 2px #f5c6d7}
+          .smHabitRow{display:flex!important;align-items:center;gap:6px}.smHabitRow>*:first-child{flex:1}.smHabitX{border:0!important;background:transparent!important;color:#b38f99!important;font-size:20px!important;padding:2px 5px!important;min-width:30px}
+          .smMoodNote{font-size:10px;color:var(--muted);margin-top:7px}
+          </style>'''
+          js=r'''<script>
+          (function(){
+            const SM_MOODS=[['🥰','Loved'],['😊','Happy'],['😌','Calm'],['🥹','Tender'],['🤩','Excited'],['😎','Confident'],['🙂','Okay'],['😐','Meh'],['😶','Blank'],['😴','Sleepy'],['🥱','Drained'],['😮‍💨','Overwhelmed'],['😔','Sad'],['🥺','Sensitive'],['😣','Frustrated'],['😤','Irritated'],['🤯','Overloaded'],['🫠','Melting'],['🧸','Need comfort'],['🌱','Hopeful'],['🧠','Focused'],['🎀','Feeling cute']];
+            function smDay(){return typeof DAY==='function'?DAY():new Date().toISOString().slice(0,10)}
+            function smSave(){try{localStorage.setItem('sm_v6',JSON.stringify(d));if(typeof render==='function')render();}catch(e){}}
+            function smMood(){const box=document.getElementById('moods');if(!box||box.dataset.smDone)return;box.dataset.smDone='1';box.className='smMoodGrid';const cur=(d.moodLog&&d.moodLog[smDay()])||'';box.innerHTML=SM_MOODS.map(x=>'<button type="button" class="smMood '+(cur===x[1]?'on':'')+'" data-m="'+x[1]+'"><b>'+x[0]+'</b><small>'+x[1]+'</small></button>').join('')+'<div class="smMoodNote">Pick what feels true. There is no wrong mood. ♡</div>';box.addEventListener('click',function(e){const b=e.target.closest('.smMood');if(!b)return;d.moodLog=d.moodLog||{};d.moodLog[smDay()]=b.dataset.m;box.querySelectorAll('.smMood').forEach(x=>x.classList.remove('on'));b.classList.add('on');smSave()})}
+            function smHabits(){const box=document.getElementById('todayHabits');if(!box)return;Array.from(box.children).forEach(row=>{if(row.dataset.smHabitX)return;const text=(row.textContent||'').trim();if(!text)return;row.dataset.smHabitX='1';row.classList.add('smHabitRow');const x=document.createElement('button');x.type='button';x.className='smHabitX';x.textContent='×';x.title='Remove habit';x.onclick=function(e){e.preventDefault();e.stopPropagation();const name=(row.textContent||'').replace('×','').trim();if(Array.isArray(d.habits)){const i=d.habits.findIndex(h=>h&&h[0]===name);if(i>-1)d.habits.splice(i,1)}smSave();row.remove()};row.appendChild(x)})}
+            function smPatch(){smMood();smHabits()}
+            window.smPatch=smPatch;setTimeout(smPatch,50);setInterval(smPatch,1000);
+          })();
+          </script>'''
+          if 'smMoodGrid' not in s:
+              s=s.replace('</body></html>',patch+js+'</body></html>',1)
+
+          # Pick for Me function is appended as normal page JS.
+          pickjs='''function pickForMe(){let pool=d.tasks.filter(x=>x.date===DAY()&&!x.done).map(x=>({text:x.text,why:'It is already on today\\'s list.'}));let pri=d.priorities.filter(Boolean).map(x=>({text:x,why:'You marked this as important today.'}));let habits=d.habits.filter(x=>!x[1][DAY()]).map(x=>({text:x[0],why:'A tiny habit counts as progress.'}));let all=pool.concat(pri,habits);if(!all.length){$('pickResult').innerHTML='🌷 You are caught up! Your next step can be <b>rest</b>. That counts too. ♡';return}let x=all[Math.floor(Math.random()*all.length)];$('pickResult').innerHTML='✨ <b>Start here:</b> '+esc(x.text)+'<br><span class="muted">'+esc(x.why)+'</span><div class="row"><button class="btn primary" onclick="pickForMe()">🎲 Pick another</button></div>'}'''
           if 'function pickForMe()' not in s:
-              s=s.replace('</script></body></html>',js+'</script></body></html>',1)
+              s=s.replace('</script></body></html>',pickjs+'</script></body></html>',1)
+
           Path('docs/planner-app.html').write_text(s)
           p.write_text(s)
           PY
