@@ -9,3 +9,10 @@ body{width:100%;min-height:100%;margin:0!important;padding:0 0 76px!important;ov
 /* Modal portal: absolute in the document at the captured scroll position. This avoids iPad Safari fixed-viewport drift. */
 .v17-modal,.v18-event-modal{position:absolute!important;top:var(--v20-modal-y,0px)!important;left:0!important;right:auto!important;bottom:auto!important;width:100vw!important;height:100vh!important;min-height:100vh!important;z-index:2147483647!important;transform:none!important;overflow:hidden!important}
 .v17-modal-box,.v18-event-modal-box{position:absolute!important;top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important}
+/* V21 compatibility: v20-shell historically forced the legacy app into block layout.
+   V21 uses a two-column shell, so this must win over the legacy !important rule. */
+#app.v17-app.v21-app{display:grid!important;grid-template-columns:260px minmax(0,1fr)!important;gap:22px!important;max-width:1480px!important;margin:0 auto!important;padding:18px!important;min-height:100vh!important;overflow:visible!important;transform:none!important}
+#app.v17-app.v21-app .v21-main{display:block!important;min-width:0!important;visibility:visible!important;opacity:1!important}
+#app.v17-app.v21-app #tab-root{display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;min-height:0!important;padding:0!important}
+@media(max-width:900px){#app.v17-app.v21-app{grid-template-columns:82px minmax(0,1fr)!important;gap:12px!important;padding:10px!important}}
+@media(max-width:600px){#app.v17-app.v21-app{display:block!important;padding:10px!important}.v21-sidebar{position:sticky!important;top:8px!important;width:100%!important;height:auto!important;min-height:0!important}.v21-main{padding-top:12px!important}}
