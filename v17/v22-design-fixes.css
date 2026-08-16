@@ -1,0 +1,19 @@
+/* Tablet-friendly task controls and the planner's floating day review. */
+.v21-main .v17-task-row{position:relative!important;z-index:5!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;align-items:center!important;gap:10px!important}
+.v21-main .v17-task-row .v17-check{width:100%!important;min-width:0!important;margin:0!important}
+.v21-main .v17-task-actions{display:flex!important;flex:0 0 auto!important;flex-wrap:nowrap!important;align-items:center!important;gap:6px!important}
+.v21-main .v17-task-actions button{width:38px!important;height:38px!important;min-width:38px!important;padding:0!important;display:grid!important;place-items:center!important;touch-action:manipulation!important}
+.v18-planner-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:0 4px;color:var(--v21-muted);font-size:13px;font-weight:750}
+.v18-day-review-modal{z-index:100000!important}
+.v18-day-review-box{width:min(760px,calc(100vw - 28px))!important;padding:24px!important}
+.v18-review-heading{display:flex;align-items:center;gap:14px;padding:2px 44px 12px 2px}
+.v18-review-heading h2{margin:4px 0}.v18-review-heading p{margin:0}
+.v18-review-icon{width:58px;height:58px;display:grid;place-items:center;flex:0 0 auto;border-radius:20px;background:linear-gradient(135deg,#fff0f7,#eef7e9);font-size:28px}
+.v18-review-summary{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 14px}
+.v18-review-summary span{border:1px solid var(--v21-line);border-radius:999px;background:#fff5f9;padding:6px 10px;color:var(--v21-pink-deep);font-size:12px;font-weight:800}
+.v18-review-section{border:1px solid var(--v21-line);border-radius:19px;padding:14px;margin:12px 0;background:linear-gradient(135deg,rgba(255,250,252,.94),rgba(247,252,244,.82))}
+.v18-review-section h3{margin:0 0 8px}
+.v18-review-task{display:flex;align-items:center;gap:9px;padding:9px 0;border-top:1px solid rgba(239,209,221,.72);font-size:13px;font-weight:700}
+.v18-review-task input{width:18px;height:18px;accent-color:var(--v21-pink-deep)}
+.v18-review-section .v17-empty{margin:0;padding:12px!important}
+@media(max-width:700px){.v21-main .v17-task-row{grid-template-columns:1fr!important}.v21-main .v17-task-actions{justify-content:flex-end!important}.v18-planner-foot{align-items:stretch;flex-direction:column}.v18-day-review-box{padding:18px!important}.v18-review-heading{align-items:flex-start}.v18-review-icon{width:48px;height:48px;font-size:23px}}
