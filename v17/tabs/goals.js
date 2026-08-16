@@ -1,4 +1,4 @@
-/* V21.11 Dreamscape hotfix: keep this module cache-fresh and fully ESM-compatible. */
+/* V22.0 Dreamscape hotfix: keep this module cache-fresh and fully ESM-compatible. */
 const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const list=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[]);
