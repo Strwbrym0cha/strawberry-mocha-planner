@@ -1,5 +1,5 @@
-import{createStore}from'./storage.js';
-import{createRouter}from'./router.js';
+import{createStore}from'./storage.js?v=22.0.0-20260816';
+import{createRouter}from'./router.js?v=22.0.0-20260816';
 
 function installFloatingIslands(){
  if(document.getElementById('sm-floating-islands'))return;

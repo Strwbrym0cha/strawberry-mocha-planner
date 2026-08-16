@@ -1,4 +1,4 @@
-import{localDateKey,moneyTotals}from'../app/data.js';
+import{localDateKey,moneyTotals}from'../app/data.js?v=22.0.0-20260816';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const pct=(value,total)=>total?Math.round(value/total*100):0;
