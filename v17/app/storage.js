@@ -1,4 +1,4 @@
-import{loadLocalData,saveLocalData}from'./data.js?v=22.0.0-20260816';
+import{loadLocalData,saveLocalData}from'./data.js';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
@@ -25,7 +25,7 @@ function queueCloudSave(data){
 export function createStore(){
  let data=loadLocalData();
  const listeners=new Set();
- const persist=next=>{saveLocalData(next);queueCloudSave(next);listeners.forEach(listener=>listener(next))};
+ const persist=next=>{data={...next,__smUpdatedAt:new Date().toISOString()};saveLocalData(data);queueCloudSave(data);listeners.forEach(listener=>listener(data))};
  return{
   get(){return data},
   set(next){data=next;persist(data)},
