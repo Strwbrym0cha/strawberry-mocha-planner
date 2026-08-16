@@ -1,0 +1,11 @@
+/* V20.8: one stable planner viewport. Safari scrolls only the content pane. */
+html,body{width:100%;height:100%;min-height:100%;margin:0!important;overflow:hidden!important;overscroll-behavior:none!important;-webkit-overflow-scrolling:auto!important}
+body{padding:0!important;position:static!important;touch-action:pan-y!important}
+#app.v17-app{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;margin:0!important;padding:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;transform:none!important}
+#v17-nav{position:relative!important;top:auto!important;left:auto!important;right:auto!important;flex:0 0 auto!important;z-index:1000!important}
+#tab-root{position:relative!important;flex:1 1 auto!important;min-height:0!important;width:100%!important;overflow-y:auto!important;overflow-x:hidden!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important;padding:0 14px 24px!important;box-sizing:border-box!important}
+#v17-bottom-nav{position:absolute!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;z-index:2000!important;box-sizing:border-box!important}
+#app .v17-card:first-child{margin-top:9px}
+/* Modals live outside the scrolling pane and remain viewport overlays. */
+.v17-modal,.v18-event-modal{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;z-index:2147483647!important;transform:none!important}
+.v17-modal-box,.v18-event-modal-box{position:absolute!important;top:50%!important;left:50%!important;transform:translate(-50%,-50%)!important}
