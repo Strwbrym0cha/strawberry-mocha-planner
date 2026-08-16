@@ -1,12 +1,11 @@
-/* V20.9: stop fighting iPad Safari's viewport. Use normal document scrolling and sticky navigation. */
+/* V20.14: normal document scrolling + document-positioned modal overlays. */
 html{width:100%;min-height:100%;margin:0!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-x:none!important}
 body{width:100%;min-height:100%;margin:0!important;padding:0 0 76px!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-x:none!important;-webkit-overflow-scrolling:touch!important;position:static!important;touch-action:pan-y!important}
 #app.v17-app{position:relative!important;inset:auto!important;width:100%!important;min-height:100vh!important;min-height:100svh!important;max-width:1320px!important;margin:0 auto!important;padding:0 0 0!important;display:block!important;overflow:visible!important;transform:none!important}
 #v17-nav{position:sticky!important;top:0!important;left:auto!important;right:auto!important;z-index:1000!important}
 #tab-root{position:relative!important;width:100%!important;min-height:calc(100svh - 72px)!important;overflow:visible!important;padding:0 14px 24px!important;box-sizing:border-box!important}
 #v17-bottom-nav{position:sticky!important;left:auto!important;right:auto!important;bottom:0!important;width:100%!important;z-index:2000!important;box-sizing:border-box!important}
-/* Give the document enough breathing room so the last card is never hidden behind the sticky bar. */
 #tab-root:after{content:'';display:block;height:28px}
-/* Modals are direct body children, outside the scrollable planner content. */
-.v17-modal,.v18-event-modal{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:100vw!important;height:100vh!important;z-index:2147483647!important;transform:none!important}
+/* Modal portal: absolute in the document at the captured scroll position. This avoids iPad Safari fixed-viewport drift. */
+.v17-modal,.v18-event-modal{position:absolute!important;top:var(--v20-modal-y,0px)!important;left:0!important;right:auto!important;bottom:auto!important;width:100vw!important;height:100vh!important;min-height:100vh!important;z-index:2147483647!important;transform:none!important;overflow:hidden!important}
 .v17-modal-box,.v18-event-modal-box{position:absolute!important;top:50%!important;left:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%)!important}
