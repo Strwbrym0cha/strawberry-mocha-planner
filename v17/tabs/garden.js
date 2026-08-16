@@ -2,55 +2,49 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const dateObj=s=>{const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d,12)};
-function weekKeys(){const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-d.getDay());return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`})}
-function weekDone(h){const days=h.days||{};return weekKeys().filter(k=>!!days[k]).length}
-function streak(h){const days=h.days||{};let d=dateObj(today()),n=0;while(days[`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`]){n++;d.setDate(d.getDate()-1)}return n}
-function pct(n,d){return d?Math.round(n/d*100):0}
+const weekKeys=()=>{const d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-d.getDay());return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`})};
+const pct=(n,d)=>d?Math.round(n/d*100):0;
 function normalizeHabit(h){return {...h,id:h.id||makeId(),name:h.name||h.title||'Habit',icon:h.icon||h.emoji||'🌷',days:h.days&&typeof h.days==='object'&&!Array.isArray(h.days)?h.days:{}}}
+function weekDone(h){return weekKeys().filter(k=>!!(h.days||{})[k]).length}
+function streak(h){const days=h.days||{};let d=dateObj(today()),n=0;while(days[`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`]){n++;d.setDate(d.getDate()-1)}return n}
+function plantFor(p){return p>=100?'🌸':p>=86?'🌺':p>=71?'🌷':p>=43?'🪴':'🌱'}
 
 function renderGarden({root,store}){
-  let adding=false;
-  let editingIndex=null;
+  let adding=false,editingIndex=null;
   const draw=()=>{
     const data=store.get();
     const habits=(data.habits||[]).map(normalizeHabit);
-    const keys=weekKeys();
-    const todayKey=today();
-    const totalChecks=habits.reduce((n,h)=>n+weekDone(h),0);
-    const totalPossible=Math.max(1,habits.length*7);
-    const overall=pct(totalChecks,totalPossible);
-    root.innerHTML=`<section class="v17-card"><div class="v17-home-hero"><div class="v17-eyebrow">🍓 STRAWBERRY MOCHA • HABIT GARDEN</div><div class="v17-home-heading"><div><h1>🌷 Grow what matters.</h1><p>Small check-ins grow into something you can actually see. ♡</p></div><div class="v17-hero-berry">🌸</div></div></div><section class="v17-card"><header><div><h2>🌱 Your little garden</h2><p class="v17-muted">Check a habit today. Every check-in helps your plant grow.</p></div><span class="v17-pill">${overall}% this week</span></header><div class="v17-progress"><i style="width:${overall}%"></i></div><div class="v17-garden-bed">${habits.length?habits.map((h,i)=>{const done=weekDone(h),p=pct(done,7),checked=!!(h.days||{})[todayKey],st=streak(h),editing=editingIndex===i;return `<article class="v17-garden-plant"><div class="v17-garden-plant-top"><div class="v17-garden-icon">${esc(h.icon)}</div><div class="v17-garden-name"><b>${esc(h.name)}</b><small>${done}/7 this week${st?` • 🔥 ${st} day streak`:''}</small></div><div class="v17-garden-actions"><button type="button" class="v17-garden-edit" data-edit="${i}" aria-label="Edit ${esc(h.name)}">✎</button><button type="button" class="v17-garden-archive" data-archive="${i}" aria-label="Archive ${esc(h.name)}">🗄</button></div></div><div class="v17-garden-progress"><i style="width:${p}%"></i></div><div class="v17-garden-days">${keys.map(k=>`<span class="${(h.days||{})[k]?'done':''}" title="${k}">${(h.days||{})[k]?'✓':'·'}</span>`).join('')}</div><button type="button" class="${checked?'primary':''} v17-garden-today" data-check="${i}">${checked?'✓ Done today':'＋ Check in today'}</button>${editing?`<div class="v17-garden-edit-form"><input data-edit-name="${i}" value="${esc(h.name)}" autocomplete="off"><input data-edit-icon="${i}" value="${esc(h.icon)}" maxlength="4" autocomplete="off"><div><button type="button" data-cancel-edit="${i}">Cancel</button><button type="button" class="primary" data-save-edit="${i}">♡ Save changes</button></div></div>`:''}</article>`}).join(''):'<div class="v17-empty v17-garden-empty">🌱 Your garden is empty.<br>Plant one tiny habit and let it grow.</div>'}</div></section><section class="v17-card"><header><div><h2>🌱 Plant a new habit</h2><p class="v17-muted">Keep it simple. You can always add more later.</p></div><button type="button" class="primary" id="toggleHabit">${adding?'× Close':'＋ Add habit'}</button></header>${adding?`<div class="v17-garden-form"><input id="gardenName" class="input" autocomplete="off" placeholder="Habit, e.g. Pilates"><input id="gardenIcon" class="input" autocomplete="off" placeholder="Emoji, e.g. 🌷" maxlength="4"><button type="button" class="primary" id="plantHabit">🌱 Plant habit</button></div>`:''}</section></section>`;
-
-    root.querySelector('#toggleHabit').onclick=()=>{adding=!adding;editingIndex=null;draw()};
-    root.querySelector('#plantHabit')?.addEventListener('click',()=>{
-      const name=root.querySelector('#gardenName').value.trim();
-      if(!name)return;
-      const icon=root.querySelector('#gardenIcon').value.trim()||'🌷';
-      store.update(d=>({...d,habits:[...(d.habits||[]),{id:makeId(),name,icon,days:{}}]}));
-      adding=false;
-      draw();
-    });
-    root.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{
-      const index=Number(b.dataset.check);
-      store.update(d=>{const habits=[...(d.habits||[])];const h=normalizeHabit(habits[index]);if(!h)return d;const days={...(h.days||{})};if(days[todayKey])delete days[todayKey];else days[todayKey]=true;habits[index]={...h,days};return {...d,habits}});
-    });
+    const keys=weekKeys(),todayKey=today(),total=habits.length;
+    const doneToday=habits.filter(h=>h.days[todayKey]).length;
+    const weekChecks=habits.reduce((n,h)=>n+weekDone(h),0);
+    const overall=pct(weekChecks,Math.max(1,total*7));
+    const best=Math.max(0,...habits.map(streak));
+    root.innerHTML=`<style>
+      .sm-garden{--pink:#e99ab7;--deep:#b96d88;--ink:#674941;--muted:#9a817b;--line:#eadbd6;--soft:#fff0f5;--cream:#fffaf6}
+      .sm-garden{color:var(--ink)}.sm-garden *{box-sizing:border-box}
+      .sm-hero{background:linear-gradient(135deg,#f7d8e4,#fff9f2);border:1px solid #efd9df;border-radius:28px;padding:24px;margin-bottom:10px;position:relative;overflow:hidden}
+      .sm-hero:after{content:'🍓  ✦  🎀  ✦  🌸';position:absolute;right:18px;bottom:12px;font-size:20px;opacity:.8}.sm-title{font-size:31px;margin:5px 0 3px}.sm-sub{color:var(--muted);font-size:12px;max-width:650px;line-height:1.5}
+      .sm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}.sm-stat{background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px}.sm-stat small{display:block;color:var(--deep);font-size:9px;font-weight:900;letter-spacing:.1em}.sm-stat b{display:block;font-size:22px;margin-top:4px}
+      .sm-garden-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.sm-garden-head h2{margin:0 0 4px}.sm-garden-head p{margin:0}.sm-progress{height:9px;background:#f0e5e5;border-radius:99px;overflow:hidden;margin:10px 0}.sm-progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,#e99ab7,#cfe0b8);border-radius:99px}
+      .sm-bed{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.sm-plant{background:linear-gradient(180deg,#fff,#fffaf6);border:1px solid var(--line);border-radius:22px;padding:13px;position:relative;overflow:hidden}.sm-plant:after{content:'✦  ·  ✦';position:absolute;right:10px;bottom:7px;color:#e7b2c4;font-size:11px}.sm-top{display:flex;align-items:center;gap:9px}.sm-icon{font-size:39px;width:48px;text-align:center;filter:drop-shadow(0 5px 5px rgba(103,73,65,.08))}.sm-name{min-width:0;flex:1}.sm-name b{display:block;font-size:14px;overflow-wrap:anywhere}.sm-name small{display:block;color:var(--muted);font-size:9px;margin-top:3px}.sm-actions{display:flex;gap:4px}.sm-actions button{padding:5px 7px;font-size:11px;border-radius:9px}.sm-flower{text-align:center;font-size:38px;height:45px;margin:3px 0}.sm-grow{height:9px;background:#f0e5e5;border-radius:99px;overflow:hidden;margin:5px 0 7px}.sm-grow i{display:block;height:100%;background:linear-gradient(90deg,#e99ab7,#cfe0b8);border-radius:99px}.sm-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.sm-day{height:27px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-size:10px;padding:0}.sm-day.done{background:var(--soft);border-color:#efbfd0;color:var(--deep);font-weight:900}.sm-today{width:100%;margin-top:8px}.sm-edit{display:grid;grid-template-columns:1fr 70px;gap:6px;margin-top:9px}.sm-edit input{min-width:0;padding:9px;border:1px solid var(--line);border-radius:10px}.sm-edit button{padding:8px}.sm-add{display:flex;gap:7px;margin-top:9px}.sm-add input{flex:1;min-width:0;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff}.sm-add button{background:var(--soft);border-color:#efbfd0;color:var(--deep)}.sm-empty{text-align:center;padding:28px;border:1px dashed var(--line);border-radius:18px;color:var(--muted);grid-column:1/-1}
+      @media(max-width:800px){.sm-stats{grid-template-columns:1fr 1fr}.sm-bed{grid-template-columns:1fr 1fr}}@media(max-width:520px){.sm-title{font-size:26px}.sm-bed{grid-template-columns:1fr}.sm-add{flex-direction:column}.sm-hero{padding:18px}.sm-garden-head{flex-direction:column}}
+    </style>
+    <div class="sm-garden">
+      <section class="sm-hero"><div class="v17-eyebrow">🍓 STRAWBERRY MOCHA • HABIT GARDEN</div><h1 class="sm-title">Grow what matters. 🌷</h1><div class="sm-sub">Your habits are little seeds. Show up today, water them gently, and let the garden keep the receipts. ♡</div></section>
+      <div class="sm-stats"><div class="sm-stat"><small>TODAY</small><b>${doneToday}/${total}</b></div><div class="sm-stat"><small>THIS WEEK</small><b>${overall}%</b></div><div class="sm-stat"><small>BEST STREAK</small><b>${best} 🔥</b></div><div class="sm-stat"><small>ACTIVE HABITS</small><b>${total}</b></div></div>
+      <section class="v17-card"><div class="sm-garden-head"><div><h2>🌱 Your little garden</h2><p class="v17-muted">One tap waters today's plant. Missing a day never erases your growth.</p></div><span class="v17-pill">${overall}% grown</span></div><div class="sm-progress"><i style="width:${overall}%"></i></div><div class="sm-bed">${habits.length?habits.map((h,i)=>{const w=weekDone(h),p=pct(w,7),checked=!!h.days[todayKey],editing=editingIndex===i;return `<article class="sm-plant"><div class="sm-top"><div class="sm-icon">${esc(h.icon)}</div><div class="sm-name"><b>${esc(h.name)}</b><small>${w}/7 this week${streak(h)?` • 🔥 ${streak(h)} day streak`:''}</small></div><div class="sm-actions"><button type="button" data-edit="${i}" aria-label="Edit ${esc(h.name)}">✎</button><button type="button" data-archive="${i}" aria-label="Archive ${esc(h.name)}">🗄</button></div></div><div class="sm-flower">${plantFor(p)}</div><div class="sm-grow"><i style="width:${p}%"></i></div><div class="sm-days">${keys.map((k,j)=>`<button type="button" class="sm-day ${(h.days||{})[k]?'done':''}" data-day="${i}" data-date="${k}">${['S','M','T','W','T','F','S'][j]}${(h.days||{})[k]?'✓':''}</button>`).join('')}</div><button type="button" class="sm-today ${checked?'primary':''}" data-check="${i}">${checked?'✓ Watered today':'＋ Water today'}</button>${editing?`<div class="sm-edit"><input data-name="${i}" value="${esc(h.name)}" autocomplete="off"><input data-icon="${i}" value="${esc(h.icon)}" maxlength="4" autocomplete="off"><button type="button" data-cancel="${i}">Cancel</button><button type="button" class="primary" data-save="${i}">♡ Save</button></div>`:''}</article>`}).join(''):'<div class="sm-empty">🌱 Your garden is waiting.<br>Plant your first tiny habit below. ♡</div>'}</div></section>
+      <section class="v17-card"><div class="sm-garden-head"><div><h2>🌱 Plant a habit</h2><p class="v17-muted">Keep the first version tiny. We can grow the system later.</p></div><button type="button" class="primary" id="addToggle">${adding?'× Close':'＋ Add habit'}</button></div>${adding?`<div class="sm-add"><input id="newHabit" placeholder="e.g. Pilates, skincare, read 10 pages" autocomplete="off"><input id="newIcon" placeholder="🌷" maxlength="4" style="max-width:85px"><button type="button" id="plant">🌱 Plant it</button></div>`:''}</section>
+    </div>`;
+    root.querySelector('#addToggle').onclick=()=>{adding=!adding;editingIndex=null;draw()};
+    root.querySelector('#plant')?.addEventListener('click',()=>{const name=root.querySelector('#newHabit').value.trim();if(!name)return;const icon=root.querySelector('#newIcon').value.trim()||'🌷';store.update(d=>({...d,habits:[...(d.habits||[]),{id:makeId(),name,icon,days:{}}]}));adding=false;draw()});
+    root.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>toggle(Number(b.dataset.check),todayKey));
+    root.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>toggle(Number(b.dataset.day),b.dataset.date));
     root.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{editingIndex=Number(b.dataset.edit);adding=false;draw()});
-    root.querySelectorAll('[data-cancel-edit]').forEach(b=>b.onclick=()=>{editingIndex=null;draw()});
-    root.querySelectorAll('[data-save-edit]').forEach(b=>b.onclick=()=>{
-      const index=Number(b.dataset.saveEdit);
-      const name=root.querySelector(`[data-edit-name="${index}"]`).value.trim()||'Habit';
-      const icon=root.querySelector(`[data-edit-icon="${index}"]`).value.trim()||'🌷';
-      store.update(d=>{const habits=[...(d.habits||[])];if(!habits[index])return d;const h=normalizeHabit(habits[index]);habits[index]={...h,name,icon};return {...d,habits}});
-      editingIndex=null;
-      draw();
-    });
-    root.querySelectorAll('[data-archive]').forEach(b=>b.onclick=()=>{
-      const index=Number(b.dataset.archive);
-      store.update(d=>{const habits=[...(d.habits||[])];if(!habits[index])return d;const item=normalizeHabit(habits.splice(index,1)[0]);return {...d,habits,archive:[...(d.archive||[]),{type:'habit',item,archivedAt:new Date().toISOString()}]}});
-    });
+    root.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>{editingIndex=null;draw()});
+    root.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.save),name=root.querySelector(`[data-name="${i}"]`).value.trim()||'Habit',icon=root.querySelector(`[data-icon="${i}"]`).value.trim()||'🌷';store.update(d=>{const habits=[...(d.habits||[])];if(!habits[i])return d;const h=normalizeHabit(habits[i]);habits[i]={...h,name,icon};return {...d,habits}});editingIndex=null;draw()});
+    root.querySelectorAll('[data-archive]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.archive);store.update(d=>{const habits=[...(d.habits||[])];if(!habits[i])return d;const item=normalizeHabit(habits.splice(i,1)[0]);return {...d,habits,archive:[...(d.archive||[]),{type:'habit',item,archivedAt:new Date().toISOString()}]}})});
+    function toggle(i,date){store.update(d=>{const habits=[...(d.habits||[])];if(!habits[i])return d;const h=normalizeHabit(habits[i]),days={...(h.days||{})};days[date]=!days[date];habits[i]={...h,days};return {...d,habits}})}
   };
-  store.subscribe(draw);
-  draw();
+  store.subscribe(draw);draw();
 }
-
 export{renderGarden};
