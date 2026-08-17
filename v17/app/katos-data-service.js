@@ -1,5 +1,5 @@
-import{CURRENT_SCHEMA_VERSION,getLocalBackup,listLocalBackups,loadLocalData,moneyTotals,normalizeNoms,saveLocalData,validateState}from'./data.js?v=22.1.18-20260817';
-import{evaluateToday}from'./logic/evaluate-today.js?v=22.1.16-20260817';
+import{CURRENT_SCHEMA_VERSION,getLocalBackup,listLocalBackups,loadLocalData,moneyTotals,normalizeHyperfixation,normalizeNoms,saveLocalData,validateState}from'./data.js?v=22.1.19-20260817';
+import{evaluateToday}from'./logic/evaluate-today.js?v=22.1.19-20260817';
 
 /**
  * Compatibility-first state gateway. It deliberately wraps the current snapshot
@@ -30,6 +30,7 @@ export function createKatOSDataService({storage=localStorage,onPersist=()=>{}}={
   getCurrentTaskbotState:()=>state.taskbot||{},
   getRoutines:()=>state.routines||[],
   getNoms:()=>normalizeNoms(state.noms),
+  getHyperfixation:()=>normalizeHyperfixation(state.hyperfixation),
   getFinanceSummary:()=>moneyTotals(state.money),
   evaluateToday:context=>evaluateToday(state,context)
  };

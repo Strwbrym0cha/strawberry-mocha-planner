@@ -1,6 +1,6 @@
-import{buildMochiniPresentation,readableReason}from'./mochini.js?v=22.1.16-20260817';
-import{openTasksForDate,taskTitle}from'./logic/tasks.js';
-import{nextTimedEvent}from'./logic/events.js';
+import{buildMochiniPresentation,readableReason}from'./mochini.js?v=22.1.19-20260817';
+import{openTasksForDate,taskTitle}from'./logic/tasks.js?v=22.1.19-20260817';
+import{eventsInRange,nextTimedEvent}from'./logic/events.js?v=22.1.19-20260817';
 
 const clean=value=>String(value||'').toLowerCase().replace(/[’‘']/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 const includesAny=(input,phrases)=>phrases.some(phrase=>input===phrase||input.includes(phrase));
@@ -16,8 +16,12 @@ export function matchMochiniIntent(input){
  if(normalized==='anything coming up'||normalized==='whats coming up'||normalized==='what is coming up')return{intent:'ambiguous',confidence:'ambiguous',parameters:{choices:['ask_tasks','ask_next_event','ask_deadlines']}};
  if(includesAny(normalized,['what should i do','whats next','what is next','what should i work on','pick something for me','what should i do first']))return{intent:'ask_next_task',confidence:'high',parameters:{}};
  if(includesAny(normalized,['what do i have today','what are my tasks','anything left','what do i need to do','show my tasks']))return{intent:'ask_tasks',confidence:'high',parameters:{}};
+ if(/\b(events?|scheduled|schedule)\b/.test(normalized)&&/\b(today|tomorrow|this week)\b/.test(normalized)){const range=normalized.includes('tomorrow')?'tomorrow':normalized.includes('this week')?'week':'today';return{intent:'ask_events_range',confidence:'high',parameters:{range}}}
  if(includesAny(normalized,['any deadlines','whats due soon','what is due soon','do i have something due','what deadlines do i have']))return{intent:'ask_deadlines',confidence:'high',parameters:{}};
  if(includesAny(normalized,['how are my routines','whats left in my routine','what is left in my routine','did i finish my routine','routine status']))return{intent:'ask_routines',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['what am i hyperfixating on','whats my fixation','what is my fixation','what did i pick']))return{intent:'ask_fixation',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['hows hyperfixation mode','how is hyperfixation mode','anything interrupting me','can i keep going']))return{intent:'ask_fixation_status',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['im done hyperfixating','i am done hyperfixating','end hyperfixation mode']))return{intent:'end_hyperfixation_request',confidence:'high',parameters:{}};
  if(includesAny(normalized,['whats next on my schedule','what is next on my schedule','do i have anything scheduled','whats my next event','what is my next event','when do i have to be somewhere']))return{intent:'ask_next_event',confidence:'high',parameters:{}};
  if(includesAny(normalized,['whats my capacity','what is my capacity','what kind of day is this','how much can i handle today']))return{intent:'ask_capacity',confidence:'high',parameters:{}};
  if(includesAny(normalized,['how does today look','give me the rundown','whats going on today','what is going on today','hows my day','how is my day']))return{intent:'ask_today_summary',confidence:'high',parameters:{}};
@@ -46,6 +50,9 @@ export function answerMochiniIntent(intentResult,{state={},evaluation={},session
   const tasks=openTasksForDate(state,date);if(!tasks.length)return response(intent,'Your task list is clear for today. 🌷');
   const names=tasks.slice(0,5).map(taskLine);return response(intent,`You have ${tasks.length} open task${tasks.length===1?'':'s'} today: ${names.join(', ')}${tasks.length>5?'…':''}`,{evidence:tasks});
  }
+ if(intent==='ask_events_range'){
+  const range=intentResult.parameters?.range||'today',events=eventsInRange(state,{date,range}),label=range==='week'?'this week':range;if(!events.length)return response(intent,range==='week'?'Nothing scheduled this week. Your calendar is clear. 🍡':`Nothing scheduled ${label}. Your calendar is clear. 🍡`,{evidence:[]});const first=events[0];return response(intent,`${events.length} event${events.length===1?'':'s'} ${range==='week'?'this week':label}: ${first.title||'Scheduled event'}${first.start?` at ${time(first.start)}`:''}${events.length>1?` and ${events.length-1} more.`:''}`,{evidence:events});
+ }
  if(intent==='ask_deadlines'){
   const deadlines=list(evaluation?.deadlines).filter(item=>item.urgency!=='later');if(!deadlines.length)return response(intent,'No upcoming deadlines are recorded right now. 🍓');
   const first=deadlines[0];return response(intent,`${first.title} is ${first.urgency}${first.date?` (${first.date})`:''}.${deadlines.length>1?` I also found ${deadlines.length-1} more.`:''}`,{evidence:deadlines});
@@ -59,6 +66,9 @@ export function answerMochiniIntent(intentResult,{state={},evaluation={},session
   const event=nextTimedEvent(state,date,{now:new Date()});if(!event)return response(intent,'Nothing fixed is coming up today. Your flexible time is yours. ♡');
   return response(intent,`Next up: ${event.title||'Scheduled event'} at ${time(event.start)}.`,{evidence:[event]});
  }
+ if(intent==='ask_fixation'){const fixation=evaluation?.hyperfixation;if(!fixation?.active)return response(intent,'Hyperfixation Mode is not on right now. 🍡');return response(intent,`Hyperfixation Mode is on. Your current fixation is ${fixation.focus?.label||'your chosen focus'}. 🍡`,{evidence:[fixation]});}
+ if(intent==='ask_fixation_status'){const fixation=evaluation?.hyperfixation;if(!fixation?.active)return response(intent,'Hyperfixation Mode is not on right now. 🍡');const event=fixation.nextFixedEvent;return response(intent,event?`Your fixation is still ${fixation.focus?.label||'active'}, and ${event.title||'a fixed event'} is coming up at ${time(event.start)}. 🍡`:`Your fixation is ${fixation.focus?.label||'active'}, and KatOS sees no fixed event ahead today. 🍡`,{evidence:[fixation]});}
+ if(intent==='end_hyperfixation_request')return response(intent,'I can’t switch modes from a chat message yet. Use Exit Hyperfixation Mode on Home whenever you’re ready. 🌷');
  if(intent==='ask_capacity')return response(intent,`KatOS has today set to ${evaluation?.state?.capacity||'High'} capacity. I’ll use that only to filter task fit, not to make assumptions about you. 🍓`);
  if(intent==='ask_today_summary'){
   const next=nextTimedEvent(state,date,{now:new Date()}),deadline=list(evaluation?.deadlines).find(item=>item.urgency!=='later'),routines=evaluation?.routines||{},packed=list(evaluation?.alerts).some(alert=>alert.code==='day_overloaded');

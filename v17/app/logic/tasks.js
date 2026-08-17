@@ -1,5 +1,5 @@
-import{localDateKey}from'../data.js?v=22.1.16-20260817';
-import{minutesUntil,nextTimedEvent}from'./events.js';
+import{localDateKey}from'../data.js?v=22.1.19-20260817';
+import{minutesUntil,nextTimedEvent}from'./events.js?v=22.1.19-20260817';
 
 const list=value=>Array.isArray(value)?value:[];
 export const taskTitle=task=>task?.text||task?.title||'Untitled task';

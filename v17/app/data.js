@@ -7,7 +7,8 @@ export const CURRENT_SCHEMA_VERSION=1;
 export const MAX_LOCAL_BACKUPS=7;
 
 export const DEFAULT_NOMS={foods:[],pantry:[],groceries:[],recipes:[],mealPlan:[],emergencyNoms:[],today:null};
-export const DEFAULT_DATA={schemaVersion:CURRENT_SCHEMA_VERSION,events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},dayNotes:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],labObservations:[],labArchivedObservations:[],weeklyExperiment:{},financeWorkflow:{},schoolTasks:[],schoolGoals:[],workItems:[],workSchedule:{mode:'flexible',weekly:{sunday:[],monday:[],tuesday:[],wednesday:[],thursday:[],friday:[],saturday:[]}},noms:DEFAULT_NOMS,taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
+export const DEFAULT_HYPERFIXATION={active:false,focusType:null,focusId:null,focusLabel:null,startedAt:null,intention:null};
+export const DEFAULT_DATA={schemaVersion:CURRENT_SCHEMA_VERSION,events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},dayNotes:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],labObservations:[],labArchivedObservations:[],weeklyExperiment:{},financeWorkflow:{},schoolTasks:[],schoolGoals:[],workItems:[],workSchedule:{mode:'flexible',weekly:{sunday:[],monday:[],tuesday:[],thursday:[],friday:[],saturday:[]}},noms:DEFAULT_NOMS,hyperfixation:DEFAULT_HYPERFIXATION,taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
 
 const isObject=value=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const clone=value=>structuredClone(value);
@@ -20,6 +21,7 @@ export const localDateKey=(date=new Date())=>{const d=new Date(date);return `${d
 export const asList=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
 export const moneyTotals=money=>{const data=money||{};const total=key=>asList(data[key]).reduce((sum,item)=>sum+Number(item?.amount??0),0);const income=total('income');const spent=total('expenses');const bills=asList(data.bills).filter(item=>!item?.paid).reduce((sum,item)=>sum+Number(item?.amount||0),0);const cash=Number(data.cash?.amount??data.cash??0);return{income,spent,bills,cash,available:income-spent-bills+cash}};
 export const normalizeNoms=value=>{const noms=isObject(value)?value:{};const next={...clone(DEFAULT_NOMS),...noms};for(const key of ['foods','pantry','groceries','recipes','mealPlan','emergencyNoms'])if(!Array.isArray(next[key]))next[key]=[];if(next.today!==null&&!isObject(next.today))next.today=null;return next};
+export const normalizeHyperfixation=value=>{const session=isObject(value)?value:{};return{...clone(DEFAULT_HYPERFIXATION),...session,active:!!session.active,focusType:['task','project','goal','freeform'].includes(session.focusType)?session.focusType:null,focusId:session.focusId==null?null:String(session.focusId),focusLabel:typeof session.focusLabel==='string'?session.focusLabel:null,startedAt:typeof session.startedAt==='string'?session.startedAt:null,intention:typeof session.intention==='string'?session.intention:null}};
 export function normalizeTask(task){if(!isObject(task))return task;const next={...task};if(next.done===undefined||next.done===null)next.done=false;if(next.parked===undefined||next.parked===null)next.parked=false;if(next.hardBoundary===undefined||next.hardBoundary===null)next.hardBoundary=false;if(!Array.isArray(next.unavailableOn))next.unavailableOn=[];return next}
 
 /** Versioned, idempotent migration seam. Version 0 is every legacy snapshot without schemaVersion. */
@@ -45,6 +47,7 @@ export function validateState(input={}){
  if(!data.workSchedule.mode)data.workSchedule.mode='flexible';
  if(!isObject(data.taskbot))data.taskbot={capacity:'High',missionId:null,disrupted:false};
  data.noms=normalizeNoms(data.noms);
+ data.hyperfixation=normalizeHyperfixation(data.hyperfixation);
  if(!Number.isInteger(data.schemaVersion)||data.schemaVersion<CURRENT_SCHEMA_VERSION)data.schemaVersion=CURRENT_SCHEMA_VERSION;
  return{ok:isObject(input),state:data,issues};
 }

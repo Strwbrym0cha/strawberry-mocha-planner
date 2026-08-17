@@ -1,5 +1,5 @@
-import{buildBigMochiRequest,buildMochiniPresentation}from'../app/mochini.js?v=22.1.17-20260817';
-import{answerMochiniIntent,matchMochiniIntent}from'../app/mochini-intents.js?v=22.1.17-20260817';
+import{buildBigMochiRequest,buildMochiniPresentation}from'../app/mochini.js?v=22.1.19-20260817';
+import{answerMochiniIntent,matchMochiniIntent}from'../app/mochini-intents.js?v=22.1.19-20260817';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const time=value=>value?new Date(`2000-01-01T${value}`).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'Any time';
