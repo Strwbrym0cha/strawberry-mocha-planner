@@ -19,14 +19,15 @@ export function buildMochiniPresentation(evaluation,state={}){
  return{mode:'no_eligible',headline:'No clear mission right now. 🍡',message:'KatOS cannot find an eligible task with the current rules.',notices,recommendation:null,reasonLines:[],finance,showBigMochi:false};
 }
 
-export function buildBigMochiRequest(evaluation,state={},question='Please help me decide what to do next and explain why.'){
+export function buildBigMochiRequest(evaluation,state={},question='Please help me decide what to do next and explain why.',{reason='',topic='general'}={}){
  const presentation=buildMochiniPresentation(evaluation,state),options=(evaluation?.candidates||[]).slice(0,4),nextEvent=(state.events||[]).find(event=>String(event.id)===String(evaluation?.state?.nextFixedEventId)),deadline=(evaluation?.deadlines||[]).find(item=>['overdue','today','tomorrow','soon'].includes(item.urgency)),financeTask=options.map(option=>option.task).find(task=>financeSafetyForTask(state,task).applicable),finance=financeTask?financeSafetyForTask(state,financeTask):{applicable:false};
- const lines=['🍓 BIG MOCHI REQUEST',`Kat's question: ${question}`,'',`Why Mochini escalated: ${(evaluation?.escalation?.reasons||['KatOS cannot choose fairly.']).join(', ')}`,'','Current KatOS state:',`- Date: ${evaluation?.date||'Not available'}`,`- Capacity: ${evaluation?.state?.capacity||'Not available'}`,`- Open tasks: ${evaluation?.state?.openTaskCount??0}`,`- Next fixed event: ${nextEvent?`${nextEvent.title||'Scheduled event'}${nextEvent.start?` - ${nextEvent.start}`:''}`:'None'}`];
+ const why=reason||(evaluation?.escalation?.needsBigMochi?'KatOS found equally ranked options.':'This question cannot be answered reliably using deterministic KatOS rules.');
+ const lines=['🍓 BIG MOCHI REQUEST',`Kat asked: "${question}"`,'',`Why Mochini escalated: ${why}`,'','Relevant KatOS context:',`- Date: ${evaluation?.date||'Not available'}`,`- Capacity: ${evaluation?.state?.capacity||'Not available'}`,`- Open tasks: ${evaluation?.state?.openTaskCount??0}`,`- Next fixed event: ${nextEvent?`${nextEvent.title||'Scheduled event'}${nextEvent.start?` - ${nextEvent.start}`:''}`:'None'}`];
  if(deadline)lines.push(`- Relevant deadline: ${deadline.title} - ${deadline.urgency}${deadline.date?` (${deadline.date})`:''}`);
  if(evaluation?.routines?.remaining)lines.push(`- Routine steps remaining: ${evaluation.routines.remaining}`);
  lines.push('','Competing options:');
  if(options.length)options.forEach((option,index)=>lines.push(`- Option ${index+1}: ${title(option.task)}${option.reasons?.length?` (${option.reasons.map(readableReason).join(' ')})`:''}`));else lines.push('- KatOS did not identify a specific option.');
  if(finance.applicable)lines.push('','Relevant finance safety:',`- Estimated cost: $${finance.estimatedCost.toFixed(2)}`,`- Available: $${Number(finance.summary.available||0).toFixed(2)}`,`- Unpaid bills: $${Number(finance.summary.unpaidBills||0).toFixed(2)}`);
- lines.push('','What Mochini knows:',presentation.message||'KatOS used the current deterministic planner rules.','What Mochini cannot decide: Which equally ranked option best fits Kat’s broader priorities.','', 'What Kat wants from Big Mochi:',question);
+ lines.push('','What Mochini could determine:',presentation.message||'KatOS used the current deterministic planner rules.',`What needs Big Mochi: ${topic==='task_ambiguity'?'Which equally ranked option best fits Kat’s broader priorities.':'Judgment, strategy, or reasoning beyond KatOS rules.'}`,'', `Please answer Kat's original question using the relevant context above.`);
  return lines.join('\n');
 }

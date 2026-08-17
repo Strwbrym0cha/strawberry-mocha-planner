@@ -1,0 +1,70 @@
+import{buildMochiniPresentation,readableReason}from'./mochini.js?v=22.1.16-20260817';
+import{openTasksForDate,taskTitle}from'./logic/tasks.js';
+import{nextTimedEvent}from'./logic/events.js';
+
+const clean=value=>String(value||'').toLowerCase().replace(/[’‘']/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
+const includesAny=(input,phrases)=>phrases.some(phrase=>input===phrase||input.includes(phrase));
+const time=value=>value?new Date(`2000-01-01T${value}`).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'any time';
+const list=value=>Array.isArray(value)?value:[];
+
+export const normalizeMochiniInput=clean;
+
+export function matchMochiniIntent(input){
+ const normalized=clean(input);if(!normalized)return{intent:'unknown',confidence:'unknown',parameters:{}};
+ if(/\b(delete|remove|move|reschedule|complete|finish|archive|park|mark)\b/.test(normalized))return{intent:'mutation_request',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['why','why that','why should i do that','how did you pick that','how did you choose that']))return{intent:'ask_why',confidence:'exact',parameters:{}};
+ if(normalized==='anything coming up'||normalized==='whats coming up'||normalized==='what is coming up')return{intent:'ambiguous',confidence:'ambiguous',parameters:{choices:['ask_tasks','ask_next_event','ask_deadlines']}};
+ if(includesAny(normalized,['what should i do','whats next','what is next','what should i work on','pick something for me','what should i do first']))return{intent:'ask_next_task',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['what do i have today','what are my tasks','anything left','what do i need to do','show my tasks']))return{intent:'ask_tasks',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['any deadlines','whats due soon','what is due soon','do i have something due','what deadlines do i have']))return{intent:'ask_deadlines',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['how are my routines','whats left in my routine','what is left in my routine','did i finish my routine','routine status']))return{intent:'ask_routines',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['whats next on my schedule','what is next on my schedule','do i have anything scheduled','whats my next event','what is my next event','when do i have to be somewhere']))return{intent:'ask_next_event',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['whats my capacity','what is my capacity','what kind of day is this','how much can i handle today']))return{intent:'ask_capacity',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['how does today look','give me the rundown','whats going on today','what is going on today','hows my day','how is my day']))return{intent:'ask_today_summary',confidence:'high',parameters:{}};
+ if(/^(should i|help me decide|should we|do you think i should)\b/.test(normalized)||/\b(change|degree plan|life plan|strategy)\b/.test(normalized))return{intent:'complex',confidence:'unknown',parameters:{}};
+ return{intent:'unknown',confidence:'unknown',parameters:{}};
+}
+
+const response=(intent,answer,{evidence=[],escalation=false,choices=[],reason='',recommendation=null}={})=>({intent,answer,evidence,escalation,choices,reason,recommendation});
+const taskLine=task=>taskTitle(task);
+const pickTemplate=(task,reason)=>{const templates=[`Psst, I’d start with ${task}. ${reason} 🍓`,`Tiny bean vote: ${task}. ${reason}`,`${task} looks like the best fit right now. ${reason} 🌷`];const index=String(task).split('').reduce((sum,char)=>sum+char.charCodeAt(0),0)%templates.length;return templates[index]};
+
+export function answerMochiniIntent(intentResult,{state={},evaluation={},session={}}={}){
+ const intent=intentResult?.intent||'unknown',date=evaluation?.date;
+ if(intent==='ask_next_task'){
+  const view=buildMochiniPresentation(evaluation,state);
+  if(evaluation?.escalation?.needsBigMochi)return response(intent,'I can’t fairly choose between the top options. Want me to make a Big Mochi Request? 🍓',{evidence:evaluation.candidates||[],escalation:true,reason:'KatOS found equally ranked options.'});
+  const recommendation=evaluation?.recommendedNextAction;
+  if(!recommendation)return response(intent,view.message,{evidence:[],recommendation:null});
+  const firstReason=readableReason(recommendation.reasons?.[0]);return response(intent,pickTemplate(taskLine(recommendation.task),firstReason),{evidence:recommendation.reasons||[],recommendation});
+ }
+ if(intent==='ask_why'){
+  const last=session.lastRecommendation;if(!last)return response(intent,'I haven’t picked anything yet. Ask me what you should do first. 🍡');
+  const reasons=(session.lastReasons||last.reasons||[]).map(readableReason);return response(intent,`${taskLine(last.task)} because ${reasons.join(' ')}`,{evidence:last.reasons||[]});
+ }
+ if(intent==='ask_tasks'){
+  const tasks=openTasksForDate(state,date);if(!tasks.length)return response(intent,'Your task list is clear for today. 🌷');
+  const names=tasks.slice(0,5).map(taskLine);return response(intent,`You have ${tasks.length} open task${tasks.length===1?'':'s'} today: ${names.join(', ')}${tasks.length>5?'…':''}`,{evidence:tasks});
+ }
+ if(intent==='ask_deadlines'){
+  const deadlines=list(evaluation?.deadlines).filter(item=>item.urgency!=='later');if(!deadlines.length)return response(intent,'No upcoming deadlines are recorded right now. 🍓');
+  const first=deadlines[0];return response(intent,`${first.title} is ${first.urgency}${first.date?` (${first.date})`:''}.${deadlines.length>1?` I also found ${deadlines.length-1} more.`:''}`,{evidence:deadlines});
+ }
+ if(intent==='ask_routines'){
+  const routines=evaluation?.routines||{total:0,completed:0,remaining:0};if(!routines.total)return response(intent,'No routines are configured for today yet. 🍡');
+  if(!routines.remaining)return response(intent,`Your routines are all wrapped up: ${routines.completed}/${routines.total} complete. 🌷`,{evidence:[routines]});
+  return response(intent,`Your routines have ${routines.remaining} step${routines.remaining===1?'':'s'} left (${routines.completed}/${routines.total} complete).`,{evidence:[routines]});
+ }
+ if(intent==='ask_next_event'){
+  const event=nextTimedEvent(state,date,{now:new Date()});if(!event)return response(intent,'Nothing fixed is coming up today. Your flexible time is yours. ♡');
+  return response(intent,`Next up: ${event.title||'Scheduled event'} at ${time(event.start)}.`,{evidence:[event]});
+ }
+ if(intent==='ask_capacity')return response(intent,`KatOS has today set to ${evaluation?.state?.capacity||'High'} capacity. I’ll use that only to filter task fit, not to make assumptions about you. 🍓`);
+ if(intent==='ask_today_summary'){
+  const next=nextTimedEvent(state,date,{now:new Date()}),deadline=list(evaluation?.deadlines).find(item=>item.urgency!=='later'),routines=evaluation?.routines||{},packed=list(evaluation?.alerts).some(alert=>alert.code==='day_overloaded');
+  const parts=[`${evaluation?.state?.openTaskCount||0} open task${evaluation?.state?.openTaskCount===1?'':'s'}`,`${evaluation?.state?.capacity||'High'} capacity`,next?`next event: ${next.title||'Scheduled event'} at ${time(next.start)}`:'no fixed event next'];if(deadline)parts.push(`${deadline.title} is ${deadline.urgency}`);if(routines.total)parts.push(`${routines.remaining||0} routine step${routines.remaining===1?'':'s'} left`);if(packed)parts.push('the day looks packed');return response(intent,`Tiny rundown: ${parts.join(' • ')}.`,{evidence:[evaluation]});
+ }
+ if(intent==='mutation_request')return response(intent,'I can’t change planner stuff yet. That power is coming later. 🍡');
+ if(intent==='ambiguous')return response(intent,'I’m not totally sure what you mean. Are you asking about your tasks, schedule, or deadlines? 🍡',{choices:intentResult.parameters?.choices||['ask_tasks','ask_next_event','ask_deadlines']});
+ const complex=intent==='complex';return response(intent,complex?'That needs more thinking than my tiny bean brain can do. Want me to make a Big Mochi Request? 🍓':'I don’t know how to answer that reliably yet. Want me to make a Big Mochi Request? 🍓',{escalation:true,reason:complex?'This needs judgment or strategy beyond KatOS rules.':'This question is outside Mochini’s supported deterministic intents.'});
+}
