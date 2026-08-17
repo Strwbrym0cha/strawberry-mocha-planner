@@ -1,6 +1,2 @@
-import{localDateKey}from'./data.js';
-export const taskTitle=task=>task?.text||task?.title||'Untitled task';
-export const effortRank=value=>({Low:1,Medium:2,High:3}[value]||1);
-export const minutesUntil=time=>{if(!time)return Infinity;const [hours,minutes]=String(time).split(':').map(Number),now=new Date(),then=new Date(now);then.setHours(hours||0,minutes||0,0,0);return Math.max(0,Math.floor((then-now)/60000))};
-export function nextFixedEvent(data,date=localDateKey()){const now=new Date(),events=(data.events||[]).filter(event=>event.date===date&&event.start).sort((a,b)=>String(a.start).localeCompare(String(b.start)));return events.find(event=>date!==localDateKey()||minutesUntil(event.start)>0)||null}
-export function eligibleTasks(data,date=localDateKey()){const bot=data.taskbot||{},capacity=bot.capacity||'High',next=nextFixedEvent(data,date),free=next?minutesUntil(next.start):Infinity;return(data.tasks||[]).filter(task=>{const assigned=task.date===date;const unavailable=Array.isArray(task.unavailableOn)&&task.unavailableOn.includes(date);const duration=Number(task.durationMin)||0;return assigned&&!task.done&&!task.parked&&!task.hardBoundary&&!unavailable&&effortRank(task.effort)<=effortRank(capacity)&&duration<=free})}
+// Compatibility surface for existing Home/TaskBot UI. Pure logic now lives in app/logic.
+export{eligibleTasks,effortRank,minutesUntil,nextFixedEvent,taskTitle}from'./logic/tasks.js?v=22.1.15-20260817';

@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+
+const source=path=>readFile(new URL(path,import.meta.url),'utf8');
+const url=code=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
+const data=url(await source('./data.js'));
+const finance=url((await source('./logic/finance.js')).replace("'../data.js?v=22.1.15-20260817'",`'${data}'`));
+const mochini=url((await source('./mochini.js')).replace("'./logic/finance.js?v=22.1.15-20260817'",`'${finance}'`));
+const {buildBigMochiRequest,buildMochiniPresentation,readableReason}=await import(mochini);
+const task={id:'task-1',text:'Take medication',date:'2026-08-17',priority:'High'};
+const clear={date:'2026-08-17',state:{capacity:'High',openTaskCount:1,eligibleTaskCount:1,nextFixedEventId:null},recommendedNextAction:{task,reasons:[{code:'assigned_today'},{code:'fits_capacity'}]},candidates:[{task,reasons:[{code:'assigned_today'}]}],alerts:[],deadlines:[],routines:{completed:0,total:0,remaining:0},escalation:{needsBigMochi:false,reasons:[]}};
+const state={tasks:[task],events:[],money:{income:[{amount:50}],bills:[{amount:5,paid:false}]}};
+const before=JSON.stringify({clear,state});
+const recommendation=buildMochiniPresentation(clear,state);assert.equal(recommendation.mode,'recommendation');assert.match(recommendation.headline,/Take medication/);assert.match(recommendation.message,/assigned to today/i);
+const empty=buildMochiniPresentation({...clear,state:{...clear.state,openTaskCount:0,eligibleTaskCount:0},recommendedNextAction:null,candidates:[]},state);assert.equal(empty.mode,'empty');
+const low=buildMochiniPresentation({...clear,state:{...clear.state,capacity:'Low',openTaskCount:3,eligibleTaskCount:1}},state);assert.ok(low.notices.some(note=>/lower-capacity/i.test(note)));
+const overloaded=buildMochiniPresentation({...clear,alerts:[{code:'day_overloaded',evidence:{}}]},state);assert.ok(overloaded.notices.some(note=>/packed/i.test(note)));
+const routine=buildMochiniPresentation({...clear,alerts:[{code:'routine_incomplete',evidence:{remaining:2}}]},state);assert.ok(routine.notices.some(note=>/2 steps/i.test(note)));
+const deadline=buildMochiniPresentation({...clear,deadlines:[{title:'Submit quiz',date:'2026-08-18',urgency:'tomorrow'}]},state);assert.ok(deadline.notices.some(note=>/Submit quiz/.test(note)));
+const ambiguous={...clear,recommendedNextAction:null,candidates:[{task:{id:'a',text:'Option A'},reasons:[{code:'assigned_today'}]},{task:{id:'b',text:'Option B'},reasons:[{code:'assigned_today'}]}],escalation:{needsBigMochi:true,reasons:['multiple_competing_priorities']}};
+const escalation=buildMochiniPresentation(ambiguous,state);assert.equal(escalation.mode,'escalation');assert.equal(escalation.showBigMochi,true);
+const request=buildBigMochiRequest(ambiguous,state);assert.match(request,/BIG MOCHI REQUEST/);assert.match(request,/Option A/);assert.match(request,/Option B/);assert.ok(!request.includes('Unpaid bills'));
+const moneyTask={id:'money',text:'Buy shelves',requiresMoney:true,estimatedCost:60};const moneyEscalation={...ambiguous,candidates:[{task:moneyTask,reasons:[]} ]};const moneyRequest=buildBigMochiRequest(moneyEscalation,state);assert.match(moneyRequest,/Relevant finance safety/);assert.match(moneyRequest,/Available/);
+assert.equal(readableReason('fits_capacity'),'It fits your current capacity.');assert.equal(JSON.stringify({clear,state}),before);
+console.log('Mochini deterministic presentation tests: PASS');

@@ -1,4 +1,4 @@
-import{loadLocalData,saveLocalData}from'./data.js?v=22.1.13-20260817';
+import{createKatOSDataService}from'./katos-data-service.js?v=22.1.16-20260817';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
@@ -23,15 +23,23 @@ function queueCloudSave(data){
 }
 
 export function createStore(){
- let data=loadLocalData();
- const listeners=new Set();
- const persist=next=>{data={...next,__smUpdatedAt:new Date().toISOString()};saveLocalData(data);queueCloudSave(data);listeners.forEach(listener=>listener(data))};
+ const service=createKatOSDataService({onPersist:queueCloudSave});
  return{
-  get(){return data},
-  set(next){data=next;persist(data)},
-  update(fn){data=fn(data)||data;persist(data)},
-  subscribe(listener){listeners.add(listener);return()=>listeners.delete(listener)},
-  reload(){data=loadLocalData();listeners.forEach(listener=>listener(data))}
+  get(){return service.getState()},
+  set(next){service.setState(next)},
+  update(fn){service.updateState(fn)},
+  subscribe(listener){return service.subscribe(listener)},
+  reload(){service.reload()},
+  // Read APIs establish the selector pattern without requiring tab rewrites.
+  getTasksForDate:service.getTasksForDate,
+  getEventsForDate:service.getEventsForDate,
+  getCurrentTaskbotState:service.getCurrentTaskbotState,
+  getRoutines:service.getRoutines,
+  getFinanceSummary:service.getFinanceSummary,
+  evaluateToday:service.evaluateToday,
+  listBackups:service.listBackups,
+  getBackup:service.getBackup,
+  schemaVersion:service.schemaVersion
  };
 }
 export async function cloudSync(){return{ok:!!readSession(),migrated:false}}
