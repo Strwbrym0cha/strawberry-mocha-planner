@@ -5,7 +5,7 @@ const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
 const SESSION_KEY='sm_v16_session';
 let syncTimer=null,lastPayload='';
 
-function readSession(){try{const host=window.parent&&window.parent!==window?window.parent:window;return JSON.parse(host.localStorage.getItem(SESSION_KEY)||'null')}catch{return null}}
+export function readSession(){try{const host=window.parent&&window.parent!==window?window.parent:window;return JSON.parse(host.localStorage.getItem(SESSION_KEY)||'null')}catch{return null}}
 function queueCloudSave(data){
  const payload=JSON.stringify({data});if(payload===lastPayload)return;
  lastPayload=payload;clearTimeout(syncTimer);
