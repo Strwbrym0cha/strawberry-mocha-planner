@@ -159,6 +159,18 @@ function extractOutput(payload: unknown): string | null {
   return text || null;
 }
 
+/** Logs provider diagnostics only. Never include request content, credentials, or planner data. */
+function openAIFailureDetails(providerResponse: Response, payload: unknown) {
+  const providerError = isObject(payload) && isObject(payload.error) ? payload.error : {};
+  return {
+    status: providerResponse.status,
+    requestId: cleanString(providerResponse.headers.get("x-request-id") || providerResponse.headers.get("request-id"), 200),
+    errorType: cleanString(providerError.type, 120),
+    errorCode: cleanString(providerError.code, 120),
+    errorMessage: cleanString(providerError.message, 500),
+  };
+}
+
 Deno.serve(async (request) => {
   const cors = corsHeaders(request);
   if (!cors) return response({ ok: false, error: "This origin is not allowed." }, 403, null);
@@ -197,12 +209,14 @@ Deno.serve(async (request) => {
       }),
     });
     if (!providerResponse.ok) {
-      console.warn("taskbot-ai OpenAI request failed", { status: providerResponse.status, taskCount: context.tasks.length });
+      const providerPayload = await providerResponse.json().catch(() => null);
+      console.warn("taskbot-ai OpenAI request failed", openAIFailureDetails(providerResponse, providerPayload));
       return response({ ok: false, error: "Task Bot is unavailable right now. Please try again." }, 502, cors);
     }
-    const output = extractOutput(await providerResponse.json());
+    const providerPayload = await providerResponse.json();
+    const output = extractOutput(providerPayload);
     if (!output) {
-      console.warn("taskbot-ai received an empty OpenAI response", { taskCount: context.tasks.length });
+      console.warn("taskbot-ai received an empty OpenAI response", openAIFailureDetails(providerResponse, providerPayload));
       return response({ ok: false, error: "Task Bot could not prepare a response. Please try again." }, 502, cors);
     }
     console.info("taskbot-ai response sent", { taskCount: context.tasks.length, historyCount: history.length });
