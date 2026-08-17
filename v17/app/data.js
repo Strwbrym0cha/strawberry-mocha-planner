@@ -6,7 +6,8 @@ export const CORRUPT_SNAPSHOT_PREFIX='sm_v16_corrupt_';
 export const CURRENT_SCHEMA_VERSION=1;
 export const MAX_LOCAL_BACKUPS=7;
 
-export const DEFAULT_DATA={schemaVersion:CURRENT_SCHEMA_VERSION,events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},dayNotes:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],labObservations:[],labArchivedObservations:[],weeklyExperiment:{},financeWorkflow:{},schoolTasks:[],schoolGoals:[],workItems:[],workSchedule:{mode:'flexible',weekly:{sunday:[],monday:[],tuesday:[],wednesday:[],thursday:[],friday:[],saturday:[]}},taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
+export const DEFAULT_NOMS={foods:[],pantry:[],groceries:[],recipes:[],mealPlan:[],emergencyNoms:[],today:null};
+export const DEFAULT_DATA={schemaVersion:CURRENT_SCHEMA_VERSION,events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},dayNotes:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],labObservations:[],labArchivedObservations:[],weeklyExperiment:{},financeWorkflow:{},schoolTasks:[],schoolGoals:[],workItems:[],workSchedule:{mode:'flexible',weekly:{sunday:[],monday:[],tuesday:[],wednesday:[],thursday:[],friday:[],saturday:[]}},noms:DEFAULT_NOMS,taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
 
 const isObject=value=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const clone=value=>structuredClone(value);
@@ -18,6 +19,7 @@ const writeRecord=(storage,key,data)=>storage.setItem(key,JSON.stringify({data})
 export const localDateKey=(date=new Date())=>{const d=new Date(date);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 export const asList=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
 export const moneyTotals=money=>{const data=money||{};const total=key=>asList(data[key]).reduce((sum,item)=>sum+Number(item?.amount??0),0);const income=total('income');const spent=total('expenses');const bills=asList(data.bills).filter(item=>!item?.paid).reduce((sum,item)=>sum+Number(item?.amount||0),0);const cash=Number(data.cash?.amount??data.cash??0);return{income,spent,bills,cash,available:income-spent-bills+cash}};
+export const normalizeNoms=value=>{const noms=isObject(value)?value:{};const next={...clone(DEFAULT_NOMS),...noms};for(const key of ['foods','pantry','groceries','recipes','mealPlan','emergencyNoms'])if(!Array.isArray(next[key]))next[key]=[];if(next.today!==null&&!isObject(next.today))next.today=null;return next};
 export function normalizeTask(task){if(!isObject(task))return task;const next={...task};if(next.done===undefined||next.done===null)next.done=false;if(next.parked===undefined||next.parked===null)next.parked=false;if(next.hardBoundary===undefined||next.hardBoundary===null)next.hardBoundary=false;if(!Array.isArray(next.unavailableOn))next.unavailableOn=[];return next}
 
 /** Versioned, idempotent migration seam. Version 0 is every legacy snapshot without schemaVersion. */
@@ -42,6 +44,7 @@ export function validateState(input={}){
  for(const day of ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'])if(!Array.isArray(data.workSchedule.weekly[day]))data.workSchedule.weekly[day]=[];
  if(!data.workSchedule.mode)data.workSchedule.mode='flexible';
  if(!isObject(data.taskbot))data.taskbot={capacity:'High',missionId:null,disrupted:false};
+ data.noms=normalizeNoms(data.noms);
  if(!Number.isInteger(data.schemaVersion)||data.schemaVersion<CURRENT_SCHEMA_VERSION)data.schemaVersion=CURRENT_SCHEMA_VERSION;
  return{ok:isObject(input),state:data,issues};
 }

@@ -1,4 +1,4 @@
-import{createKatOSDataService}from'./katos-data-service.js?v=22.1.16-20260817';
+import{createKatOSDataService}from'./katos-data-service.js?v=22.1.18-20260817';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
@@ -35,6 +35,7 @@ export function createStore(){
   getEventsForDate:service.getEventsForDate,
   getCurrentTaskbotState:service.getCurrentTaskbotState,
   getRoutines:service.getRoutines,
+  getNoms:service.getNoms,
   getFinanceSummary:service.getFinanceSummary,
   evaluateToday:service.evaluateToday,
   listBackups:service.listBackups,

@@ -7,15 +7,15 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#fff4fa">
-  <meta name="sm-build" content="V22.1.17-2026-08-17">
-  <title>Kat’s Korner V1 • V22.1.17</title>
+  <meta name="sm-build" content="V22.1.18-2026-08-17">
+  <title>Kat’s Korner V1 • V22.1.18</title>
   <link rel="stylesheet" href="./styles.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v20-skin.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v20-modal-stability.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v20-shell.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v21-shell.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v21-pages.css?v=22.0.1-20260816">
-  <link rel="stylesheet" href="./v22-design-fixes.css?v=22.1.17-20260817">
+  <link rel="stylesheet" href="./v22-design-fixes.css?v=22.1.18-20260817">
 </head>
 <body>
   <div id="app" class="v17-app v21-app">
@@ -24,14 +24,14 @@
   </div>
   <script src="./v20-popup.js?v=22.0.1-20260816"></script>
   <script type="module">
-    const BUILD='V22.1.17-2026-08-17';
+    const BUILD='V22.1.18-2026-08-17';
     const moduleSuffix=location.protocol==='file:'?'':'?build='+encodeURIComponent(BUILD);
     const root=document.getElementById('tab-root'),sidebar=document.getElementById('v21-sidebar');
-    const groups=[['CORE',[['home','🏠','Home'],['planner','📅','Planner'],['tasks','📝','Tasks'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Garden'],['school','🎓','School'],['work','💼','Work'],['money','☕','Money'],['reminders','🔔','Reminders']]],['MIND',[['brain','🧠','Brain'],['wellness','🌸','Wellness'],['goals','🌙','Dreamscape'],['projects','🗂','Projects'],['labs','🔬','Kat Labs'],['wins','🏆','Wins']]]];
-    const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Archive',settings:'Settings'});
+    const groups=[['CORE',[['home','🏠','Home'],['planner','📅','Planner'],['tasks','📝','Tasks'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Garden'],['school','🎓','School'],['work','💼','Work'],['money','☕','Money'],['reminders','🔔','Reminders'],['noms','🍱','Noms']]],['MIND',[['brain','🧠','Brain'],['wellness','🌸','Wellness'],['goals','🌙','Dreamscape'],['projects','🗂','Projects'],['labs','🔬','Kat Labs'],['wins','🏆','Wins']]],['SYSTEM',[['settings','⚙️','Settings'],['hub','✨','KatOS Hub']]]];
+    const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Archive'});
     const queued=new Set(Object.keys(labels));let modules={},routerRef=null;
     const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-    function navHTML(page){return '<div class="v21-brand"><div class="v21-brand-mark">🍓</div><div><strong>STRAWBERRY</strong><span>MOCHA</span><em>'+BUILD.split('-')[0]+'</em></div></div>'+groups.map(([title,items])=>'<section class="v21-nav-group"><small>✦ '+title+'</small>'+items.map(([key,icon,label])=>'<button type="button" class="v21-nav-item '+(key===page?'active':'')+'" data-nav="'+key+'"><span class="v21-nav-icon">'+icon+'</span><span class="v21-nav-copy"><b>'+label+'</b><em data-nav-meta="'+key+'"></em></span></button>').join('')+'</section>').join('')+'<div class="v21-nav-spacer"></div><button type="button" class="v21-nav-item '+(page==='archive'?'active':'')+'" data-nav="archive"><span class="v21-nav-icon">📦</span><span class="v21-nav-copy"><b>Archive</b></span></button><button type="button" class="v21-nav-item '+(page==='settings'?'active':'')+'" data-nav="settings"><span class="v21-nav-icon">⚙️</span><span class="v21-nav-copy"><b>Settings</b></span></button><div class="v21-sidebar-footer">🍓 ✦ 🎀 ✦ 🍓</div>'}
+    function navHTML(page){return '<div class="v21-brand"><div class="v21-brand-mark">🍓</div><div><strong>STRAWBERRY</strong><span>MOCHA</span><em>'+BUILD.split('-')[0]+'</em></div></div>'+groups.map(([title,items])=>'<section class="v21-nav-group"><small>✦ '+title+'</small>'+items.map(([key,icon,label])=>'<button type="button" class="v21-nav-item '+(key===page?'active':'')+'" data-nav="'+key+'"><span class="v21-nav-icon">'+icon+'</span><span class="v21-nav-copy"><b>'+label+'</b><em data-nav-meta="'+key+'"></em></span></button>').join('')+'</section>').join('')+'<div class="v21-nav-spacer"></div><button type="button" class="v21-nav-item '+(page==='archive'?'active':'')+'" data-nav="archive"><span class="v21-nav-icon">📦</span><span class="v21-nav-copy"><b>Archive</b></span></button><div class="v21-sidebar-footer">🍓 ✦ 🎀 ✦ 🍓</div>'}
     function localDateKey(){const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
     function refreshMeta(){const store=window.__smStore;if(!store)return;const data=store.get(),today=localDateKey(),tasks=(data.tasks||[]).filter(task=>(!task.date||task.date===today)&&!task.done).length,events=(data.events||[]).filter(event=>event.date===today).length;sidebar.querySelector('[data-nav-meta="tasks"]')?.replaceChildren(document.createTextNode(tasks?`• ${tasks} remaining`:'• all clear'));sidebar.querySelector('[data-nav-meta="planner"]')?.replaceChildren(document.createTextNode(events?`• ${events} today`:'• no events'))}
     function buildNav(page){sidebar.innerHTML=navHTML(page);sidebar.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>routerRef?.go(button.dataset.nav)));setTimeout(refreshMeta,0)}
