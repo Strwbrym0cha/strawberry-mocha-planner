@@ -1,0 +1,3 @@
+# Local-only secrets. Configure production secrets in the Supabase dashboard instead.
+.env.local
+supabase/functions/.env
