@@ -1,6 +1,6 @@
 export const DATA_KEY='sm_v16';
 export const BACKUP_KEY='sm_v16_backup';
-export const DEFAULT_DATA={events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
+export const DEFAULT_DATA={events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],weeklyExperiment:{},financeWorkflow:{},taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
 export const localDateKey=(date=new Date())=>{const d=new Date(date);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 export const asList=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
 export const moneyTotals=money=>{const data=money||{};const total=key=>asList(data[key]).reduce((sum,item)=>sum+Number(item?.amount??0),0);const income=total('income');const spent=total('expenses');const bills=asList(data.bills).filter(item=>!item?.paid).reduce((sum,item)=>sum+Number(item?.amount||0),0);const cash=Number(data.cash?.amount??data.cash??0);return{income,spent,bills,cash,available:income-spent-bills+cash}};
