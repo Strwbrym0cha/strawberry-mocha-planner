@@ -1,4 +1,4 @@
-import{completeTask,createTask,deleteTask,updateTask}from'../app/task-actions.js';
+import{completeTask,createTask,deleteTask,updateTask}from'../app/task-actions.js?v=22.1.13-20260817';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const today=()=>new Date().toISOString().slice(0,10);

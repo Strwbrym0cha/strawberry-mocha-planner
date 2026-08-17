@@ -1,4 +1,4 @@
-import{createTask,moveTask}from'../app/task-actions.js';
+import{createTask,moveTask}from'../app/task-actions.js?v=22.1.13-20260817';
 const pad=n=>String(n).padStart(2,'0');
 const key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const parse=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d,12)};

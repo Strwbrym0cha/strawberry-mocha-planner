@@ -1,4 +1,4 @@
-import{loadLocalData,saveLocalData}from'./data.js';
+import{loadLocalData,saveLocalData}from'./data.js?v=22.1.13-20260817';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';

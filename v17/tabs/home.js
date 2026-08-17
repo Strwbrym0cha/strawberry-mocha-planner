@@ -1,6 +1,6 @@
 import{localDateKey}from'../app/data.js';
 import{eligibleTasks,nextFixedEvent,taskTitle}from'../app/taskbot.js';
-import{completeTask,createTask,parkTask,updateTask}from'../app/task-actions.js';
+import{completeTask,createTask,parkTask,updateTask}from'../app/task-actions.js?v=22.1.13-20260817';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const today=()=>localDateKey();
 const dateLabel=()=>new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});

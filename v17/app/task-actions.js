@@ -1,4 +1,4 @@
-import{localDateKey}from'./data.js';
+import{localDateKey,normalizeTask}from'./data.js?v=22.1.13-20260817';
 
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 const EFFORT=new Set(['','Low','Medium','High']);
@@ -38,7 +38,7 @@ export function createTask(store,draft={}){
   const id=String(draft.id||makeId());
   if(findTask(data,id))return fail('A task with this ID already exists.');
   const text=taskText(draft.text??draft.title);
-  const task={...draft,id,text,done:typeof draft.done==='boolean'?draft.done:false};
+  const task=normalizeTask({...draft,id,text,done:typeof draft.done==='boolean'?draft.done:false});
   delete task.title;
   if(task.date==='')delete task.date;
   if(task.durationMin!==undefined)task.durationMin=Number(task.durationMin)||0;
@@ -55,7 +55,7 @@ export function updateTask(store,id,changes={}){
   const patch={...changes};delete patch.id;
   if(patch.text!==undefined)patch.text=taskText(patch.text);
   if(patch.durationMin!==undefined)patch.durationMin=Number(patch.durationMin)||0;
-  const task={...existing,...patch};
+  const task=normalizeTask({...existing,...patch});
   return{ok:true,data:{...data,tasks:tasksOf(data).map(item=>String(item.id)===String(id)?task:item)},response:ok(task)};
  });
 }
@@ -71,7 +71,7 @@ export function completeTask(store,id){
  if(id==null||id==='')return fail('A task ID is required.');
  return apply(store,data=>{
   const task=findTask(data,id);if(!task)return fail('Task not found.');
-  const updated={...task,done:true};
+  const updated=normalizeTask({...task,done:true});
   return{ok:true,data:{...data,tasks:tasksOf(data).map(item=>String(item.id)===String(id)?updated:item),taskbot:String(data.taskbot?.missionId)===String(id)?{...(data.taskbot||{}),missionId:null}:data.taskbot},response:ok(updated)};
  });
 }
@@ -81,7 +81,7 @@ export function parkTask(store,id){
  if(id==null||id==='')return fail('A task ID is required.');
  return apply(store,data=>{
   const task=findTask(data,id);if(!task)return fail('Task not found.');
-  const updated={...task,parked:true};
+  const updated=normalizeTask({...task,parked:true});
   return{ok:true,data:{...data,tasks:tasksOf(data).map(item=>String(item.id)===String(id)?updated:item),taskbot:String(data.taskbot?.missionId)===String(id)?{...(data.taskbot||{}),missionId:null}:data.taskbot},response:ok(updated)};
  });
 }
