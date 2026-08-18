@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+
+const source=path=>readFile(new URL(path,import.meta.url),'utf8');
+const url=code=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
+const data=url(await source('./data.js'));
+const taskActions=url((await source('./task-actions.js')).replace("'./data.js?v=22.1.27-20260818'",`'${data}'`));
+const actions=url((await source('./mochini-actions.js')).replace("'./task-actions.js?v=22.1.27-20260818'",`'${taskActions}'`));
+const {loadLocalData,saveLocalData,listLocalBackups}=await import(data);
+const {protectTaskFromMochini,protectionProposal}=await import(actions);
+let state={tasks:[{id:'work',text:'Work videos',date:'2026-08-18',priority:'High',notes:'keep me',isProtected:false},{id:'other',text:'Other task',isProtected:false}]};
+const store={get:()=>state,update:updater=>{state=typeof updater==='function'?updater(state):updater;return state}};
+const proposal=protectionProposal({intent:'ask_next_task',recommendation:{task:state.tasks[0],reasons:[{code:'deadline_today'}]},evaluation:{hyperfixation:{active:true}}});
+assert.deepEqual(proposal,{type:'protect_task',taskId:'work',reason:'This important task could be displaced while Hyperfixation Mode is active.'});
+assert.equal(protectionProposal({intent:'ask_next_task',recommendation:{task:state.tasks[0],reasons:[{code:'deadline_today'}]},evaluation:{hyperfixation:{active:false}}}),null);
+const beforeDecline=structuredClone(state);
+assert.equal(protectionProposal({intent:'request_protect_last_recommendation',recommendation:{task:state.tasks[0]},evaluation:{},declinedTaskIds:['work']}),null);
+assert.deepEqual(state,beforeDecline);
+const beforeOther=structuredClone(state.tasks[1]);const result=protectTaskFromMochini(store,'work');
+assert.equal(result.ok,true);assert.equal(result.task.isProtected,true);assert.equal(state.tasks[0].notes,'keep me');assert.deepEqual(state.tasks[1],beforeOther);
+assert.equal(protectTaskFromMochini(store,'work').alreadyProtected,true);
+assert.equal(protectTaskFromMochini(store,'missing').ok,false);
+const records=new Map(),storage={getItem:key=>records.has(key)?records.get(key):null,setItem:(key,value)=>records.set(key,String(value))};
+saveLocalData(state,storage);saveLocalData({...state,brain:'backup trigger'},storage);
+assert.equal(loadLocalData(storage).tasks.find(task=>task.id==='work').isProtected,true);
+assert.equal(listLocalBackups(storage)[0].state.tasks.find(task=>task.id==='work').isProtected,true);
+console.log('Mochini Protect this task action tests: PASS');
