@@ -1,0 +1,26 @@
+/* V2 maintenance: keep compact action rows usable without changing desktop hierarchy. */
+.v21-main .sm-project .v21-list-row{align-items:flex-start;flex-wrap:wrap;min-width:0}
+.v21-main .sm-project .v21-list-row>span{min-width:min(100%,220px);flex:1 1 180px}
+.v21-main .sm-project .v21-list-row>button{flex:0 0 auto;min-height:38px;white-space:nowrap}
+.v21-main .sm-project-actions{display:flex;flex-wrap:wrap;gap:8px}
+.v21-main .sm-project-actions button{min-height:42px}
+.v21-main .sm-mochini-request{max-width:100%;overflow-wrap:anywhere}
+@media(max-width:600px){
+ html,body{max-width:100%;overflow-x:hidden}
+ .v21-main .sm-project .v21-list-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 0}
+ .v21-main .sm-project .v21-list-row>span{grid-column:1/-1;min-width:0}
+ .v21-main .sm-project .v21-list-row>button{width:100%;min-width:0;padding:9px 8px;white-space:normal}
+ .v21-main .sm-project .v21-list-row>button:last-child:nth-child(even){grid-column:1/-1}
+ .sm-mochini-chat header{align-items:flex-start;flex-direction:column}
+ .sm-mochini-chat header>div:last-child{width:100%;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+ .sm-mochini-request{min-height:220px;font-size:11px}
+ .sm-noms{min-width:0}
+ .sm-noms .sm-noms-compact{width:100%}
+ .sm-noms .sm-noms-compact button{flex:1 1 120px;min-height:42px;white-space:normal}
+ .sm-noms .sm-noms-filter button{min-height:40px;flex:1 1 auto}
+ .sm-noms .sm-noms-form-actions{align-items:stretch;flex-direction:column}
+ .sm-noms .sm-noms-form-actions button{width:100%;min-height:44px}
+ .sm-noms .sm-noms-note{overflow-wrap:anywhere}
+ .v17-modal{padding:10px!important}
+ .v17-modal-box{width:min(100%,calc(100vw - 20px))!important;max-height:calc(100dvh - 20px)!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+}

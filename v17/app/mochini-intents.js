@@ -16,10 +16,11 @@ export function matchMochiniIntent(input){
  if(includesAny(normalized,['why','why that','why should i do that','how did you pick that','how did you choose that']))return{intent:'ask_why',confidence:'exact',parameters:{}};
  if(normalized==='anything coming up'||normalized==='whats coming up'||normalized==='what is coming up')return{intent:'ambiguous',confidence:'ambiguous',parameters:{choices:['ask_tasks','ask_next_event','ask_deadlines']}};
  if(includesAny(normalized,['what should i do','whats next','what is next','what should i work on','pick something for me','what should i do first']))return{intent:'ask_next_task',confidence:'high',parameters:{}};
+ if(includesAny(normalized,['how does today look','give me the rundown','whats going on today','what is going on today','hows my day','how is my day']))return{intent:'ask_today_summary',confidence:'high',parameters:{}};
+ if(/\b(events?|scheduled|schedule)\b/.test(normalized)&&/\b(today|tomorrow|this week)\b/.test(normalized)){const range=normalized.includes('tomorrow')?'tomorrow':normalized.includes('this week')?'week':'today';return{intent:'ask_events_range',confidence:'high',parameters:{range}}}
  const requestedDay=dayReference(normalized);
  if(requestedDay&&/\b(what|whats|what is|anything|how|am i|do i|happening|dealing|scheduled|schedule|doing|have)\b/.test(normalized))return{intent:'ask_day_context',confidence:'high',parameters:{reference:requestedDay}};
  if(includesAny(normalized,['what do i have today','what are my tasks','anything left','what do i need to do','show my tasks']))return{intent:'ask_tasks',confidence:'high',parameters:{}};
- if(/\b(events?|scheduled|schedule)\b/.test(normalized)&&/\b(today|tomorrow|this week)\b/.test(normalized)){const range=normalized.includes('tomorrow')?'tomorrow':normalized.includes('this week')?'week':'today';return{intent:'ask_events_range',confidence:'high',parameters:{range}}}
  if(includesAny(normalized,['any deadlines','whats due soon','what is due soon','do i have something due','what deadlines do i have']))return{intent:'ask_deadlines',confidence:'high',parameters:{}};
  if(includesAny(normalized,['how are my routines','whats left in my routine','what is left in my routine','did i finish my routine','routine status']))return{intent:'ask_routines',confidence:'high',parameters:{}};
  if(includesAny(normalized,['what am i hyperfixating on','whats my fixation','what is my fixation','what did i pick']))return{intent:'ask_fixation',confidence:'high',parameters:{}};
@@ -27,7 +28,6 @@ export function matchMochiniIntent(input){
  if(includesAny(normalized,['im done hyperfixating','i am done hyperfixating','end hyperfixation mode']))return{intent:'end_hyperfixation_request',confidence:'high',parameters:{}};
  if(includesAny(normalized,['whats next on my schedule','what is next on my schedule','do i have anything scheduled','whats my next event','what is my next event','when do i have to be somewhere']))return{intent:'ask_next_event',confidence:'high',parameters:{}};
  if(includesAny(normalized,['whats my capacity','what is my capacity','what kind of day is this','how much can i handle today']))return{intent:'ask_capacity',confidence:'high',parameters:{}};
- if(includesAny(normalized,['how does today look','give me the rundown','whats going on today','what is going on today','hows my day','how is my day']))return{intent:'ask_today_summary',confidence:'high',parameters:{}};
  if(/^(should i|help me decide|should we|do you think i should)\b/.test(normalized)||/\b(change|degree plan|life plan|strategy)\b/.test(normalized))return{intent:'complex',confidence:'unknown',parameters:{}};
  return{intent:'unknown',confidence:'unknown',parameters:{}};
 }

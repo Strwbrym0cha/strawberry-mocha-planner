@@ -24,6 +24,7 @@ const findActive=(entries,id)=>active(entries).find(entry=>String(entry.id)===St
 export const allNoms=state=>active(normalizeNoms(state?.noms).foods);
 export const favoriteNoms=state=>allNoms(state).filter(nom=>!!nom.favorite);
 export const pantryItems=state=>active(normalizeNoms(state?.noms).pantry);
+export const linkedNomForPantry=(state,pantryId)=>{const item=pantryItems(state).find(entry=>String(entry.id)===String(pantryId));return item?.nomId?allNoms(state).find(nom=>String(nom.id)===String(item.nomId))||null:null};
 export const groceryItems=(state,{includeObtained=false}={})=>active(normalizeNoms(state?.noms).groceries).filter(item=>includeObtained||!item.obtained);
 export const allRecipes=state=>active(normalizeNoms(state?.noms).recipes);
 export const allPlannedMeals=state=>active(normalizeNoms(state?.noms).mealPlan).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
@@ -54,6 +55,7 @@ export function createNomsActions(store){
   addPantryItem(input={}){const name=clean(input.name);if(!name)return result(false,{error:'A pantry item needs a name.'});return updateNoms(noms=>{const now=stamp(),item={id:makeId('pantry'),name,quantity:clean(input.quantity),unit:clean(input.unit),notes:clean(input.notes),expiresAt:clean(input.expiresAt),createdAt:now,updatedAt:now};return{noms:{...noms,pantry:[...noms.pantry,item]},result:result(true,{item})}})},
   updatePantryItem(id,input={}){const name=clean(input.name);if(!name)return result(false,{error:'A pantry item needs a name.'});return updateEntry('pantry',id,{name,quantity:clean(input.quantity),unit:clean(input.unit),notes:clean(input.notes),expiresAt:clean(input.expiresAt)},'Pantry item')},
   archivePantryItem(id){return archiveEntry('pantry',id,'Pantry item')},
+  linkPantryToNom(pantryId,nomId){return updateNoms(noms=>{const pantry=findActive(noms.pantry,pantryId),nom=findActive(noms.foods,nomId);if(!pantry)return{result:result(false,{error:'Pantry item was not found.'})};if(!nom)return{result:result(false,{error:'Nom was not found.'})};if(String(pantry.nomId||'')===String(nom.id))return{noms,result:result(true,{item:pantry,duplicate:true})};const item={...pantry,nomId:nom.id,updatedAt:stamp()};return{noms:{...noms,pantry:noms.pantry.map(entry=>String(entry.id)===String(pantryId)?item:entry)},result:result(true,{item})}})},
   addGroceryItem(input={}){const name=clean(input.name);if(!name)return result(false,{error:'A grocery item needs a name.'});return updateNoms(noms=>{const now=stamp(),item={id:makeId('grocery'),name,quantity:clean(input.quantity),notes:clean(input.notes),obtained:false,createdAt:now,updatedAt:now};return{noms:{...noms,groceries:[...noms.groceries,item]},result:result(true,{item})}})},
   updateGroceryItem(id,input={}){const name=clean(input.name);if(!name)return result(false,{error:'A grocery item needs a name.'});return updateEntry('groceries',id,{name,quantity:clean(input.quantity),notes:clean(input.notes)},'Grocery item')},
   completeGroceryItem(id,obtained=true){return updateEntry('groceries',id,{obtained:!!obtained},'Grocery item')},
