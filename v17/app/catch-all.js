@@ -48,10 +48,7 @@ function addBrainNote(store,capture,input){
  const now=new Date().toISOString(),item={id:makeId('brain'),title:clean(input.title)||capture.title,text:clean(input.text)||capture.text,source:'brain',createdAt:now,updatedAt:now,sourceCaptureId:capture.id};store.update(state=>({...state,brainNotes:[...list(state.brainNotes),item]}));return{ok:true,item};
 }
 
-/**
- * Converts exactly one Catch-All capture through an allowlisted destination adapter.
- * The source capture is marked sorted only after the destination write succeeds.
- */
+/** Converts exactly one Catch-All capture through an allowlisted destination adapter. */
 export function routeCatchAllCapture(store,captureId,destination,input={}){
  if(!store||typeof store.get!=='function'||typeof store.update!=='function')return{ok:false,error:'KatOS could not access Catch-All right now.'};
  const capture=captureById(store.get(),captureId);if(!capture)return{ok:false,error:'That Catch-All item is no longer available.'};if(capture.captureStatus==='sorted')return{ok:false,error:'That item is already sorted.'};
@@ -71,6 +68,23 @@ export function routeCatchAllCapture(store,captureId,destination,input={}){
  return{ok:true,captureId:capture.id,destination,target};
 }
 
-export function restoreCatchAllCapture(store,captureId){
- const capture=captureById(store.get(),captureId);if(!capture)return{ok:false,error:'That Catch-All item was not found.'};updateCapture(store,captureId,item=>({...item,captureStatus:'inbox',sortedAt:null,routedTo:null,updatedAt:new Date().toISOString()}));return{ok:true};
+function removeRoutedTarget(state,type,id){
+ const same=item=>String(item?.id)===String(id);
+ if(type==='task')return{...state,tasks:list(state.tasks).filter(item=>!same(item))};
+ if(type==='event')return{...state,events:list(state.events).filter(item=>!same(item))};
+ if(type==='project')return{...state,projects:list(state.projects).filter(item=>!same(item))};
+ if(type==='school_task')return{...state,schoolTasks:list(state.schoolTasks).filter(item=>!same(item))};
+ if(type==='reminder')return{...state,reminders:list(state.reminders).filter(item=>!same(item))};
+ if(type==='lab_observation')return{...state,labObservations:list(state.labObservations).filter(item=>!same(item))};
+ if(type==='brain_note')return{...state,brainNotes:list(state.brainNotes).filter(item=>!same(item))};
+ if(type==='nom')return{...state,noms:{...(state.noms||{}),foods:list(state.noms?.foods).filter(item=>!same(item))}};
+ if(type==='grocery')return{...state,noms:{...(state.noms||{}),groceries:list(state.noms?.groceries).filter(item=>!same(item))}};
+ return null;
+}
+
+/** Undo only the exact object previously created by this capture, then reopen the source capture. */
+export function undoCatchAllRoute(store,captureId){
+ if(!store||typeof store.get!=='function'||typeof store.update!=='function')return{ok:false,error:'KatOS could not access Catch-All right now.'};
+ const capture=captureById(store.get(),captureId);if(!capture||capture.captureStatus!=='sorted'||!capture.routedTo?.type||!capture.routedTo?.id)return{ok:false,error:'That capture does not have a reversible sort record.'};
+ let undone=false;store.update(state=>{const routed=removeRoutedTarget(state,capture.routedTo.type,capture.routedTo.id);if(!routed)return state;undone=true;return{...routed,brainNotes:list(routed.brainNotes).map(item=>String(item?.id)===String(capture.id)?{...item,captureStatus:'inbox',sortedAt:null,routedTo:null,updatedAt:new Date().toISOString()}:item)}});return undone?{ok:true}:{ok:false,error:'That destination could not be safely undone.'};
 }
