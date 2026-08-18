@@ -1,5 +1,5 @@
 import{buildBigMochiRequest,buildMochiniPresentation}from'../app/mochini.js?v=22.1.20-20260817';
-import{answerMochiniIntent,matchMochiniIntent}from'../app/mochini-intents.js?v=22.1.19-20260817';
+import{answerMochiniIntent,matchMochiniIntent}from'../app/mochini-intents.js?v=22.1.21-20260817';
 import{appendConversation,clearConversation,conversationEvidence,conversationSession}from'../app/mochini-conversation.js?v=22.1.20-20260817';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -22,7 +22,7 @@ function renderMochini({root,store}){
   askForm?.addEventListener('submit',event=>{event.preventDefault();askQuestion(new FormData(event.currentTarget).get('question'))});
   askInput?.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();askQuestion(event.currentTarget.value)}});
   root.querySelectorAll('[data-choice]').forEach(button=>button.addEventListener('click',()=>answer({intent:button.dataset.choice,confidence:'exact',parameters:{}},session.lastUserQuestion||'')));
-  root.querySelector('[data-conversation-request]')?.addEventListener('click',()=>{const last=history[history.length-1]||{},question=requestQuestion||session.lastUserQuestion||'Please help me decide what to do next and explain why.';request=buildBigMochiRequest(evaluation,state,question,{reason:last.evidence?.reason||'This question cannot be answered reliably using deterministic KatOS rules.',topic:'general',recentConversation:history});draw()});
+  root.querySelectorAll('[data-conversation-request]').forEach(button=>button.addEventListener('click',()=>{const last=history[history.length-1]||{},question=requestQuestion||session.lastUserQuestion||'Please help me decide what to do next and explain why.';request=buildBigMochiRequest(evaluation,state,question,{reason:last.evidence?.reason||'This question cannot be answered reliably using deterministic KatOS rules.',topic:'general',recentConversation:history});draw()}));
   root.querySelector('[data-clear-conversation]')?.addEventListener('click',()=>{if(confirm('Clear Mochini’s saved conversation? Your planner data will stay exactly as it is.'))clearConversation(store)});
   root.querySelector('[data-close-request]')?.addEventListener('click',()=>{request='';draw()});
   root.querySelector('[data-copy-request]')?.addEventListener('click',async()=>{const status=root.querySelector('[data-copy-status]');try{await navigator.clipboard.writeText(request);status.textContent='Copied. Go summon Big Mochi. 🍓'}catch{const area=root.querySelector('.sm-mochini-request');area.focus();area.select();document.execCommand('copy');status.textContent='Copied. Go summon Big Mochi. 🍓'}});

@@ -1,6 +1,7 @@
 import{buildMochiniPresentation,readableReason}from'./mochini.js?v=22.1.19-20260817';
 import{openTasksForDate,taskTitle}from'./logic/tasks.js?v=22.1.19-20260817';
 import{eventsInRange,nextTimedEvent}from'./logic/events.js?v=22.1.19-20260817';
+import{composePlannerContext,dayReference,plannerContextForDates,resolveDayReference}from'./logic/mochini-day-context.js?v=22.1.21-20260817';
 
 const clean=value=>String(value||'').toLowerCase().replace(/[’‘']/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 const includesAny=(input,phrases)=>phrases.some(phrase=>input===phrase||input.includes(phrase));
@@ -15,6 +16,8 @@ export function matchMochiniIntent(input){
  if(includesAny(normalized,['why','why that','why should i do that','how did you pick that','how did you choose that']))return{intent:'ask_why',confidence:'exact',parameters:{}};
  if(normalized==='anything coming up'||normalized==='whats coming up'||normalized==='what is coming up')return{intent:'ambiguous',confidence:'ambiguous',parameters:{choices:['ask_tasks','ask_next_event','ask_deadlines']}};
  if(includesAny(normalized,['what should i do','whats next','what is next','what should i work on','pick something for me','what should i do first']))return{intent:'ask_next_task',confidence:'high',parameters:{}};
+ const requestedDay=dayReference(normalized);
+ if(requestedDay&&/\b(what|whats|what is|anything|how|am i|do i|happening|dealing|scheduled|schedule|doing|have)\b/.test(normalized))return{intent:'ask_day_context',confidence:'high',parameters:{reference:requestedDay}};
  if(includesAny(normalized,['what do i have today','what are my tasks','anything left','what do i need to do','show my tasks']))return{intent:'ask_tasks',confidence:'high',parameters:{}};
  if(/\b(events?|scheduled|schedule)\b/.test(normalized)&&/\b(today|tomorrow|this week)\b/.test(normalized)){const range=normalized.includes('tomorrow')?'tomorrow':normalized.includes('this week')?'week':'today';return{intent:'ask_events_range',confidence:'high',parameters:{range}}}
  if(includesAny(normalized,['any deadlines','whats due soon','what is due soon','do i have something due','what deadlines do i have']))return{intent:'ask_deadlines',confidence:'high',parameters:{}};
@@ -49,6 +52,10 @@ export function answerMochiniIntent(intentResult,{state={},evaluation={},session
  if(intent==='ask_tasks'){
   const tasks=openTasksForDate(state,date);if(!tasks.length)return response(intent,'Your task list is clear for today. 🌷');
   const names=tasks.slice(0,5).map(taskLine);return response(intent,`You have ${tasks.length} open task${tasks.length===1?'':'s'} today: ${names.join(', ')}${tasks.length>5?'…':''}`,{evidence:tasks});
+ }
+ if(intent==='ask_day_context'){
+  const reference=intentResult.parameters?.reference||{kind:'today',label:'today'},dates=resolveDayReference(reference,{date}),days=plannerContextForDates(state,dates),composed=composePlannerContext(days,reference);
+  return response(intent,composed.answer,{evidence:composed.evidence});
  }
  if(intent==='ask_events_range'){
   const range=intentResult.parameters?.range||'today',events=eventsInRange(state,{date,range}),label=range==='week'?'this week':range;if(!events.length)return response(intent,range==='week'?'Nothing scheduled this week. Your calendar is clear. 🍡':`Nothing scheduled ${label}. Your calendar is clear. 🍡`,{evidence:[]});const first=events[0];return response(intent,`${events.length} event${events.length===1?'':'s'} ${range==='week'?'this week':label}: ${first.title||'Scheduled event'}${first.start?` at ${time(first.start)}`:''}${events.length>1?` and ${events.length-1} more.`:''}`,{evidence:events});

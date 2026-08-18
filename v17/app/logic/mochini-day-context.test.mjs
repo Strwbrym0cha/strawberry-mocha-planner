@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import{normalizeLabExperiments,validateState}from'../data.js';
+import{composePlannerContext,dayReference,plannerContextForDates,resolveDayReference}from'./mochini-day-context.js';
+
+const state={schemaVersion:1,tasks:[{id:'task-1',text:'Saturday task',date:'2026-08-22',done:false}],events:[{id:'event-1',title:'Dinner',date:'2026-08-22',start:'17:00'}],goals:[{id:'goal-1',title:'Saturday deadline',date:'2026-08-22',progress:0}]};
+const saturday=dayReference('What am I dealing with Saturday?');
+assert.equal(saturday.kind,'weekday');
+assert.deepEqual(resolveDayReference(saturday,{date:'2026-08-17'}),['2026-08-22']);
+const days=plannerContextForDates(state,['2026-08-22']);
+const answer=composePlannerContext(days,saturday);
+assert.match(answer.answer,/Saturday task/);assert.match(answer.answer,/Dinner/);assert.match(answer.answer,/Saturday deadline/);
+const empty=composePlannerContext(plannerContextForDates(state,['2026-08-23']),{label:'Sunday'});
+assert.equal(empty.empty,true);assert.match(empty.answer,/Nothing is currently scheduled/);
+assert.deepEqual(state.tasks[0],{id:'task-1',text:'Saturday task',date:'2026-08-22',done:false});
+const legacy={hypothesis:'Smaller starting points reduce friction',test:'Start smaller'};
+const normalized=validateState({weeklyExperiment:legacy});
+assert.equal(normalized.state.labExperiments.length,1);assert.equal(normalized.state.labExperiments[0].hypothesis,legacy.hypothesis);
+const pair=normalizeLabExperiments([{id:'a',hypothesis:'A',status:'Active'},{id:'b',hypothesis:'B',status:'Planned'}],legacy);
+assert.equal(pair.length,2);assert.equal(pair[1].hypothesis,'B');
+console.log('mochini day context and experiment compatibility tests passed');
