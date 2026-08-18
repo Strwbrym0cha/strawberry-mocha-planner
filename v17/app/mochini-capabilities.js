@@ -1,6 +1,7 @@
 import{allNoms,emergencyNoms,nomsMatchingFilters,pantryItems,plannedNomSuggestion,todayNom}from'./noms.js?v=22.1.29-20260818';
 import{normalizeWorkSchedule,shiftLabel,shiftsForDate}from'./work-schedule.js?v=22.1.16-20260817';
 import{sipsSummary}from'./sips.js?v=22.2.0-20260818';
+import{catchAllItems}from'./catch-all.js?v=22.2.0-20260818';
 
 const clean=value=>String(value||'').toLowerCase().replace(/[’‘']/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
 const list=value=>Array.isArray(value)?value:[];
@@ -11,7 +12,7 @@ const isFood=input=>/\b(eat|food|meal|snack|nom|noms|pantry|hungry)\b/.test(inpu
 const isQuick=input=>/\b(quick|quicker|fast|easy|low effort|no prep|before work|before my shift)\b/.test(input);
 const isProjects=input=>/\b(project|projects|working on|parked)\b/.test(input);
 const isLabs=input=>/\b(kat labs|labs|finding|findings|observation|observations|noticed about myself|patterns? about myself)\b/.test(input);
-const isCatchAll=input=>/\b(catch all|catchall|captured|capture|brain dump)\b/.test(input);
+const isCatchAll=input=>/\b(catch all|catchall|captured|capture|inbox|unsorted)\b/.test(input);
 const isSips=input=>/\b(sip|sips|sipping|drink|drinking|water|hydration|hydrated)\b/.test(input)||/\bwhat are we sipping\b/.test(input);
 
 export const MOCHINI_CAPABILITIES=Object.freeze({
@@ -23,7 +24,7 @@ export const MOCHINI_CAPABILITIES=Object.freeze({
  routines:['list','next_step','gateway','recommendation'],
  projects:['active','parked','next_step'],
  katLabs:['findings','observations'],
- catchAll:['list','count']
+ catchAll:['list','count','unsorted']
 });
 
 function nomsAnswer(input,state,date){
@@ -73,9 +74,9 @@ function labsAnswer(input,state){
 }
 
 function catchAllAnswer(state){
- const captures=list(state.brainNotes);if(!captures.length)return response('cap_catch_all','Your Catch-All is clear right now. 🍓');
+ const captures=catchAllItems(state);if(!captures.length)return response('cap_catch_all','Your Catch-All inbox is clear right now. 🍓');
  const recent=captures.slice().sort((a,b)=>String(b.updatedAt||b.createdAt||'').localeCompare(String(a.updatedAt||a.createdAt||''))).slice(0,4);
- return response('cap_catch_all',`You have ${captures.length} thing${captures.length===1?'':'s'} waiting in Catch-All: ${recent.map(title).join(', ')}.`,recent);
+ return response('cap_catch_all',`You have ${captures.length} unsorted thing${captures.length===1?'':'s'} in Catch-All: ${recent.map(title).join(', ')}.`,recent);
 }
 
 /** Read-only capability router. Returns null when legacy Mochini intents should handle the request. */
@@ -87,6 +88,6 @@ export function routeMochiniCapability(question,{state={},evaluation={},session=
  if(isFood(input)||followupNoms){const result=nomsAnswer(input,state,date);return /\b(work|shift|before work|before my shift)\b/.test(input)?appendWorkContext(result,state,date):result;}
  if(isProjects(input)&&/\b(what|which|working|parked|project)\b/.test(input))return projectsAnswer(input,state);
  if(isLabs(input)&&/\b(what|show|finding|observation|noticed|pattern|labs)\b/.test(input))return labsAnswer(input,state);
- if(isCatchAll(input)&&/\b(what|show|anything|how many|captured|capture)\b/.test(input))return catchAllAnswer(state);
+ if(isCatchAll(input)&&/\b(what|show|anything|how many|captured|capture|inbox|unsorted)\b/.test(input))return catchAllAnswer(state);
  return null;
 }
