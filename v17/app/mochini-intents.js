@@ -1,4 +1,4 @@
-import{buildMochiniPresentation,readableReason}from'./mochini.js?v=22.1.19-20260817';
+import{buildMochiniPresentation,readableReason}from'./mochini.js?v=22.1.28-20260818';
 import{openTasksForDate,taskTitle}from'./logic/tasks.js?v=22.1.19-20260817';
 import{eventsInRange,nextTimedEvent}from'./logic/events.js?v=22.1.19-20260817';
 import{composePlannerContext,dayReference,plannerContextForDates,resolveDayReference}from'./logic/mochini-day-context.js?v=22.1.21-20260817';
@@ -16,6 +16,7 @@ export function matchMochiniIntent(input){
  if(includesAny(normalized,['why','why that','why should i do that','how did you pick that','how did you choose that']))return{intent:'ask_why',confidence:'exact',parameters:{}};
  if(normalized==='anything coming up'||normalized==='whats coming up'||normalized==='what is coming up')return{intent:'ambiguous',confidence:'ambiguous',parameters:{choices:['ask_tasks','ask_next_event','ask_deadlines']}};
  if(includesAny(normalized,['what should i do','whats next','what is next','what should i work on','pick something for me','what should i do first']))return{intent:'ask_next_task',confidence:'high',parameters:{}};
+ if(/\b(i dont want to|i do not want to|i dont feel like|i do not feel like|hard to start|cant start|cannot start)\b/.test(normalized))return{intent:'ask_resistance',confidence:'high',parameters:{}};
  if(includesAny(normalized,['how does today look','give me the rundown','whats going on today','what is going on today','hows my day','how is my day']))return{intent:'ask_today_summary',confidence:'high',parameters:{}};
  if(/\b(events?|scheduled|schedule)\b/.test(normalized)&&/\b(today|tomorrow|this week)\b/.test(normalized)){const range=normalized.includes('tomorrow')?'tomorrow':normalized.includes('this week')?'week':'today';return{intent:'ask_events_range',confidence:'high',parameters:{range}}}
  const requestedDay=dayReference(normalized);
@@ -35,6 +36,7 @@ export function matchMochiniIntent(input){
 const response=(intent,answer,{evidence=[],escalation=false,choices=[],reason='',recommendation=null}={})=>({intent,answer,evidence,escalation,choices,reason,recommendation});
 const taskLine=task=>taskTitle(task);
 const pickTemplate=(task,reason)=>{const templates=[`Psst, I’d start with ${task}. ${reason} 🍓`,`Tiny bean vote: ${task}. ${reason}`,`${task} looks like the best fit right now. ${reason} 🌷`];const index=String(task).split('').reduce((sum,char)=>sum+char.charCodeAt(0),0)%templates.length;return templates[index]};
+const behavioralRecommendation=(recommendation,evaluation)=>{const task=recommendation?.task,codes=new Set((recommendation?.reasons||[]).map(reason=>reason.code));if(codes.has('protected_commitment'))return `Tiny bean vote: ${taskLine(task)}. It is a protected commitment you chose, so I’m keeping it ahead of optional momentum. 🍓`;if(codes.has('gateway_task'))return `Start with ${taskLine(task)}. It is marked as the gateway task, so you only need to begin the first step. 🍓`;if(codes.has('routine_momentum'))return `You’re already moving. ${taskLine(task)} fits naturally after the routine step you finished. 🌷`;if(codes.has('deferred_repeatedly'))return `${taskLine(task)} has been moved a few times. Starting may get harder if we keep carrying it forward—could the smallest first step be enough? 🍓`;const firstReason=readableReason(recommendation?.reasons?.[0]);return pickTemplate(taskLine(task),firstReason)};
 
 export function answerMochiniIntent(intentResult,{state={},evaluation={},session={}}={}){
  const intent=intentResult?.intent||'unknown',date=evaluation?.date;
@@ -43,7 +45,15 @@ export function answerMochiniIntent(intentResult,{state={},evaluation={},session
   if(evaluation?.escalation?.needsBigMochi)return response(intent,'I can’t fairly choose between the top options. Want me to make a Big Mochi Request? 🍓',{evidence:evaluation.candidates||[],escalation:true,reason:'KatOS found equally ranked options.'});
   const recommendation=evaluation?.recommendedNextAction;
   if(!recommendation)return response(intent,view.message,{evidence:[],recommendation:null});
-  const firstReason=readableReason(recommendation.reasons?.[0]);return response(intent,pickTemplate(taskLine(recommendation.task),firstReason),{evidence:recommendation.reasons||[],recommendation});
+  return response(intent,behavioralRecommendation(recommendation,evaluation),{evidence:recommendation.reasons||[],recommendation});
+ }
+ if(intent==='ask_resistance'){
+  const last=session.lastRecommendation;if(!last)return response(intent,'I can’t tell whether the plan changed from resistance alone. Did time, capacity, availability, or your schedule change? 🍡');
+  const stillEligible=list(evaluation?.candidates).some(item=>String(item?.task?.id)===String(last.task?.id));
+  if(!stillEligible)return response(intent,`Something in today’s circumstances may have changed around ${taskLine(last.task)}. Check the time, capacity, availability, or schedule before deciding what fits now. 🍓`,{evidence:[]});
+  if(last.task?.isGatewayTask)return response(intent,`${taskLine(last.task)} still fits today’s current constraints, and it is marked as a gateway task. You do not have to solve the whole routine—just start the first step, then decide what follows. 🌷`,{evidence:last.reasons||[]});
+  if((Number(last.task?.timesDeferred)||0)>=2)return response(intent,`${taskLine(last.task)} still fits today’s current constraints, but it has been moved a few times. Would the smallest possible start make it easier to test? 🍓`,{evidence:last.reasons||[]});
+  return response(intent,`The plan still fits the current planner constraints. I can’t tell from resistance alone whether it should change—did time, capacity, availability, or your schedule change? 🍡`,{evidence:last.reasons||[]});
  }
  if(intent==='ask_why'){
   const last=session.lastRecommendation;if(!last)return response(intent,'I haven’t picked anything yet. Ask me what you should do first. 🍡');
@@ -74,7 +84,7 @@ export function answerMochiniIntent(intentResult,{state={},evaluation={},session
   return response(intent,`Next up: ${event.title||'Scheduled event'} at ${time(event.start)}.`,{evidence:[event]});
  }
  if(intent==='ask_fixation'){const fixation=evaluation?.hyperfixation;if(!fixation?.active)return response(intent,'Hyperfixation Mode is not on right now. 🍡');return response(intent,`Hyperfixation Mode is on. Your current fixation is ${fixation.focus?.label||'your chosen focus'}. 🍡`,{evidence:[fixation]});}
- if(intent==='ask_fixation_status'){const fixation=evaluation?.hyperfixation;if(!fixation?.active)return response(intent,'Hyperfixation Mode is not on right now. 🍡');const event=fixation.nextFixedEvent;return response(intent,event?`Your fixation is still ${fixation.focus?.label||'active'}, and ${event.title||'a fixed event'} is coming up at ${time(event.start)}. 🍡`:`Your fixation is ${fixation.focus?.label||'active'}, and KatOS sees no fixed event ahead today. 🍡`,{evidence:[fixation]});}
+ if(intent==='ask_fixation_status'){const fixation=evaluation?.hyperfixation;if(!fixation?.active)return response(intent,'Hyperfixation Mode is not on right now. 🍡');const event=fixation.nextFixedEvent,protectedTask=list(evaluation?.candidates).find(item=>item?.task?.isProtected)?.task;if(event)return response(intent,`Your fixation is still ${fixation.focus?.label||'active'}, and ${event.title||'a fixed event'} is coming up at ${time(event.start)}. 🍡`,{evidence:[fixation]});if(protectedTask)return response(intent,`Your fixation can keep going, and ${taskLine(protectedTask)} is the protected commitment waiting for the baton next. 🍓`,{evidence:[fixation,protectedTask]});if(fixation.focus?.nextStep)return response(intent,`Your fixation is ${fixation.focus?.label||'active'}. When you are ready to leave it, your concrete next step is ${fixation.focus.nextStep}. 🌷`,{evidence:[fixation]});return response(intent,`Your fixation is ${fixation.focus?.label||'active'}, and KatOS sees no fixed event ahead today. 🍡`,{evidence:[fixation]});}
  if(intent==='end_hyperfixation_request')return response(intent,'I can’t switch modes from a chat message yet. Use Exit Hyperfixation Mode on Home whenever you’re ready. 🌷');
  if(intent==='ask_capacity')return response(intent,`KatOS has today set to ${evaluation?.state?.capacity||'High'} capacity. I’ll use that only to filter task fit, not to make assumptions about you. 🍓`);
  if(intent==='ask_today_summary'){

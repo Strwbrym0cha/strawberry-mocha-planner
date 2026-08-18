@@ -1,4 +1,4 @@
-import{createKatOSDataService}from'./katos-data-service.js?v=22.1.20-20260817';
+import{createKatOSDataService}from'./katos-data-service.js?v=22.1.27-20260818';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';

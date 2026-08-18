@@ -1,4 +1,4 @@
-import{createTask,moveTask}from'../app/task-actions.js?v=22.1.13-20260817';
+import{createTask,moveTask}from'../app/task-actions.js?v=22.1.27-20260818';
 import{shiftsForDate,shiftLabel,shiftMinutes}from'../app/work-schedule.js?v=22.1.14-20260817';
 const pad=n=>String(n).padStart(2,'0');
 const key=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;

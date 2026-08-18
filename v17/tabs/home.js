@@ -1,6 +1,6 @@
 import{localDateKey}from'../app/data.js';
 import{eligibleTasks,nextFixedEvent,taskTitle}from'../app/taskbot.js';
-import{completeTask,createTask,parkTask,updateTask}from'../app/task-actions.js?v=22.1.13-20260817';
+import{completeTask,createTask,parkTask,updateTask}from'../app/task-actions.js?v=22.1.27-20260818';
 import{askTaskBot}from'../app/taskbot-ai.js?v=22.1.14-20260817';
 import{enterHyperfixation,exitHyperfixation}from'../app/hyperfixation-actions.js?v=22.1.19-20260817';
 import{focusBiasedCandidates,hyperfixationStatus}from'../app/logic/hyperfixation.js?v=22.1.19-20260817';

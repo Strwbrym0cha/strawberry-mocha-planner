@@ -1,4 +1,4 @@
-import{localDateKey,normalizeTask}from'./data.js?v=22.1.13-20260817';
+import{localDateKey,normalizeTask}from'./data.js?v=22.1.27-20260818';
 
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 const EFFORT=new Set(['','Low','Medium','High']);
@@ -18,6 +18,10 @@ function validTaskPatch(patch,{creating=false}={}){
  if(patch.effort!==undefined&&!EFFORT.has(String(patch.effort)))return 'Physical effort must be Low, Medium, High, or empty.';
  if(patch.durationMin!==undefined&&(!Number.isFinite(Number(patch.durationMin))||Number(patch.durationMin)<0))return 'Estimated duration must be zero or more minutes.';
  if(patch.unavailableOn!==undefined&&!Array.isArray(patch.unavailableOn))return 'Unavailable dates must be a list.';
+ if(patch.routineId!==undefined&&patch.routineId!==null&&typeof patch.routineId!=='string')return 'Routine must be text or empty.';
+ if(patch.isGatewayTask!==undefined&&typeof patch.isGatewayTask!=='boolean')return 'Gateway task must be on or off.';
+ if(patch.isProtected!==undefined&&typeof patch.isProtected!=='boolean')return 'Protected commitment must be on or off.';
+ if(patch.timesDeferred!==undefined&&(!Number.isFinite(Number(patch.timesDeferred))||Number(patch.timesDeferred)<0))return 'Deferral count must be zero or more.';
  return null;
 }
 function tasksOf(data){return Array.isArray(data?.tasks)?data.tasks:[]}
@@ -63,7 +67,10 @@ export function updateTask(store,id,changes={}){
 /** Assigns an existing flexible task to a valid calendar day. */
 export function moveTask(store,id,date){
  if(!DATE.test(String(date||'')))return fail('A destination date in YYYY-MM-DD format is required.');
- return updateTask(store,id,{date:String(date)});
+ if(!store||typeof store.get!=='function')return fail('A planner store is required.');
+ const existing=findTask(store.get()||{},id);if(!existing)return fail('Task not found.');
+ const destination=String(date),wasDeferred=DATE.test(String(existing.date||''))&&destination>String(existing.date);
+ return updateTask(store,id,{date:destination,...(wasDeferred?{timesDeferred:(Number(existing.timesDeferred)||0)+1}:{})});
 }
 
 /** Marks a task complete without removing any of its source metadata. */

@@ -11,6 +11,33 @@ export const DEFAULT_HYPERFIXATION={active:false,focusType:null,focusId:null,foc
 export const DEFAULT_MOCHINI={conversation:[]};
 export const DEFAULT_DATA={schemaVersion:CURRENT_SCHEMA_VERSION,events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},dayNotes:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],labObservations:[],labArchivedObservations:[],weeklyExperiment:{},labExperiments:[],financeWorkflow:{},schoolTasks:[],schoolGoals:[],workItems:[],workSchedule:{mode:'flexible',weekly:{sunday:[],monday:[],tuesday:[],thursday:[],friday:[],saturday:[]}},noms:DEFAULT_NOMS,hyperfixation:DEFAULT_HYPERFIXATION,mochini:DEFAULT_MOCHINI,taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
 
+// Deliberate, idempotent research records from Kat's recent real-world use.
+// These IDs remain stable so normal reloads and cloud hydration never duplicate them.
+const KAT_LABS_RESEARCH_AT='2026-08-18T00:00:00.000Z';
+const KAT_LABS_RESEARCH_OBSERVATIONS=[
+ {id:'kat-labs-observation-routine-momentum',text:'After initiating a shower, related self-care tasks followed more easily: Shower → Wash Hair → Skincare → Makeup. The later tasks required less initiation once the first action began.',tags:['Routines','Transitions','Motivation'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-observation-gateway-tasks',text:'Showering acted as a gateway action for related self-care behaviors. Once the shower began, skincare and other getting-ready actions followed more naturally.',tags:['Routines','Transitions'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-observation-deferral-resistance',text:'The longer showering was postponed, the harder initiating it felt. Repeated delay increased resistance rather than keeping it constant.',tags:['Planning','Motivation'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-observation-predetermined-commitment',text:'Despite not wanting to shower, Kat followed the previously chosen plan because the decision had already been intentionally made as part of KatOS/Mochini guidance.',tags:['Planning','Focus'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-observation-hyperfixation-overrides-plan',text:'Kat became strongly hyperfocused on KatOS/the planner and lost interest in previously planned tasks, then chose an intentional exit sequence: Planner → Shower → Bed.',tags:['Focus','Planning'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-observation-exit-ramps',text:'A predetermined sequence after hyperfixation made it possible to leave the planner and transition into necessary self-care.',tags:['Focus','Transitions'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-observation-momentum-needs-guardrails',text:'After showering, momentum continued through hair care, skincare, makeup, and cleaning the vanity. Kat intentionally stopped cleaning because required work videos still needed to be completed.',tags:['Focus','Planning'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-observation-momentum-redirection',text:'Kat was able to stop one productive chain because another obligation was recognized as more important.',tags:['Focus','Transitions'],timestamp:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT}
+];
+const KAT_LABS_RESEARCH_FINDINGS=[
+ {id:'kat-labs-finding-routine-momentum',title:'Routine Momentum',description:'Starting the first action in an established routine can create behavioral momentum that lowers the activation barrier for related actions. KatOS implication: future Routine/Guided Mode guidance can recognize routine chains instead of treating every step as unrelated.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-finding-gateway-tasks',title:'Gateway Tasks',description:'For some routines, the most important intervention may be identifying and initiating the gateway task rather than motivating every step individually. KatOS implication: future guidance can highlight the first useful action.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-finding-deferral-resistance-compounds',title:'Deferral Resistance Compounds',description:'Task postponement may be behaviorally non-neutral. For some tasks, repeated deferral can increase initiation difficulty. KatOS implication: future guidance can distinguish a task that can safely wait from one deferred repeatedly, without guilt or punishment language.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-finding-predetermined-commitment',title:'Predetermined Commitment Can Override Resistance',description:'A previously intentional commitment can function as an external executive-function scaffold. KatOS implication: Mochini should not casually renegotiate a reasonable plan because resistance appears later, while Kat always retains override control.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-finding-hyperfixation-overrides-planned-tasks',title:'Hyperfixation Can Override Planned Tasks',description:'Hyperfixation may be better supported through boundaries and exit ramps than through constant interruption. KatOS implication: future Hyperfixation/Locked-In Mode can protect important obligations while allowing intentional focus.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-finding-exit-ramps',title:'Exit Ramps Help End Hyperfixation',description:'Hyperfixation is easier to leave when there is a concrete next action or short transition sequence. KatOS implication: future Guided Modes may support an exit ramp such as Current Focus → Shower → Bed.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-finding-productive-momentum-needs-guardrails',title:'Productive Momentum Needs Guardrails',description:'Behavioral momentum can be useful but can also carry attention into lower-priority productive tasks. KatOS implication: future Mochini behavior can preserve momentum while redirecting it when a protected commitment needs attention.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT},
+ {id:'kat-labs-finding-momentum-can-be-redirected',title:'Momentum Can Be Redirected',description:'The goal does not always need to be stopping momentum; active momentum can be redirected toward the next protected task. KatOS implication: future guidance may carry momentum into an important commitment.',status:'Observed',createdAt:KAT_LABS_RESEARCH_AT,updatedAt:KAT_LABS_RESEARCH_AT}
+];
+const GUIDED_MODES_NAME='KatOS V2 • Guided Modes';
+const GUIDED_MODES_RESEARCH_VERSION=1;
+const GUIDED_MODES_UPDATE={currentObjective:'Design Routine System V2 and improve Hyperfixation Mode using observed Kat Labs behavior, including gateway tasks, momentum chains, exit ramps, and protected commitments.',doneWhen:'Routines can support gateway tasks and momentum-aware guidance, Hyperfixation Mode has intentional exit/re-entry tools, and important commitments remain protected without turning KatOS into a punitive task system.',nextStep:'Add the minimum task signals needed for future Routine and Hyperfixation reasoning.'};
+
 const isObject=value=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const clone=value=>structuredClone(value);
 const dateStamp=data=>Date.parse(data?.__smUpdatedAt||'')||0;
@@ -26,7 +53,14 @@ export const normalizeHyperfixation=value=>{const session=isObject(value)?value:
 export const normalizeMochini=value=>{const mochini=isObject(value)?value:{};return{...clone(DEFAULT_MOCHINI),...mochini,conversation:Array.isArray(mochini.conversation)?mochini.conversation:[]}};
 /** Preserves the original weeklyExperiment object while exposing it as one record in the V2 collection. */
 export const normalizeLabExperiments=(value,legacy={})=>{const experiments=Array.isArray(value)?value.filter(isObject):[];if(experiments.length)return experiments.map((experiment,index)=>({...experiment,id:experiment.id||`lab-experiment-${index}`,status:['Planned','Active','Completed'].includes(experiment.status)?experiment.status:'Active'}));if(!isObject(legacy)||!Object.values(legacy).some(value=>String(value??'').trim()))return[];return[{...legacy,id:legacy.id||'legacy-weekly-experiment',status:['Planned','Active','Completed'].includes(legacy.status)?legacy.status:'Active'}]};
-export function normalizeTask(task){if(!isObject(task))return task;const next={...task};if(next.done===undefined||next.done===null)next.done=false;if(next.parked===undefined||next.parked===null)next.parked=false;if(next.hardBoundary===undefined||next.hardBoundary===null)next.hardBoundary=false;if(!Array.isArray(next.unavailableOn))next.unavailableOn=[];return next}
+export function normalizeTask(task){if(!isObject(task))return task;const next={...task};if(next.done===undefined||next.done===null)next.done=false;if(next.parked===undefined||next.parked===null)next.parked=false;if(next.hardBoundary===undefined||next.hardBoundary===null)next.hardBoundary=false;if(!Array.isArray(next.unavailableOn))next.unavailableOn=[];next.routineId=typeof next.routineId==='string'&&next.routineId.trim()?next.routineId.trim():null;next.isGatewayTask=next.isGatewayTask===true;next.isProtected=next.isProtected===true;const deferred=Number(next.timesDeferred);next.timesDeferred=Number.isFinite(deferred)&&deferred>=0?Math.floor(deferred):0;return next}
+
+const appendMissing=(items,seeds,key='id')=>[...items,...seeds.filter(seed=>!items.some(item=>String(item?.[key]??'')===String(seed[key]??'')))];
+const applyGuidedModesResearch=projects=>projects.map(project=>{
+ const name=String(project?.name??project?.title??'');
+ if(name!==GUIDED_MODES_NAME||project?.guidedModesResearchVersion===GUIDED_MODES_RESEARCH_VERSION)return project;
+ return{...project,...GUIDED_MODES_UPDATE,guidedModesResearchVersion:GUIDED_MODES_RESEARCH_VERSION};
+});
 
 /** Versioned, idempotent migration seam. Version 0 is every legacy snapshot without schemaVersion. */
 export function migrateState(input={}){
@@ -54,6 +88,9 @@ export function validateState(input={}){
  data.hyperfixation=normalizeHyperfixation(data.hyperfixation);
  data.mochini=normalizeMochini(data.mochini);
  data.labExperiments=normalizeLabExperiments(data.labExperiments,data.weeklyExperiment);
+ data.labObservations=appendMissing(data.labObservations,KAT_LABS_RESEARCH_OBSERVATIONS);
+ data.labFindings=appendMissing(data.labFindings,KAT_LABS_RESEARCH_FINDINGS);
+ data.projects=applyGuidedModesResearch(data.projects);
  if(!Number.isInteger(data.schemaVersion)||data.schemaVersion<CURRENT_SCHEMA_VERSION)data.schemaVersion=CURRENT_SCHEMA_VERSION;
  return{ok:isObject(input),state:data,issues};
 }

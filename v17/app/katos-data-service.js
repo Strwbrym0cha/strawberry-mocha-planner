@@ -1,5 +1,5 @@
-import{CURRENT_SCHEMA_VERSION,getLocalBackup,listLocalBackups,loadLocalData,moneyTotals,normalizeHyperfixation,normalizeMochini,normalizeNoms,saveLocalData,validateState}from'./data.js?v=22.1.20-20260817';
-import{evaluateToday}from'./logic/evaluate-today.js?v=22.1.19-20260817';
+import{CURRENT_SCHEMA_VERSION,getLocalBackup,listLocalBackups,loadLocalData,moneyTotals,normalizeHyperfixation,normalizeMochini,normalizeNoms,saveLocalData,validateState}from'./data.js?v=22.1.27-20260818';
+import{evaluateToday}from'./logic/evaluate-today.js?v=22.1.28-20260818';
 
 /**
  * Compatibility-first state gateway. It deliberately wraps the current snapshot

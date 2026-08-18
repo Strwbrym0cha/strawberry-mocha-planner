@@ -9,7 +9,7 @@ const events=url(`export const eventsForDate=(state,date)=>(state.events||[]).fi
 const data=url(`export const localDateKey=value=>{const date=value?new Date(value):new Date();return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0')};`);
 const deadlines=url(`export const upcomingDeadlines=(state,{date}={})=>(state.deadlines||[]).filter(item=>!date||item.date===date);`);
 const dayContext=url((await source('./logic/mochini-day-context.js')).replace("'../data.js?v=22.1.21-20260817'",`'${data}'`).replace("'./tasks.js?v=22.1.21-20260817'",`'${tasks}'`).replace("'./events.js?v=22.1.21-20260817'",`'${events}'`).replace("'./deadlines.js?v=22.1.21-20260817'",`'${deadlines}'`));
-const intents=url((await source('./mochini-intents.js')).replace("'./mochini.js?v=22.1.19-20260817'",`'${mochini}'`).replace("'./logic/tasks.js?v=22.1.19-20260817'",`'${tasks}'`).replace("'./logic/events.js?v=22.1.19-20260817'",`'${events}'`).replace("'./logic/mochini-day-context.js?v=22.1.21-20260817'",`'${dayContext}'`));
+const intents=url((await source('./mochini-intents.js')).replace("'./mochini.js?v=22.1.28-20260818'",`'${mochini}'`).replace("'./logic/tasks.js?v=22.1.19-20260817'",`'${tasks}'`).replace("'./logic/events.js?v=22.1.19-20260817'",`'${events}'`).replace("'./logic/mochini-day-context.js?v=22.1.21-20260817'",`'${dayContext}'`));
 const {answerMochiniIntent,matchMochiniIntent,normalizeMochiniInput}=await import(intents);
 const task={id:'one',text:'Take medication',date:'2026-08-17'};
 const state={tasks:[task],events:[{id:'event',title:'Class',date:'2026-08-17',start:'15:00'}]};
@@ -18,6 +18,7 @@ const answer=(input,session={})=>answerMochiniIntent(matchMochiniIntent(input),{
 assert.equal(normalizeMochiniInput(' What’s next?? '),'whats next');
 ['What should I do?','What’s next?','Pick something for me.'].forEach(input=>assert.equal(matchMochiniIntent(input).intent,'ask_next_task'));
 const next=answer('What should I do?');assert.match(next.answer,/Take medication/);assert.equal(next.escalation,false);
+assert.equal(matchMochiniIntent("I don't want to do this anymore").intent,'ask_resistance');
 assert.match(answer('Why?',{lastRecommendation:next.recommendation,lastReasons:next.recommendation.reasons}).answer,/assigned to today/i);
 assert.match(answer('Why?').answer,/haven’t picked/i);
 assert.equal(matchMochiniIntent('What do I have today?').intent,'ask_day_context');assert.match(answer('What do I have today?').answer,/Take medication/);
@@ -36,5 +37,16 @@ const noRoutine=answerMochiniIntent({intent:'ask_routines'},{state,evaluation:{.
 const noEvent=answerMochiniIntent({intent:'ask_next_event'},{state:{...state,events:[]},evaluation,session:{}});assert.match(noEvent.answer,/Nothing fixed/i);
 assert.equal(matchMochiniIntent('What events do I have this week?').intent,'ask_events_range');assert.match(answer('What events do I have today?').answer,/Class/);assert.equal(answer('What events do I have today?').escalation,false);assert.match(answerMochiniIntent(matchMochiniIntent('What events do I have this week?'),{state:{...state,events:[]},evaluation,session:{}}).answer,/Nothing scheduled this week/i);assert.equal(answerMochiniIntent(matchMochiniIntent('What events do I have this week?'),{state:{...state,events:[]},evaluation,session:{}}).escalation,false);
 const hyperEvaluation={...evaluation,hyperfixation:{active:true,focus:{label:'KatOS'},nextFixedEvent:state.events[0]}};assert.match(answerMochiniIntent(matchMochiniIntent('What is my fixation?'),{state,evaluation:hyperEvaluation,session:{}}).answer,/KatOS/);assert.match(answerMochiniIntent(matchMochiniIntent('Can I keep going?'),{state,evaluation:hyperEvaluation,session:{}}).answer,/Class/);assert.match(answerMochiniIntent(matchMochiniIntent('End hyperfixation mode'),{state,evaluation:hyperEvaluation,session:{}}).answer,/Home/);
+const gatewayTask={id:'gateway',text:'Shower',date:'2026-08-17',isGatewayTask:true,routineId:'self-care'};
+const gatewayEvaluation={...evaluation,recommendedNextAction:{task:gatewayTask,reasons:[{code:'gateway_task'}]},candidates:[{task:gatewayTask,reasons:[{code:'gateway_task'}]}]};
+assert.match(answerMochiniIntent(matchMochiniIntent('What should I do?'),{state:{tasks:[gatewayTask]},evaluation:gatewayEvaluation,session:{}}).answer,/gateway task/i);
+assert.match(answerMochiniIntent(matchMochiniIntent("I don't want to do this"),{state:{tasks:[gatewayTask]},evaluation:gatewayEvaluation,session:{lastRecommendation:gatewayEvaluation.recommendedNextAction}}).answer,/first step/i);
+const protectedTask={id:'protected',text:'Work videos',date:'2026-08-17',isProtected:true};
+const protectedEvaluation={...evaluation,recommendedNextAction:{task:protectedTask,reasons:[{code:'protected_commitment'}]},candidates:[{task:protectedTask,reasons:[{code:'protected_commitment'}]}]};
+assert.match(answerMochiniIntent(matchMochiniIntent('What should I do?'),{state:{tasks:[protectedTask]},evaluation:protectedEvaluation,session:{}}).answer,/protected commitment/i);
+const deferredTask={id:'deferred',text:'Shower',date:'2026-08-17',timesDeferred:3};
+const deferredEvaluation={...evaluation,recommendedNextAction:{task:deferredTask,reasons:[{code:'deferred_repeatedly'}]},candidates:[{task:deferredTask,reasons:[{code:'deferred_repeatedly'}]}]};
+assert.match(answerMochiniIntent(matchMochiniIntent('What should I do?'),{state:{tasks:[deferredTask]},evaluation:deferredEvaluation,session:{}}).answer,/moved a few times/i);
+const protectedFixation={...evaluation,hyperfixation:{active:true,focus:{label:'KatOS'},nextFixedEvent:null},candidates:[{task:protectedTask,reasons:[]}]};assert.match(answerMochiniIntent(matchMochiniIntent('Can I keep going?'),{state:{tasks:[protectedTask]},evaluation:protectedFixation,session:{}}).answer,/waiting for the baton/i);
 assert.deepEqual(state,{tasks:[task],events:[{id:'event',title:'Class',date:'2026-08-17',start:'15:00'}]});
 console.log('Mochini deterministic intent tests: PASS');
