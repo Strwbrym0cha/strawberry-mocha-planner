@@ -1,4 +1,4 @@
-import{createStore}from'./storage.js?v=22.1.19-20260817';
+import{createStore}from'./storage.js?v=22.1.20-20260817';
 import{createRouter}from'./router.js?v=22.1.18-20260817';
 
 function installFloatingIslands(){

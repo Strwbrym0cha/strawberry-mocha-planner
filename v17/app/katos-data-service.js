@@ -1,4 +1,4 @@
-import{CURRENT_SCHEMA_VERSION,getLocalBackup,listLocalBackups,loadLocalData,moneyTotals,normalizeHyperfixation,normalizeNoms,saveLocalData,validateState}from'./data.js?v=22.1.19-20260817';
+import{CURRENT_SCHEMA_VERSION,getLocalBackup,listLocalBackups,loadLocalData,moneyTotals,normalizeHyperfixation,normalizeMochini,normalizeNoms,saveLocalData,validateState}from'./data.js?v=22.1.20-20260817';
 import{evaluateToday}from'./logic/evaluate-today.js?v=22.1.19-20260817';
 
 /**
@@ -30,6 +30,7 @@ export function createKatOSDataService({storage=localStorage,onPersist=()=>{}}={
   getCurrentTaskbotState:()=>state.taskbot||{},
   getRoutines:()=>state.routines||[],
   getNoms:()=>normalizeNoms(state.noms),
+  getMochini:()=>normalizeMochini(state.mochini),
   getHyperfixation:()=>normalizeHyperfixation(state.hyperfixation),
   getFinanceSummary:()=>moneyTotals(state.money),
   evaluateToday:context=>evaluateToday(state,context)
