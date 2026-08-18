@@ -7,9 +7,10 @@ export const CURRENT_SCHEMA_VERSION=1;
 export const MAX_LOCAL_BACKUPS=7;
 
 export const DEFAULT_NOMS={foods:[],pantry:[],groceries:[],recipes:[],mealPlan:[],emergencyNoms:[],today:null};
-export const DEFAULT_HYPERFIXATION={active:false,focusType:null,focusId:null,focusLabel:null,startedAt:null,intention:null};
+export const DEFAULT_HYPERFIXATION={active:false,focusType:null,focusId:null,focusLabel:null,startedAt:null,intention:null,exitAt:null,exitRoutineId:null};
+export const DEFAULT_ROUTINE_MODE={active:false,routineId:null,skippedTaskIds:[]};
 export const DEFAULT_MOCHINI={conversation:[]};
-export const DEFAULT_DATA={schemaVersion:CURRENT_SCHEMA_VERSION,events:[],reminders:[],tasks:[],routines:[],habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},dayNotes:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],labObservations:[],labArchivedObservations:[],weeklyExperiment:{},labExperiments:[],financeWorkflow:{},schoolTasks:[],schoolGoals:[],workItems:[],workSchedule:{mode:'flexible',weekly:{sunday:[],monday:[],tuesday:[],thursday:[],friday:[],saturday:[]}},noms:DEFAULT_NOMS,hyperfixation:DEFAULT_HYPERFIXATION,mochini:DEFAULT_MOCHINI,taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
+export const DEFAULT_DATA={schemaVersion:CURRENT_SCHEMA_VERSION,events:[],reminders:[],tasks:[],routines:[],guidedRoutines:[],routineMode:DEFAULT_ROUTINE_MODE,habits:[],goals:[],wins:[],courses:[],projects:[],archive:[],days:{},dayNotes:{},money:{},brain:'',brainNotes:[],parkedProjects:[],recovery:{},weeklyLabNotes:{},labFindings:[],labObservations:[],labArchivedObservations:[],weeklyExperiment:{},labExperiments:[],financeWorkflow:{},schoolTasks:[],schoolGoals:[],workItems:[],workSchedule:{mode:'flexible',weekly:{sunday:[],monday:[],tuesday:[],thursday:[],friday:[],saturday:[]}},noms:DEFAULT_NOMS,hyperfixation:DEFAULT_HYPERFIXATION,mochini:DEFAULT_MOCHINI,taskbot:{capacity:'High',missionId:null,disrupted:false},totalClasses:0,demoTasksCleaned:false};
 
 // Deliberate, idempotent research records from Kat's recent real-world use.
 // These IDs remain stable so normal reloads and cloud hydration never duplicate them.
@@ -49,7 +50,9 @@ export const localDateKey=(date=new Date())=>{const d=new Date(date);return `${d
 export const asList=value=>Array.isArray(value)?value:(value&&typeof value==='object'?Object.values(value):[]);
 export const moneyTotals=money=>{const data=money||{};const total=key=>asList(data[key]).reduce((sum,item)=>sum+Number(item?.amount??0),0);const income=total('income');const spent=total('expenses');const bills=asList(data.bills).filter(item=>!item?.paid).reduce((sum,item)=>sum+Number(item?.amount||0),0);const cash=Number(data.cash?.amount??data.cash??0);return{income,spent,bills,cash,available:income-spent-bills+cash}};
 export const normalizeNoms=value=>{const noms=isObject(value)?value:{};const next={...clone(DEFAULT_NOMS),...noms};for(const key of ['foods','pantry','groceries','recipes','mealPlan','emergencyNoms'])if(!Array.isArray(next[key]))next[key]=[];if(next.today!==null&&!isObject(next.today))next.today=null;return next};
-export const normalizeHyperfixation=value=>{const session=isObject(value)?value:{};return{...clone(DEFAULT_HYPERFIXATION),...session,active:!!session.active,focusType:['task','project','goal','freeform'].includes(session.focusType)?session.focusType:null,focusId:session.focusId==null?null:String(session.focusId),focusLabel:typeof session.focusLabel==='string'?session.focusLabel:null,startedAt:typeof session.startedAt==='string'?session.startedAt:null,intention:typeof session.intention==='string'?session.intention:null}};
+export const normalizeHyperfixation=value=>{const session=isObject(value)?value:{};return{...clone(DEFAULT_HYPERFIXATION),...session,active:!!session.active,focusType:['task','project','goal','freeform'].includes(session.focusType)?session.focusType:null,focusId:session.focusId==null?null:String(session.focusId),focusLabel:typeof session.focusLabel==='string'?session.focusLabel:null,startedAt:typeof session.startedAt==='string'?session.startedAt:null,intention:typeof session.intention==='string'?session.intention:null,exitAt:/^\d{2}:\d{2}$/.test(String(session.exitAt||''))?session.exitAt:null,exitRoutineId:session.exitRoutineId==null?null:String(session.exitRoutineId)}};
+export const normalizeRoutineMode=value=>{const mode=isObject(value)?value:{};return{...clone(DEFAULT_ROUTINE_MODE),...mode,active:!!mode.active,routineId:mode.routineId==null?null:String(mode.routineId),skippedTaskIds:Array.isArray(mode.skippedTaskIds)?[...new Set(mode.skippedTaskIds.filter(Boolean).map(String))]:[]}};
+export const normalizeGuidedRoutine=value=>{const routine=isObject(value)?value:{};const taskIds=Array.isArray(routine.taskIds)?[...new Set(routine.taskIds.filter(Boolean).map(String))]:[];return{...routine,id:routine.id==null?null:String(routine.id),name:typeof routine.name==='string'?routine.name.trim():'',taskIds,gatewayTaskId:taskIds.includes(String(routine.gatewayTaskId||''))?String(routine.gatewayTaskId):null}};
 export const normalizeMochini=value=>{const mochini=isObject(value)?value:{};return{...clone(DEFAULT_MOCHINI),...mochini,conversation:Array.isArray(mochini.conversation)?mochini.conversation:[]}};
 /** Preserves the original weeklyExperiment object while exposing it as one record in the V2 collection. */
 export const normalizeLabExperiments=(value,legacy={})=>{const experiments=Array.isArray(value)?value.filter(isObject):[];if(experiments.length)return experiments.map((experiment,index)=>({...experiment,id:experiment.id||`lab-experiment-${index}`,status:['Planned','Active','Completed'].includes(experiment.status)?experiment.status:'Active'}));if(!isObject(legacy)||!Object.values(legacy).some(value=>String(value??'').trim()))return[];return[{...legacy,id:legacy.id||'legacy-weekly-experiment',status:['Planned','Active','Completed'].includes(legacy.status)?legacy.status:'Active'}]};
@@ -75,8 +78,9 @@ export function migrateState(input={}){
 /** Lightweight, preservation-first validation for current and legacy state. */
 export function validateState(input={}){
  const migrated=migrateState(input);let data={...clone(DEFAULT_DATA),...migrated.state};const issues=[...migrated.issues];
- for(const key of ['events','reminders','tasks','routines','habits','goals','wins','courses','projects','archive','brainNotes','parkedProjects','labFindings','labObservations','labArchivedObservations','labExperiments','schoolTasks','schoolGoals','workItems'])if(!Array.isArray(data[key])){issues.push(`${key} was normalized to an empty list.`);data[key]=[]}
+ for(const key of ['events','reminders','tasks','routines','guidedRoutines','habits','goals','wins','courses','projects','archive','brainNotes','parkedProjects','labFindings','labObservations','labArchivedObservations','labExperiments','schoolTasks','schoolGoals','workItems'])if(!Array.isArray(data[key])){issues.push(`${key} was normalized to an empty list.`);data[key]=[]}
  data.tasks=data.tasks.map(normalizeTask);
+ data.guidedRoutines=data.guidedRoutines.map(normalizeGuidedRoutine).filter(routine=>routine.id&&routine.name);
  for(const key of ['days','dayNotes','money','recovery','weeklyLabNotes','weeklyExperiment'])if(!isObject(data[key])){issues.push(`${key} was normalized to an object.`);data[key]={}}
  if(!isObject(data.money.financeWorkflow))data.money={...data.money,financeWorkflow:{}};
  if(!isObject(data.workSchedule)){issues.push('workSchedule was normalized.');data.workSchedule=clone(DEFAULT_DATA.workSchedule)}
@@ -86,6 +90,7 @@ export function validateState(input={}){
  if(!isObject(data.taskbot))data.taskbot={capacity:'High',missionId:null,disrupted:false};
  data.noms=normalizeNoms(data.noms);
  data.hyperfixation=normalizeHyperfixation(data.hyperfixation);
+ data.routineMode=normalizeRoutineMode(data.routineMode);
  data.mochini=normalizeMochini(data.mochini);
  data.labExperiments=normalizeLabExperiments(data.labExperiments,data.weeklyExperiment);
  data.labObservations=appendMissing(data.labObservations,KAT_LABS_RESEARCH_OBSERVATIONS);

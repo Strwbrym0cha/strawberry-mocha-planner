@@ -29,6 +29,12 @@ export const groceryItems=(state,{includeObtained=false}={})=>active(normalizeNo
 export const allRecipes=state=>active(normalizeNoms(state?.noms).recipes);
 export const allPlannedMeals=state=>active(normalizeNoms(state?.noms).mealPlan).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
 export const plannedMealsForDate=(state,date)=>active(normalizeNoms(state?.noms).mealPlan).filter(meal=>String(meal.date)===String(date||''));
+/** A read-only prompt from the existing meal plan; it never changes Today’s Nom by itself. */
+export const plannedNomSuggestion=(state,date)=>{
+ const meal=plannedMealsForDate(state,date)[0];if(!meal)return null;
+ const nom=meal.nomId?allNoms(state).find(entry=>String(entry.id)===String(meal.nomId))||null:null;
+ const label=nom?.name||clean(meal.text);return label?{meal,nom,label}:null;
+};
 export const emergencyNoms=state=>{
  const noms=normalizeNoms(state?.noms),foods=allNoms(state);return active(noms.emergencyNoms).map(link=>foods.find(food=>String(food.id)===String(link.nomId))).filter(Boolean);
 };
