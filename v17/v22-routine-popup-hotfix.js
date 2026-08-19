@@ -1,4 +1,4 @@
-/* V22.6.3: keep routine editors correctly branded and make iPad/Safari scrolling modal-only. */
+/* V22.8.0: routine editor scrolling + Motion Meadow global navigation. */
 (()=>{
   const STYLE_ID='sm-routine-popup-hotfix-style';
   if(!document.getElementById(STYLE_ID)){
@@ -96,3 +96,5 @@
   new MutationObserver(syncLock).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('pagehide',unlockPage,{once:true});
 })();
+
+import('./v22-motion-nav.js?v=22.8.0-20260819').catch(error=>console.warn('Motion Meadow nav could not load',error));
