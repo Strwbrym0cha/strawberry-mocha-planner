@@ -1,15 +1,21 @@
-/* V22.6.2: keep routine editors correctly branded and scrollable on iPad/Safari. */
+/* V22.6.3: keep routine editors correctly branded and make iPad/Safari scrolling modal-only. */
 (()=>{
   const STYLE_ID='sm-routine-popup-hotfix-style';
   if(!document.getElementById(STYLE_ID)){
     const style=document.createElement('style');
     style.id=STYLE_ID;
     style.textContent=`
+      html.sm-routine-modal-open,
+      body.sm-routine-modal-open{
+        overflow:hidden!important;
+        overscroll-behavior:none!important;
+      }
       .sm-routine-editor-backdrop{
-        overflow-y:auto!important;
-        -webkit-overflow-scrolling:touch!important;
-        overscroll-behavior:contain!important;
-        touch-action:pan-y!important;
+        position:fixed!important;
+        inset:0!important;
+        overflow:hidden!important;
+        overscroll-behavior:none!important;
+        touch-action:none!important;
       }
       .sm-routine-editor{
         max-height:calc(100dvh - 36px)!important;
@@ -18,6 +24,7 @@
         -webkit-overflow-scrolling:touch!important;
         overscroll-behavior:contain!important;
         touch-action:pan-y!important;
+        scrollbar-gutter:stable;
       }
       .sm-routine-editor-actions{
         position:sticky!important;
@@ -36,6 +43,20 @@
     document.head.appendChild(style);
   }
 
+  let locked=false;
+  const lockPage=()=>{
+    if(locked)return;
+    locked=true;
+    document.documentElement.classList.add('sm-routine-modal-open');
+    document.body.classList.add('sm-routine-modal-open');
+  };
+  const unlockPage=()=>{
+    if(!locked)return;
+    locked=false;
+    document.documentElement.classList.remove('sm-routine-modal-open');
+    document.body.classList.remove('sm-routine-modal-open');
+  };
+
   const patch=panel=>{
     if(!panel?.matches?.('.sm-routine-editor'))return;
     panel.dataset.popupCategory='routines';
@@ -45,11 +66,33 @@
     }
   };
 
-  const scan=root=>{
-    if(root?.matches?.('.sm-routine-editor'))patch(root);
-    root?.querySelectorAll?.('.sm-routine-editor').forEach(patch);
+  const syncLock=()=>{
+    const backdrop=document.querySelector('.sm-routine-editor-backdrop');
+    if(backdrop){
+      lockPage();
+      backdrop.querySelectorAll('.sm-routine-editor').forEach(patch);
+    }else unlockPage();
   };
 
-  scan(document);
-  new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(scan))).observe(document.documentElement,{childList:true,subtree:true});
+  let startY=0;
+  document.addEventListener('touchstart',event=>{
+    if(!document.querySelector('.sm-routine-editor-backdrop'))return;
+    if(event.touches?.length)startY=event.touches[0].clientY;
+  },{capture:true,passive:true});
+
+  document.addEventListener('touchmove',event=>{
+    const backdrop=document.querySelector('.sm-routine-editor-backdrop');
+    if(!backdrop)return;
+    const editor=event.target?.closest?.('.sm-routine-editor');
+    if(!editor){event.preventDefault();return;}
+    const currentY=event.touches?.[0]?.clientY??startY;
+    const delta=currentY-startY;
+    const atTop=editor.scrollTop<=0;
+    const atBottom=editor.scrollTop+editor.clientHeight>=editor.scrollHeight-1;
+    if((atTop&&delta>0)||(atBottom&&delta<0))event.preventDefault();
+  },{capture:true,passive:false});
+
+  syncLock();
+  new MutationObserver(syncLock).observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('pagehide',unlockPage,{once:true});
 })();
