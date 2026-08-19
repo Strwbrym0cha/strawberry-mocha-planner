@@ -1,7 +1,8 @@
 const list=value=>Array.isArray(value)?value:[];
 const same=(a,b)=>String(a??'')===String(b??'');
 const completed=value=>value===true||value==='complete';
-const skipped=value=>value==='skipped'||value==='na';
+const skipped=value=>value==='skipped';
+const notApplicable=value=>value==='na';
 
 export const routineTaskBotEnabled=routine=>routine?.showInTaskBot===true||routine?.sendToTaskBot===true;
 export const routineParentTaskId=routineId=>`routine-parent-${String(routineId??'').replace(/[^a-z0-9_-]/gi,'-')}`;
@@ -10,10 +11,10 @@ export const isLegacyRoutineStepTask=task=>!!task&&task.source==='routine'&&task
 
 export function routineProgress(routine,date){
  const steps=list(routine?.steps),checks=routine?.checks?.[date]||{};
- let complete=0,skip=0,later=0;
- steps.forEach((_,index)=>{const status=checks[index];if(completed(status))complete+=1;else if(skipped(status))skip+=1;else if(status==='later')later+=1});
- const resolved=complete+skip,remaining=Math.max(0,steps.length-resolved);
- return{total:steps.length,completed:complete,skipped:skip,deferred:later,resolved,remaining,done:steps.length>0&&remaining===0};
+ let complete=0,skip=0,later=0,na=0;
+ steps.forEach((_,index)=>{const status=checks[index];if(completed(status))complete+=1;else if(skipped(status))skip+=1;else if(notApplicable(status))na+=1;else if(status==='later')later+=1});
+ const total=Math.max(0,steps.length-na),resolved=complete+skip,remaining=Math.max(0,total-resolved);
+ return{originalTotal:steps.length,total,completed:complete,skipped:skip,notApplicable:na,deferred:later,resolved,remaining,done:steps.length>0&&remaining===0};
 }
 
 function mergeLegacyCompletion(routine,task){
@@ -40,7 +41,7 @@ export function reconcileRoutineTaskBotState(state={},date){
  routines.forEach(routine=>{
   if(!routineTaskBotEnabled(routine)||!list(routine.steps).length)return;
   const rid=String(routine.id),old=parentByRoutine.get(rid)||{},progress=routineProgress(routine,date);
-  nextParents.push({...old,id:routineParentTaskId(rid),text:String(routine.name||'Routine'),title:String(routine.name||'Routine'),date,done:progress.done,parked:false,source:'routine-parent',sourceRoutineId:rid,sourceRoutineDate:date,routineId:rid,isRoutineParent:true,routineStepCount:progress.total,routineResolvedCount:progress.resolved,routineCompletedCount:progress.completed,hardBoundary:!!old.hardBoundary,unavailableOn:list(old.unavailableOn),timesDeferred:Number(old.timesDeferred)||0});
+  nextParents.push({...old,id:routineParentTaskId(rid),text:String(routine.name||'Routine'),title:String(routine.name||'Routine'),date,done:progress.done,parked:false,source:'routine-parent',sourceRoutineId:rid,sourceRoutineDate:date,routineId:rid,isRoutineParent:true,routineStepCount:progress.total,routineOriginalStepCount:progress.originalTotal,routineNotApplicableCount:progress.notApplicable,routineResolvedCount:progress.resolved,routineCompletedCount:progress.completed,hardBoundary:!!old.hardBoundary,unavailableOn:list(old.unavailableOn),timesDeferred:Number(old.timesDeferred)||0});
  });
  const tasks=[...ordinary,...nextParents];
  const changed=JSON.stringify(tasks)!==JSON.stringify(sourceTasks)||JSON.stringify(routines)!==JSON.stringify(sourceRoutines);
