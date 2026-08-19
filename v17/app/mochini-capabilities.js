@@ -16,6 +16,7 @@ const asksForHelp=input=>/\b(what|which|how|should|can|could|would|need|want|pic
 const mentionsWork=input=>/\b(work|shift|job)\b/.test(input);
 const needsFoodNow=input=>/\b(havent eaten|have not eaten|not eaten|didnt eat|did not eat|forgot to eat|need to eat|starving|really hungry|so hungry|ate nothing|no food all day)\b/.test(input);
 const isQuick=input=>/\b(quick|quicker|fast|easy|easier|low effort|no prep|simple|tired|exhausted|drained|before work|before my shift)\b/.test(input)||needsFoodNow(input);
+const isDirectMutation=input=>/\b(delete|remove|reschedule|archive|park)\b/.test(input)||/\bmove (this|that|the|my|a)\b/.test(input)||/\b(mark|complete|finish) (this|that|the|my|a)\b/.test(input)||/\bprotect (this|that|the|my|a)\b/.test(input);
 
 const DOMAIN_RULES=Object.freeze({
  noms:[[/\b(eat|eats|eating|ate|eaten|food|foods|meal|meals|snack|snacks|breakfast|lunch|dinner|hungry|hunger|nom|noms|pantry|recipe|recipes|grocery|groceries)\b/,3],[/\bwhat sounds good\b/,4],[/\b(havent eaten|have not eaten|not eaten|didnt eat|did not eat|forgot to eat|starving|no food all day)\b/,5]],
@@ -74,7 +75,7 @@ function sipsAnswer(input,state,date){
 function taskAnswer(input,state,date,evaluation){
  const tasks=openTasksForDate(state,date).filter(task=>!task?.done&&!task?.parked&&!list(task?.unavailableOn).includes(date));
  const statusQuestion=/\b(left|remaining|how many|what tasks|show|list|unfinished)\b/.test(input);
- if(statusQuestion){if(!tasks.length)return response('cap_tasks_remaining','You’re clear. You don’t have any remaining tasks for today. 🌷');return response('cap_tasks_remaining',`You have ${tasks.length} task${tasks.length===1?'':'s'} left today: ${tasks.slice(0,5).map(taskTitle).join(', ')}${tasks.length>5?'…':''}` ,tasks.slice(0,5));}
+ if(statusQuestion){if(!tasks.length)return response('cap_tasks_remaining','You’re clear. You don’t have any remaining tasks for today. 🌷');return response('cap_tasks_remaining',`You have ${tasks.length} task${tasks.length===1?'':'s'} left today: ${tasks.slice(0,5).map(taskTitle).join(', ')}${tasks.length>5?'…':''}`,tasks.slice(0,5));}
  if(evaluation?.escalation?.needsBigMochi)return response('cap_tasks_recommendation','I found multiple equally ranked options, so I can’t fairly pretend one is the winner. Want a Big Mochi Request? 🍓',evaluation.candidates||[],{escalation:true,reason:'KatOS found equally ranked options.'});
  const recommendation=evaluation?.recommendedNextAction,task=recommendation?.task;
  if(task)return response('cap_tasks_recommendation',`Tiny bean vote: ${taskTitle(task)}. It’s the best fit from the planner information I can verify right now. 🍓`,recommendation.reasons||[],{recommendation});
@@ -86,7 +87,7 @@ function routineAnswer(input,state,date){
  const mode=routineModeState(state,date);
  if(mode.active){if(mode.complete)return response('cap_routines_next','Your active Guided Routine is complete. ✨',[mode.routine]);if(mode.currentTask)return response('cap_routines_next',`You’re in ${mode.routine?.name||'Routine Mode'}. Next step: ${taskTitle(mode.currentTask)}. 🌷`,[mode.currentTask,mode.routine]);return response('cap_routines_next',`You’re in ${mode.routine?.name||'Routine Mode'}, but there isn’t an available next step right now.`,[mode.routine]);}
  const routines=[...list(state.guidedRoutines),...list(state.routines)];if(!routines.length)return response('cap_routines_list','You do not have any saved routines yet. 🌷');
- const named=routines.find(routine=>input.includes(clean(routine?.name)));if(named)return response('cap_routines_list',`${named.name} is saved${Array.isArray(named.taskIds)?` with ${named.taskIds.length} guided task${named.taskIds.length===1?'':'s'}`:Array.isArray(named.steps)?` with ${named.steps.length} step${named.steps.length===1?'':'s'}`:''}. 🌷`,[named]);
+ const named=routines.find(routine=>{const name=clean(routine?.name);return name&&input.includes(name)});if(named)return response('cap_routines_list',`${named.name} is saved${Array.isArray(named.taskIds)?` with ${named.taskIds.length} guided task${named.taskIds.length===1?'':'s'}`:Array.isArray(named.steps)?` with ${named.steps.length} step${named.steps.length===1?'':'s'}`:''}. 🌷`,[named]);
  return response('cap_routines_list',`You have ${routines.length} routine${routines.length===1?'':'s'}: ${routines.slice(0,5).map(title).filter(Boolean).join(', ')}${routines.length>5?'…':''}.`,routines.slice(0,5));
 }
 
@@ -123,13 +124,9 @@ function compose(results,domains){
  const primary=results[0];return{...primary,answer:results.map(result=>result.answer).join(' '),evidence:uniqueEvidence(results.flatMap(result=>list(result.evidence))),escalation:results.some(result=>result.escalation),reason:results.find(result=>result.reason)?.reason||'',domains,composite:true};
 }
 
-/**
- * Deterministic concept router. It reads meaningful words anywhere in the message,
- * can activate more than one KatOS domain, and falls back to legacy intent matching
- * only when the message does not contain a strong supported concept.
- */
+/** Deterministic concept router: meaningful words can activate multiple KatOS domains. */
 export function routeMochiniCapability(question,{state={},evaluation={},session={}}={}){
- const detected=detectMochiniDomains(question),input=detected.input;if(!input)return null;const date=dateKey(evaluation?.date);
+ const detected=detectMochiniDomains(question),input=detected.input;if(!input||isDirectMutation(input))return null;const date=dateKey(evaluation?.date);
  const followupNoms=String(session?.lastIntent||'').startsWith('cap_noms_')&&/\b(anything|something|one|option|quicker|quick|else|another)\b/.test(input);
  const followupSips=String(session?.lastIntent||'').startsWith('cap_sips_')&&/\b(how much|enough|today|goal|what about now)\b/.test(input);
  if(followupNoms&&!detected.ranked.some(item=>item.domain==='noms'))detected.ranked.unshift({domain:'noms',score:3});
