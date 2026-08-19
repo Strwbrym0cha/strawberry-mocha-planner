@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#fff4fa">
-  <meta name="sm-build" content="V22.3.1-2026-08-19">
+  <meta name="sm-build" content="V22.4.0-2026-08-19">
   <title>KatOS V2</title>
   <link rel="stylesheet" href="./styles.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v20-skin.css?v=22.0.1-20260816">
@@ -18,6 +18,48 @@
   <link rel="stylesheet" href="./v22-design-fixes.css?v=22.1.22-20260817">
   <link rel="stylesheet" href="./v22-maintenance.css?v=22.1.26-20260818">
   <link rel="stylesheet" href="./v22-popup-polish.css?v=22.3.1-20260819">
+  <style id="katos-v224-full-skin">
+    :root{--katos-strawberry:#ef8fb4;--katos-strawberry-deep:#bd557d;--katos-mocha:#6a4438;--katos-cream:#fffaf5;--katos-sage:#b8d3a6;--katos-gold:#d6aa63;--katos-page-accent:#ef8fb4;--katos-page-soft:#fff0f6;--katos-page-motif:"🍓  HOME SWEET HOME  ✦  🎀"}
+    body{background:radial-gradient(circle at 8% 9%,rgba(255,210,228,.42),transparent 23%),radial-gradient(circle at 90% 14%,rgba(214,231,202,.48),transparent 25%),linear-gradient(145deg,#fff7fb 0%,#fffaf5 52%,#f6fbf1 100%)!important;color:var(--katos-mocha)}
+    .v21-app{background:transparent!important}
+    .v21-sidebar{border:1.5px solid #efc0d2!important;background:linear-gradient(160deg,rgba(255,239,247,.98),rgba(255,253,250,.97) 52%,rgba(239,248,233,.98))!important;box-shadow:0 22px 60px rgba(105,68,56,.13)!important}
+    .v21-sidebar:before{content:"♡  strawberry mocha  ♡";display:block;text-align:center;padding:0 4px 11px;color:#c96a8e;font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+    .v21-brand{border-bottom:1px dashed #eab9ca!important}
+    .v21-brand-mark{background:linear-gradient(145deg,#ffe3ee,#fff7fb 58%,#e9f5e2)!important;border:1px solid #f1c2d4!important}
+    .v21-nav-group>small{color:#aa7b70!important}
+    .v21-nav-item{border-radius:18px!important}
+    .v21-nav-item:hover{background:#fff9fc!important;border-color:#efcfdb!important}
+    .v21-nav-item.active{background:linear-gradient(110deg,var(--katos-page-accent),#c9dcae)!important;box-shadow:0 9px 20px color-mix(in srgb,var(--katos-page-accent) 22%,transparent)!important}
+    .v21-sidebar-footer{color:#d68ba7!important}
+    #tab-root{--katos-page-accent:#ef8fb4;--katos-page-soft:#fff0f6;--katos-page-motif:"🍓  HOME SWEET HOME  ✦  🎀";position:relative}
+    #tab-root:before{content:var(--katos-page-motif);display:block;margin:0 0 14px;padding:12px 18px;border:1.5px solid color-mix(in srgb,var(--katos-page-accent) 45%,white);border-radius:22px;background:linear-gradient(100deg,var(--katos-page-soft),rgba(255,255,255,.94) 55%,#f4faef);box-shadow:0 10px 26px rgba(105,68,56,.07);color:color-mix(in srgb,var(--katos-page-accent) 68%,#6a4438);font-size:11px;font-weight:950;letter-spacing:.13em;text-transform:uppercase;text-align:center}
+    #tab-root:after{content:"";display:block;position:absolute;left:18px;right:18px;top:0;height:8px;background:radial-gradient(circle at 6px 0,#fff 5px,transparent 5.5px) 0 0/12px 9px repeat-x;pointer-events:none}
+    #tab-root .v17-card,#tab-root .v21-card,#tab-root .v21-pulse,#tab-root .v21-home-hero,#tab-root .v17-home-hero,#tab-root .v17-planner-hero{border-color:color-mix(in srgb,var(--katos-page-accent) 28%,#ead9d1)!important;box-shadow:0 16px 45px rgba(105,68,56,.085)!important}
+    #tab-root h1,#tab-root h2,#tab-root h3{color:#5f3d34}
+    #tab-root .primary,#tab-root .v21-primary{background:linear-gradient(105deg,var(--katos-page-accent),#b9d5a5)!important;color:white!important;border-color:transparent!important}
+    #tab-root input:focus,#tab-root textarea:focus,#tab-root select:focus{border-color:var(--katos-page-accent)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--katos-page-accent) 14%,transparent)!important}
+    .v21-app:has([data-nav="home"].active){--katos-page-accent:#ed8eb2}.v21-app:has([data-nav="home"].active) #tab-root{--katos-page-accent:#ed8eb2;--katos-page-soft:#fff0f6;--katos-page-motif:"🏡  HOME SWEET HOME  ✦  🍓"}
+    .v21-app:has([data-nav="planner"].active){--katos-page-accent:#ca8fbd}.v21-app:has([data-nav="planner"].active) #tab-root{--katos-page-accent:#ca8fbd;--katos-page-soft:#faf0ff;--katos-page-motif:"📅  BERRY BUSY  ✦  ✏️"}
+    .v21-app:has([data-nav="tasks"].active){--katos-page-accent:#df89a8}.v21-app:has([data-nav="tasks"].active) #tab-root{--katos-page-accent:#df89a8;--katos-page-soft:#fff0f5;--katos-page-motif:"📝  SWEET TO-DOS  ✦  ✅"}
+    .v21-app:has([data-nav="mochini"].active){--katos-page-accent:#d99bab}.v21-app:has([data-nav="mochini"].active) #tab-root{--katos-page-accent:#d99bab;--katos-page-soft:#fff1f5;--katos-page-motif:"🍡  MOCHINI  ✦  💭"}
+    .v21-app:has([data-nav="garden"].active){--katos-page-accent:#8eb783}.v21-app:has([data-nav="garden"].active) #tab-root{--katos-page-accent:#8eb783;--katos-page-soft:#f1f8ed;--katos-page-motif:"🌷  GROWTH GARDEN  ✦  🪴"}
+    .v21-app:has([data-nav="school"].active){--katos-page-accent:#9d8dcc}.v21-app:has([data-nav="school"].active) #tab-root{--katos-page-accent:#9d8dcc;--katos-page-soft:#f5f1ff;--katos-page-motif:"📚  SCHOOL  ✦  ✏️"}
+    .v21-app:has([data-nav="work"].active){--katos-page-accent:#7e9fb2}.v21-app:has([data-nav="work"].active) #tab-root{--katos-page-accent:#7e9fb2;--katos-page-soft:#eef7fb;--katos-page-motif:"💼  WORK  ✦  📎"}
+    .v21-app:has([data-nav="money"].active){--katos-page-accent:#d5a05e}.v21-app:has([data-nav="money"].active) #tab-root{--katos-page-accent:#d5a05e;--katos-page-soft:#fff6e5;--katos-page-motif:"👛  COIN PURSE  ✦  🪙"}
+    .v21-app:has([data-nav="reminders"].active){--katos-page-accent:#d8849f}.v21-app:has([data-nav="reminders"].active) #tab-root{--katos-page-accent:#d8849f;--katos-page-soft:#fff0f4;--katos-page-motif:"🔔  REMINDERS  ✦  💌"}
+    .v21-app:has([data-nav="noms"].active){--katos-page-accent:#d59373}.v21-app:has([data-nav="noms"].active) #tab-root{--katos-page-accent:#d59373;--katos-page-soft:#fff2eb;--katos-page-motif:"🍱  NOMS  ✦  🥐"}
+    .v21-app:has([data-nav="sips"].active){--katos-page-accent:#7db4c8}.v21-app:has([data-nav="sips"].active) #tab-root{--katos-page-accent:#7db4c8;--katos-page-soft:#eefaff;--katos-page-motif:"💧  SIPS  ✦  🫧"}
+    .v21-app:has([data-nav="brain"].active){--katos-page-accent:#aa91ce}.v21-app:has([data-nav="brain"].active) #tab-root{--katos-page-accent:#aa91ce;--katos-page-soft:#f6f0ff;--katos-page-motif:"🧠  BRAIN BLOOM  ✦  🌸"}
+    .v21-app:has([data-nav="wellness"].active){--katos-page-accent:#d983ad}.v21-app:has([data-nav="wellness"].active) #tab-root{--katos-page-accent:#d983ad;--katos-page-soft:#fff0f7;--katos-page-motif:"🌸  WELLNESS  ✦  🌿"}
+    .v21-app:has([data-nav="goals"].active){--katos-page-accent:#978bc6}.v21-app:has([data-nav="goals"].active) #tab-root{--katos-page-accent:#978bc6;--katos-page-soft:#f4f1ff;--katos-page-motif:"🌙  DREAM BOARD  ✦  ⭐"}
+    .v21-app:has([data-nav="projects"].active){--katos-page-accent:#bf8c9e}.v21-app:has([data-nav="projects"].active) #tab-root{--katos-page-accent:#bf8c9e;--katos-page-soft:#fff2f6;--katos-page-motif:"🗂️  PROJECTS  ✦  📌"}
+    .v21-app:has([data-nav="labs"].active){--katos-page-accent:#79a99e}.v21-app:has([data-nav="labs"].active) #tab-root{--katos-page-accent:#79a99e;--katos-page-soft:#eef9f6;--katos-page-motif:"🔬  KAT LABS  ✦  🧪"}
+    .v21-app:has([data-nav="wins"].active){--katos-page-accent:#d4a35f}.v21-app:has([data-nav="wins"].active) #tab-root{--katos-page-accent:#d4a35f;--katos-page-soft:#fff7e8;--katos-page-motif:"🏆  WINS  ✦  🌟"}
+    .v21-app:has([data-nav="settings"].active){--katos-page-accent:#c382a7}.v21-app:has([data-nav="settings"].active) #tab-root{--katos-page-accent:#c382a7;--katos-page-soft:#fff0f8;--katos-page-motif:"🎀  BEHIND THE BOWS  ✦  ⚙️"}
+    .v21-app:has([data-nav="hub"].active){--katos-page-accent:#7ca7b2}.v21-app:has([data-nav="hub"].active) #tab-root{--katos-page-accent:#7ca7b2;--katos-page-soft:#eff9fb;--katos-page-motif:"✨  KATOS HUB  ✦  🍓"}
+    .v21-app:has([data-nav="archive"].active){--katos-page-accent:#a98f84}.v21-app:has([data-nav="archive"].active) #tab-root{--katos-page-accent:#a98f84;--katos-page-soft:#f8f3f0;--katos-page-motif:"📦  ARCHIVE  ✦  🎀"}
+    @media(max-width:600px){#tab-root:before{margin-bottom:10px;padding:9px 10px;border-radius:17px;font-size:9px;letter-spacing:.08em}.v21-sidebar:before{display:none}}
+  </style>
 </head>
 <body>
   <div id="app" class="v17-app v21-app">
@@ -27,10 +69,10 @@
   <script src="./v20-popup.js?v=22.0.1-20260816"></script>
   <script src="./v22-popup-polish.js?v=22.3.1-20260819"></script>
   <script type="module">
-    const BUILD='V22.3.1-2026-08-19';
+    const BUILD='V22.4.0-2026-08-19';
     const moduleSuffix=location.protocol==='file:'?'':'?build='+encodeURIComponent(BUILD);
     const root=document.getElementById('tab-root'),sidebar=document.getElementById('v21-sidebar');
-    const groups=[['CORE',[['home','🏠','Home'],['planner','📅','Planner'],['tasks','📝','Tasks'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Garden'],['school','🎓','School'],['work','💼','Work'],['money','☕','Money'],['reminders','🔔','Reminders'],['noms','🍱','Noms'],['sips','💧','Sips']]],['MIND',[['brain','🧠','Brain'],['wellness','🌸','Wellness'],['goals','🌙','Dreamscape'],['projects','🗂','Projects'],['labs','🔬','Kat Labs'],['wins','🏆','Wins']]],['SYSTEM',[['settings','⚙️','Settings'],['hub','✨','KatOS Hub']]]];
+    const groups=[['CORE',[['home','🏠','Home Sweet Home'],['planner','📅','Berry Busy'],['tasks','📝','Sweet To-Dos'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Growth Garden'],['school','🎓','School'],['work','💼','Work'],['money','👛','Coin Purse'],['reminders','🔔','Reminders'],['noms','🍱','Noms'],['sips','💧','Sips']]],['MIND',[['brain','🧠','Brain Bloom'],['wellness','🌸','Wellness'],['goals','🌙','Dream Board'],['projects','🗂','Projects'],['labs','🔬','Kat Labs'],['wins','🏆','Wins']]],['SYSTEM',[['settings','🎀','Behind the Bows'],['hub','✨','KatOS Hub']]]];
     const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Archive'});
     const queued=new Set(Object.keys(labels));let modules={},routerRef=null;
     const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
