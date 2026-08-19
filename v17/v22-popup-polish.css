@@ -126,8 +126,25 @@
 .sm-popup-inline{margin:14px 0!important}
 .sm-popup-inline>[data-close-editor],.sm-popup-inline>[data-close-cycle],.sm-popup-inline header>[data-close-editor],.sm-popup-inline header>[data-close-cycle],.sm-popup-inline header>#cancelOnHand{position:absolute!important;top:16px!important;right:16px!important;width:43px!important;height:43px!important;padding:0!important;border-radius:50%!important;border:1.5px solid #ed9fbc!important;background:linear-gradient(145deg,#fff,#ffeaf3)!important;color:#e45e91!important;font-size:23px!important;z-index:30!important}
 .sm-popup-inline .sm-money-form{margin-top:10px}
+/* v20-popup intentionally keeps legacy modals in safe document flow. These higher-specificity rules skin that stable container without changing its layout mechanics. */
+.v20-flow-popup .v17-modal-box,.v20-flow-popup .v18-event-modal-box{
+  background:
+    radial-gradient(circle at 92% 14%,rgba(243,154,188,.16) 0 3px,transparent 4px),
+    radial-gradient(circle at 88% 19%,rgba(184,213,168,.15) 0 2px,transparent 3px),
+    linear-gradient(135deg,#fff9fc 0%,#fffdfb 58%,#f6fbf1 100%)!important;
+  border:2px solid var(--sm-popup-line)!important;
+  border-radius:34px!important;
+  padding:26px!important;
+  color:var(--sm-popup-ink)!important;
+  box-shadow:0 24px 70px rgba(92,56,47,.17),0 0 0 7px rgba(255,255,255,.5)!important;
+}
+.v20-flow-popup .v17-modal-box::after,.v20-flow-popup .v18-event-modal-box::after{
+  content:"";position:absolute;left:22px;right:22px;top:0;height:9px;
+  background:radial-gradient(circle at 7px 0,#fff 6px,transparent 6.5px) 0 0/14px 10px repeat-x;
+  opacity:.95;pointer-events:none;
+}
 @media(max-width:760px){
-  .v17-modal-box,.v18-event-modal-box,.v18-day-review-box,.sm-routine-editor,.sm-popup-inline{border-radius:27px!important;padding:20px!important}
+  .v17-modal-box,.v18-event-modal-box,.v18-day-review-box,.sm-routine-editor,.sm-popup-inline,.v20-flow-popup .v17-modal-box,.v20-flow-popup .v18-event-modal-box{border-radius:27px!important;padding:20px!important}
   .sm-popup-category-icon{width:46px;height:46px;flex-basis:46px;font-size:24px}
   .v17-modal-actions,.sm-routine-editor-actions{flex-wrap:wrap}
   .v17-modal-actions button,.sm-routine-editor-actions button{flex:1 1 130px}
