@@ -1,0 +1,18 @@
+import assert from'node:assert/strict';
+import{attentionForMonth,moneySummaryForMonth,occurrenceDatesForMonth,occurrenceState,updateCycle}from'./money-core.js';
+const reference=new Date(2026,7,19,12);
+assert.deepEqual(occurrenceDatesForMonth({repeat:'Monthly',due:'2026-01-31'},new Date(2026,1,10,12)),['2026-02-28']);
+const money={onHand:{amount:1000},bills:[{id:'rent',name:'Rent',kind:'fixed',amount:600,repeat:'Monthly',due:'2026-08-01',cycles:{'2026-08-01':{paid:true}}},{id:'electric',name:'Electric',kind:'variable',typicalAmount:80,amount:80,repeat:'Monthly',due:'2026-08-27'}],subscriptions:[{id:'spotify',name:'Spotify',amount:11.99,repeat:'Monthly',due:'2026-08-25'}]};
+const initial=moneySummaryForMonth(money,reference);
+assert.equal(initial.onHand,1000);
+assert.equal(initial.unpaidTotal,91.99);
+assert.equal(initial.freeAfterBills,908.01);
+assert.equal(initial.estimatedCount,1);
+assert.ok(attentionForMonth(money,reference).some(item=>item.attention==='amount_needed'&&item.item.id==='electric'));
+const electric=money.bills[1],updated=updateCycle(electric,'2026-08-27',{amount:103.42,paid:true,status:'paid'}),occ=occurrenceState(updated,'2026-08-27');
+assert.equal(occ.amount,103.42);assert.equal(occ.paid,true);assert.equal(occ.estimated,false);assert.equal(electric.typicalAmount,80,'cycle override must not mutate the usual estimate');
+const nextMoney={...money,bills:[money.bills[0],updated]};
+const next=moneySummaryForMonth(nextMoney,reference);
+assert.equal(next.unpaidTotal,11.99);
+assert.equal(next.freeAfterBills,988.01);
+console.log('Money Café core tests passed');
