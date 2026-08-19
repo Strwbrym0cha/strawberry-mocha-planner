@@ -1,4 +1,8 @@
 import{localDateKey,normalizeTask}from'./data.js?v=22.1.27-20260818';
+import{installRoutineCreator}from'./routine-creator.js?v=22.6.1-20260819';
+
+const routineCreatorRoot=document.getElementById('tab-root');
+if(routineCreatorRoot)installRoutineCreator({root:routineCreatorRoot});
 
 const DATE=/^\d{4}-\d{2}-\d{2}$/;
 const EFFORT=new Set(['','Low','Medium','High']);
