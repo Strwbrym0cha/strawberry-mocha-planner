@@ -1,10 +1,10 @@
-/* KatOS V22.3: one popup visual language, category-aware. */
+/* KatOS V22.10: one popup visual language, category-aware. */
 (()=>{
   const categories={
     planner:{icon:'📅',label:'PLANNER',hint:'Schedule it clearly and keep the details together.'},
     money:{icon:'💲',label:'MONEY CAFÉ',hint:'Money details, without accountant cosplay.'},
     tasks:{icon:'📝',label:'TASKS',hint:'One clear action at a time.'},
-    routines:{icon:'🌷',label:'ROUTINES',hint:'A sequence, not a pile of separate obligations.'},
+    routines:{icon:'🎀',label:'ROUTINES',hint:'A sequence, not a pile of separate obligations.'},
     reminders:{icon:'🔔',label:'REMINDERS',hint:'Keep future-you gently informed.'},
     noms:{icon:'🍱',label:'NOMS',hint:'Food decisions made a little smaller.'},
     sips:{icon:'💧',label:'SIPS',hint:'Hydration, without turning it into homework.'},
@@ -27,9 +27,9 @@
     [/routine|gateway/i,'routines'],
     [/reminder|birthday/i,'reminders'],
     [/task|mission/i,'tasks'],
+    [/school|course|assignment|class|deadline/i,'school'],
     [/nom|food|meal|recipe|pantry|grocery/i,'noms'],
     [/sip|water|drink|hydr/i,'sips'],
-    [/school|course|assignment|class|deadline/i,'school'],
     [/work|shift/i,'work'],
     [/wellness|mood|energy|check-in/i,'wellness'],
     [/goal|dream/i,'goals'],
@@ -41,11 +41,13 @@
   ];
   const activePage=()=>document.querySelector('#v21-sidebar [data-nav].active')?.dataset.nav||'home';
   const infer=panel=>{
+    if(panel?.closest?.('.sm-course-corner')||panel?.classList?.contains('sm-course-corner'))return'school';
     const explicit=panel.dataset.popupCategory;
     if(explicit&&categories[explicit])return explicit;
+    const page=activePage();
+    if(page!=='home'&&categories[page])return page;
     const text=panel.textContent||'';
     for(const [pattern,key] of keywordRules)if(pattern.test(text))return key;
-    const page=activePage();
     return categories[page]?page:'home';
   };
   const decorate=panel=>{
