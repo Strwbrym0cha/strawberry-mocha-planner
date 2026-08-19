@@ -66,7 +66,10 @@
     const panels=[];
     if(root?.matches?.('.v17-modal-box,.v18-event-modal-box,.v18-day-review-box,.sm-routine-editor'))panels.push(root);
     root?.querySelectorAll?.('.v17-modal-box,.v18-event-modal-box,.v18-day-review-box,.sm-routine-editor').forEach(panel=>panels.push(panel));
-    panels.forEach(decorate);
+    const moneyEditor=root?.matches?.('[data-close-editor],[data-close-cycle],#cancelOnHand')?root.closest?.('.v17-card'):null;
+    if(moneyEditor){moneyEditor.classList.add('sm-popup-inline');moneyEditor.dataset.popupCategory='money';panels.push(moneyEditor)}
+    root?.querySelectorAll?.('[data-close-editor],[data-close-cycle],#cancelOnHand').forEach(control=>{const panel=control.closest('.v17-card');if(panel){panel.classList.add('sm-popup-inline');panel.dataset.popupCategory='money';panels.push(panel)}});
+    [...new Set(panels)].forEach(decorate);
   };
   scan(document);
   new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>scan(node)))).observe(document.documentElement,{childList:true,subtree:true});
