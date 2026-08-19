@@ -2,6 +2,7 @@ const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
 const localDateKey=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const clampNumber=(value,fallback,min=0,max=10000)=>{const number=Number(value);return Number.isFinite(number)?Math.min(max,Math.max(min,number)):fallback};
+const isPositiveNumber=value=>Number.isFinite(Number(value))&&Number(value)>0;
 
 export const DEFAULT_SIPS={drink:'Water',servingOz:32,goalOz:64,entries:[]};
 
@@ -35,7 +36,7 @@ export function createSipsActions(store){
   log(amountOz){const amount=clampNumber(amountOz,0,0,512);if(!amount)return{ok:false,error:'Choose an amount greater than 0 oz.'};return update(sips=>{const entry={id:`sip-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,date:localDateKey(),drink:sips.drink,amountOz:amount,createdAt:new Date().toISOString()};return{sips:{...sips,entries:[...sips.entries,entry]},result:{ok:true,entry}}})},
   logServing(){return this.log(normalizeSips(store.get()?.sips).servingOz)},
   setDrink(drink){drink=text(drink);if(!drink)return{ok:false,error:'Give the drink a name first.'};return update(sips=>({sips:{...sips,drink},result:{ok:true,drink}}))},
-  setServingOz(value){const servingOz=clampNumber(value,0,1,128);if(!servingOz)return{ok:false,error:'Serving size must be at least 1 oz.'};return update(sips=>({sips:{...sips,servingOz},result:{ok:true,servingOz}}))},
-  setGoalOz(value){const goalOz=clampNumber(value,0,1,512);if(!goalOz)return{ok:false,error:'Goal must be at least 1 oz.'};return update(sips=>({sips:{...sips,goalOz},result:{ok:true,goalOz}}))}
+  setServingOz(value){if(!isPositiveNumber(value))return{ok:false,error:'Serving size must be at least 1 oz.'};const servingOz=clampNumber(value,1,1,128);return update(sips=>({sips:{...sips,servingOz},result:{ok:true,servingOz}}))},
+  setGoalOz(value){if(!isPositiveNumber(value))return{ok:false,error:'Goal must be at least 1 oz.'};const goalOz=clampNumber(value,1,1,512);return update(sips=>({sips:{...sips,goalOz},result:{ok:true,goalOz}}))}
  };
 }

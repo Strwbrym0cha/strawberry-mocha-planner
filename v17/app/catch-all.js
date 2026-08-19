@@ -55,8 +55,8 @@ export function routeCatchAllCapture(store,captureId,destination,input={}){
  let result=null;
  if(destination==='task')result=createTask(store,{text:clean(input.text)||capture.title,date:clean(input.date),category:clean(input.category),effort:clean(input.effort),durationMin:Number(input.durationMin)||0,sourceCaptureId:capture.id});
  else if(destination==='event')result=addEvent(store,capture,input);
- else if(destination==='nom')result=createNomsActions(store).addNom({name:clean(input.name)||capture.title,type:clean(input.type),effort:clean(input.effort),tags:list(input.tags),notes:clean(input.notes)||capture.text,favorite:!!input.favorite});
- else if(destination==='grocery')result=createNomsActions(store).addGroceryItem({name:clean(input.name)||capture.title,quantity:clean(input.quantity),notes:clean(input.notes)||capture.text});
+ else if(destination==='nom')result=createNomsActions(store).addNom({name:clean(input.name)||capture.title,type:clean(input.type),effort:clean(input.effort),tags:list(input.tags),notes:clean(input.notes)||capture.text,favorite:!!input.favorite,sourceCaptureId:capture.id});
+ else if(destination==='grocery')result=createNomsActions(store).addGroceryItem({name:clean(input.name)||capture.title,quantity:clean(input.quantity),notes:clean(input.notes)||capture.text,sourceCaptureId:capture.id});
  else if(destination==='project')result=addProject(store,capture,input);
  else if(destination==='school_task')result=addSchoolTask(store,capture,input);
  else if(destination==='reminder')result=addReminder(store,capture,input);
