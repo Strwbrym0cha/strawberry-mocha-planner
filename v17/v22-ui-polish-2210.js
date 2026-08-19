@@ -30,13 +30,8 @@
   const patchCourseCorner=()=>{
     document.querySelectorAll('.sm-course-corner').forEach(card=>{
       card.dataset.popupCategory='school';
-      let badge=card.querySelector(':scope > .sm-popup-category-badge');
-      if(!badge){
-        badge=document.createElement('div');
-        badge.className='sm-popup-category-badge';
-        card.prepend(badge);
-      }
-      badge.innerHTML='<span class="sm-popup-category-icon" aria-hidden="true">🎓</span><span class="sm-popup-category-copy"><b>COURSE CORNER</b><span>Course details, next moves, and reflection all stay in Study Nook.</span></span>';
+      const badge=card.querySelector(':scope > .sm-popup-category-badge');
+      if(badge)badge.innerHTML='<span class="sm-popup-category-icon" aria-hidden="true">🎓</span><span class="sm-popup-category-copy"><b>COURSE CORNER</b><span>Course details, next moves, and reflection all stay in Study Nook.</span></span>';
     });
   };
 
