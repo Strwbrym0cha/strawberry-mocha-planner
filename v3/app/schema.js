@@ -3,10 +3,11 @@ import{DEFAULT_KAT_MODEL,DEFAULT_PATTERNS,normalizeKatModel,normalizePatterns}fr
 import{DEFAULT_CONTEXT,normalizeContext}from'./context.js';
 import{normalizeTasks}from'./tasks.js';
 import{normalizeReminders}from'./reminders.js';
+import{normalizeSips}from'./sips.js';
 
 export const V3_SCHEMA_VERSION=1;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.5';
+export const V3_BUILD='3.0.0-alpha.6';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -31,7 +32,7 @@ export const DEFAULT_V3_STATE={
   },
   nourish:{
     noms:{foods:[],recipes:[],history:[]},
-    sips:{fridge:[],history:[]}
+    sips:normalizeSips({fridge:[],history:[]})
   },
   movement:{sessions:[],routines:[],videos:[],weighIns:[]},
   education:{courses:[],tasks:[],goals:[]},
@@ -86,7 +87,7 @@ export function normalizeV3State(value){
     },
     nourish:{
       noms:{...fallback.nourish.noms,...object(nourish.noms)},
-      sips:{...fallback.nourish.sips,...object(nourish.sips)}
+      sips:normalizeSips(nourish.sips)
     },
     movement:{...fallback.movement,...movement},
     education:{...fallback.education,...education},
