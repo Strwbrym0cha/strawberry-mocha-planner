@@ -22,7 +22,7 @@
     .hero:after{content:"🍓  ✦  🎀  ✦  🍡";position:absolute;right:24px;top:20px;color:#d992ad;opacity:.42;letter-spacing:.24em;font-size:18px}
     .eyebrow{font-size:10px;letter-spacing:.16em;font-weight:950;color:var(--pink-deep)}
     h1{margin:7px 0 4px;font-size:clamp(34px,6vw,58px);line-height:.98;letter-spacing:-.055em}
-    .hero p{max-width:650px;margin:12px 0 0;color:var(--muted);line-height:1.55}
+    .hero p{max-width:700px;margin:12px 0 0;color:var(--muted);line-height:1.55}
     .status-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
     .pill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.75);font-size:11px;font-weight:850;color:#86655e}
     .pill.safe{background:var(--sage-soft);border-color:#d4e6ca;color:#66855a}
@@ -52,6 +52,20 @@
     .switch i:after{content:"";position:absolute;width:19px;height:19px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(96,66,57,.18);transition:.18s}
     .switch input:checked+i{background:linear-gradient(100deg,var(--pink),var(--sage))}
     .switch input:checked+i:after{transform:translateX(18px)}
+    .brain-card{background:linear-gradient(140deg,rgba(255,244,249,.98),rgba(255,253,251,.98) 50%,rgba(239,248,234,.98));border-color:#eebbd0}
+    .brain-hero{padding:17px;border:1px solid #edc9d8;border-radius:21px;background:rgba(255,255,255,.78);margin-bottom:12px}
+    .brain-headline{font-size:clamp(21px,3vw,30px);font-weight:950;letter-spacing:-.035em;color:#68433a}
+    .brain-context{margin-top:5px;color:var(--muted);font-size:10px}
+    .brain-chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+    .brain-chip{padding:7px 9px;border:1px solid #eed3de;border-radius:11px;background:#fff;font-size:10px;font-weight:900;color:#7d5b54}
+    .brain-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .brain-panel{min-width:0;padding:13px;border:1px solid #ecd5de;border-radius:18px;background:rgba(255,255,255,.76)}
+    .brain-panel small{display:block;color:var(--pink-deep);font-size:9px;letter-spacing:.1em;font-weight:950;text-transform:uppercase;margin-bottom:7px}
+    .brain-panel b{display:block;font-size:12px;margin-bottom:5px}
+    .brain-panel div,.brain-panel li{font-size:10px;line-height:1.5;color:#7d5d56}
+    .brain-panel ol,.brain-panel ul{margin:5px 0 0;padding-left:18px}
+    .brain-suggestion{margin-top:10px;padding:11px 13px;border-radius:16px;background:linear-gradient(110deg,#fff0f6,#f0f8eb);font-size:11px;line-height:1.45;color:#76554e}
+    .brain-suggestion b{color:#b8587c}
     .model-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
     .model{padding:13px;border:1px solid #eddae1;border-radius:18px;background:linear-gradient(145deg,#fff,#fff8fb 65%,#f5faef);min-width:0}
     .model small{display:block;color:var(--pink-deep);font-weight:950;font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
@@ -62,20 +76,21 @@
     .btn.primary{border-color:transparent;background:linear-gradient(105deg,var(--pink),var(--sage));color:#fff}
     .save-state{font-size:10px;color:var(--muted)}
     .dev-note{margin-top:16px;padding:14px 17px;border:1px dashed #eac5d4;border-radius:18px;background:rgba(255,255,255,.66);font-size:11px;color:#8e6d66;line-height:1.55}
-    @media(max-width:800px){.grid{grid-template-columns:1fr}.card.full{grid-column:auto}.model-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:560px){body{padding:10px 10px 48px}.hero{padding:22px 18px;border-radius:27px}.hero:after{display:none}.context-grid,.model-grid{grid-template-columns:1fr}.context-wide{grid-column:auto}.card{padding:17px;border-radius:22px}.rule{grid-template-columns:auto minmax(0,1fr) auto}}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.card.full{grid-column:auto}.model-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.brain-grid{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){body{padding:10px 10px 48px}.hero{padding:22px 18px;border-radius:27px}.hero:after{display:none}.context-grid,.model-grid,.brain-grid{grid-template-columns:1fr}.context-wide{grid-column:auto}.card{padding:17px;border-radius:22px}.rule{grid-template-columns:auto minmax(0,1fr) auto}}
   </style>
 </head>
 <body>
   <main class="shell">
     <section class="hero">
-      <div class="eyebrow">🍓 KATOS V3 · ALPHA 1 · KAT-NATIVE FOUNDATION</div>
+      <div class="eyebrow">🍓 KATOS V3 · ALPHA 2 · BRAIN ONLINE</div>
       <h1>The new nervous system.</h1>
-      <p>V3 starts with who Kat is, how today feels, and the rules KatOS must respect. Nothing here reads or overwrites V2.</p>
+      <p>V3 now turns who Kat is + how today feels + the Constitution into one shared operating policy. Home, TaskBot, Mochini, and the rest can eventually consume the same brain.</p>
       <div class="status-row">
         <span class="pill">🧠 Kat Model V1</span>
         <span class="pill">📜 Constitution V1</span>
         <span class="pill">🌤 Context V1</span>
+        <span class="pill">⚙️ Brain V1</span>
         <span class="pill safe">🔒 V2 untouched</span>
       </div>
     </section>
@@ -90,6 +105,24 @@
       <section class="card">
         <div class="card-head"><div><div class="eyebrow">📜 PERSONAL LAWS</div><h2>Kat Constitution</h2><p>Explicit rules outrank learned patterns.</p></div><div class="count" id="activeRuleCount">0</div></div>
         <div class="rules" id="rules"></div>
+      </section>
+
+      <section class="card full brain-card">
+        <div class="card-head"><div><div class="eyebrow">⚙️ SHARED DECISION POLICY</div><h2>KatOS Brain</h2><p>The Brain does not choose a task yet. It decides how every V3 system should operate under the current conditions.</p></div><div class="count">B1</div></div>
+        <div class="brain-hero">
+          <div class="brain-headline" id="brainHeadline">Keep the next choice clear.</div>
+          <div class="brain-context" id="brainContext"></div>
+          <div class="brain-chips" id="brainChips"></div>
+        </div>
+        <div class="brain-grid">
+          <article class="brain-panel"><small>Decision Surface</small><b id="brainChoices"></b><div id="brainDecisionPolicy"></div></article>
+          <article class="brain-panel"><small>Momentum + Protection</small><b id="brainMomentum"></b><div id="brainProtection"></div></article>
+          <article class="brain-panel"><small>Priority Order</small><ol id="brainPriorities"></ol></article>
+          <article class="brain-panel"><small>Mochini / Nudges</small><b id="brainNudge"></b><div id="brainCommunication"></div></article>
+          <article class="brain-panel"><small>Constitution Effects</small><div id="brainConstitution"></div></article>
+          <article class="brain-panel"><small>Why the Brain chose this</small><ul id="brainReasons"></ul></article>
+        </div>
+        <div class="brain-suggestion" id="brainSuggestion" hidden></div>
       </section>
 
       <section class="card full">
@@ -107,13 +140,14 @@
       <span class="save-state" id="saveState">Stored only in sm_v3_beta.</span>
       <div><button class="btn" id="resetContext" type="button">🌤 Reset today</button> <button class="btn" id="resetV3" type="button">↺ Reset V3 alpha</button></div>
     </div>
-    <div class="dev-note"><b>Alpha boundary:</b> this screen is intentionally not the V3 Home dashboard yet. It is our foundation lab. Next we can build the first KatOS Brain rules against this state, then let Home and Mochini consume the same logic instead of inventing their own.</div>
+    <div class="dev-note"><b>Alpha boundary:</b> the Brain currently creates policy, not content. It does not pick a task, move a reminder, activate a mode, or talk as Mochini yet. That is deliberate. The next layer can ask this Brain for policy instead of inventing its own rules.</div>
   </main>
 
   <script type="module">
-    import{loadV3State,saveV3State,resetV3State,V3_STORAGE_KEY}from'./app/schema.js';
+    import{loadV3State,saveV3State,resetV3State,V3_STORAGE_KEY,V3_BUILD}from'./app/schema.js';
     import{activeRules,setConstitutionRule}from'./app/constitution.js';
     import{CONTEXT_OPTIONS,DEFAULT_CONTEXT,contextLabel,updateContext}from'./app/context.js';
+    import{evaluateStateBrain,brainStatusChips,brainContextSummary}from'./app/brain.js';
 
     let state=loadV3State();
     const $=id=>document.getElementById(id);
@@ -122,8 +156,9 @@
 
     function persist(message='Saved to V3 beta'){
       state=saveV3State(state);
-      $('saveState').textContent=`✓ ${message} · ${new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`;
+      $('saveState').textContent=`✓ ${message} · ${new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})} · ${V3_BUILD}`;
       window.__katOSV3=state;
+      window.__katOSBrain=evaluateStateBrain(state);
     }
 
     function contextSelect(key){
@@ -136,15 +171,35 @@
       const keys=['brain','energy','capacity','pressure','socialBattery','mode'];
       $('contextSummary').innerHTML=keys.map(key=>{const item=contextLabel(key,state.context[key]);return `<span class="context-chip">${item.icon} ${esc(item.label)}</span>`}).join('');
       $('contextModeIcon').textContent=contextLabel('mode',state.context.mode).icon||'🍓';
-      document.querySelectorAll('[data-context]').forEach(select=>select.addEventListener('change',()=>{state={...state,context:updateContext(state.context,{[select.dataset.context]:select.value})};persist('Context updated');drawContext()}));
-      document.querySelectorAll('[data-context-text]').forEach(input=>input.addEventListener('change',()=>{state={...state,context:updateContext(state.context,{[input.dataset.contextText]:input.value})};persist('Context updated');drawContext()}));
+      document.querySelectorAll('[data-context]').forEach(select=>select.addEventListener('change',()=>{state={...state,context:updateContext(state.context,{[select.dataset.context]:select.value})};persist('Context updated');drawContext();drawBrain()}));
+      document.querySelectorAll('[data-context-text]').forEach(input=>input.addEventListener('change',()=>{state={...state,context:updateContext(state.context,{[input.dataset.contextText]:input.value})};persist('Context updated');drawContext();drawBrain()}));
     }
 
     function drawRules(){
       const rules=state.profile.constitution||[];
       $('activeRuleCount').textContent=activeRules(rules).length;
       $('rules').innerHTML=rules.map(rule=>`<div class="rule"><span class="rule-icon">${esc(rule.icon)}</span><div><b>${esc(rule.title)}</b><small>${esc(rule.description)}</small></div><label class="switch" aria-label="Toggle ${esc(rule.title)}"><input type="checkbox" data-rule="${esc(rule.id)}" ${rule.enabled?'checked':''}><i></i></label></div>`).join('');
-      document.querySelectorAll('[data-rule]').forEach(input=>input.addEventListener('change',()=>{state={...state,profile:{...state.profile,constitution:setConstitutionRule(state.profile.constitution,input.dataset.rule,input.checked)}};persist('Constitution updated');drawRules()}));
+      document.querySelectorAll('[data-rule]').forEach(input=>input.addEventListener('change',()=>{state={...state,profile:{...state.profile,constitution:setConstitutionRule(state.profile.constitution,input.dataset.rule,input.checked)}};persist('Constitution updated');drawRules();drawBrain()}));
+    }
+
+    function drawBrain(){
+      const policy=evaluateStateBrain(state);
+      window.__katOSBrain=policy;
+      $('brainHeadline').textContent=policy.headline;
+      $('brainContext').textContent=brainContextSummary(policy);
+      $('brainChips').innerHTML=brainStatusChips(policy).map(chip=>`<span class="brain-chip">${esc(chip)}</span>`).join('');
+      $('brainChoices').textContent=`Show ${policy.choiceCount} choice${policy.choiceCount===1?'':'s'} · ${esc(policy.taskEnergyCeiling)} effort ceiling`;
+      $('brainDecisionPolicy').textContent=`Focus: ${title(policy.focusScope)} · Initiation: ${title(policy.initiationStyle)} · ${policy.restAllowed?'Rest may be recommended.':'Rest is not currently surfaced as a recommendation.'}`;
+      $('brainMomentum').textContent=title(policy.momentumPolicy);
+      $('brainProtection').textContent=`Protected commitments: ${title(policy.protectedCommitments)}. ${policy.allowBonusWork?'Extra momentum may expand the plan.':'Completion does not create bonus obligations.'}`;
+      $('brainPriorities').innerHTML=policy.priorities.map(item=>`<li>${esc(title(item))}</li>`).join('');
+      $('brainNudge').textContent=`${title(policy.nudgeLevel)} nudges · ${title(policy.reminderStyle)} reminder style`;
+      $('brainCommunication').textContent=`${policy.answerBeforeNudging?'Answer first, then nudge.':'Contextual nudges may lead.'} ${policy.allowMochiniToChoose?'Mochini may make a choice when asked.':'Mochini should present choices instead of deciding.'}`;
+      $('brainConstitution').innerHTML=`Partial progress: <b>${policy.partialProgressCounts?'counts':'strict completion'}</b><br>Planning language: <b>${policy.guiltFreePlanning?'guilt-free':'neutral default'}</b><br>Bonus work: <b>${policy.allowBonusWork?'allowed':'do not invent'}</b>`;
+      $('brainReasons').innerHTML=(policy.reasons.length?policy.reasons:['Current context is neutral, so the Brain is using Kat Model defaults.']).map(reason=>`<li>${esc(reason)}</li>`).join('');
+      const suggestion=$('brainSuggestion');
+      if(policy.modeSuggestion){suggestion.hidden=false;suggestion.innerHTML=`<b>${esc(policy.modeSuggestion.icon)} Suggested mode: ${esc(policy.modeSuggestion.label)}</b><br>${esc(policy.modeSuggestion.reason)}`}
+      else{suggestion.hidden=true;suggestion.innerHTML=''}
     }
 
     function formatModelGroup(group){
@@ -162,7 +217,7 @@
       $('patterns').innerHTML=patterns.length?`<div class="model-grid">${patterns.map(pattern=>`<article class="model"><small>${esc(pattern.status||'candidate')} · ${Math.round((Number(pattern.confidence)||0)*100)}%</small><div><b>${esc(pattern.label)}</b><br>${esc(pattern.description||'')}${pattern.evidenceCount?`<br>Evidence: ${Number(pattern.evidenceCount)}`:''}</div></article>`).join('')}</div>`:'<div class="empty">🌱 No learned patterns yet. Good. V3 starts by listening before it decides it knows anything.</div>';
     }
 
-    function draw(){drawContext();drawRules();drawModel();drawPatterns();window.__katOSV3=state}
+    function draw(){drawContext();drawRules();drawBrain();drawModel();drawPatterns();window.__katOSV3=state}
 
     $('resetContext').addEventListener('click',()=>{
       state={...state,context:updateContext(DEFAULT_CONTEXT,{})};
@@ -176,7 +231,7 @@
     });
 
     draw();
-    persist('V3 alpha ready');
+    persist('V3 Alpha 2 ready');
   </script>
 </body>
 </html>
