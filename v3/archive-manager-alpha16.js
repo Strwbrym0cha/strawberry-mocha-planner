@@ -1,5 +1,5 @@
 import{loadV3State,saveV3State,V3_BUILD}from'./app/schema.js?v=3.0.0-alpha.16.2';
-import{archiveRefs,isArchived,archiveRecord,restoreRecord}from'./app/archive-policy.js?v=1';
+import{archiveRefs,isArchived,archiveRecord,restoreRecord}from'./app/archive-policy.js?v=2';
 const app=document.getElementById('app');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const list=v=>Array.isArray(v)?v:[];
@@ -7,6 +7,7 @@ const title=x=>String(x?.title||x?.name||x?.text||x?.label||'Untitled').trim()||
 let query='';
 function rows(state){const groups=[
  ['task','📝 Sweet To-Dos',state.life?.tasks],
+ ['reminder','🔔 Little Pings',state.life?.reminders],
  ['thread','🧵 Threads / projects',state.life?.threads],
  ['routine','🔁 Routines',state.life?.routines],
  ['event','📅 Berry Busy items',state.life?.events],
