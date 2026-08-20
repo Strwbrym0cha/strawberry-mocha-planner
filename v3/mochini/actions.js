@@ -1,7 +1,7 @@
 import{createTask}from'../app/tasks.js';
 import{createReminder}from'../app/reminders.js';
 
-export const MOCHINI_ACTIONS_VERSION=1;
+export const MOCHINI_ACTIONS_VERSION=2;
 
 const text=value=>String(value??'').trim();
 const pad=n=>String(n).padStart(2,'0');
@@ -45,15 +45,29 @@ function inferWhen(input,now){
   return{date:'',timing:'specific',label:''};
 }
 
+function actionClause(input){
+  const source=text(input);
+  const patterns=[
+    /(?:^|\b(?:and|also|but)\s+)i\s+(?:totally\s+)?forgot\s+(?:that\s+)?(.+)$/i,
+    /(?:^|\b(?:and|also|but)\s+)i\s+(?:just\s+)?remembered\s+(?:that\s+)?(.+)$/i,
+    /(?:^|\b(?:and|also|but)\s+)i\s+(?:really\s+)?(?:need|have|gotta|must)\s+(?:to\s+)?(.+)$/i,
+    /(?:^|\b(?:and|also|but)\s+)we\s+(?:really\s+)?(?:need|have|gotta|must)\s+(?:to\s+)?(.+)$/i,
+    /(?:^|\b(?:and|also|but)\s+)(?:remind me|don't let me forget|dont let me forget)\s+(?:to\s+)?(.+)$/i
+  ];
+  for(const pattern of patterns){const match=source.match(pattern);if(match?.[1])return match[1].trim()}
+  return source;
+}
+
 function cleanTitle(input){
-  let value=text(input)
-    .replace(/^(?:crap|ugh|omg|shoot|damn|oops)[,! ]*/i,'')
+  let value=actionClause(input)
+    .replace(/^(?:crap|ugh|omg|shoot|damn|oops|girl)[,! ]*/i,'')
     .replace(/^mochini[,! ]*/i,'')
-    .replace(/^(?:crap|ugh|omg|shoot|damn|oops)[,! ]*/i,'')
+    .replace(/^(?:crap|ugh|omg|shoot|damn|oops|girl)[,! ]*/i,'')
     .replace(/^i\s+(?:totally\s+)?forgot\s+(?:that\s+)?/i,'')
     .replace(/^i\s+(?:just\s+)?remembered\s+(?:that\s+)?/i,'')
     .replace(/^i\s+(?:really\s+)?(?:need|have|gotta|must)\s+(?:to\s+)?/i,'')
     .replace(/^we\s+(?:really\s+)?(?:need|have|gotta|must)\s+(?:to\s+)?/i,'')
+    .replace(/^(?:remind me|don't let me forget|dont let me forget)\s+(?:to\s+)?/i,'')
     .replace(/\s+(?:before|by)\s+(?:the\s+)?end\s+of\s+(?:the\s+)?week\b.*$/i,'')
     .replace(/\s+this\s+week\b.*$/i,'')
     .replace(/\s+(?:tonight|today|tomorrow)\b.*$/i,'')
@@ -68,8 +82,8 @@ function cleanTitle(input){
 export function proposeFromMessage(message,nowValue=new Date()){
   const input=text(message),lower=input.toLowerCase(),now=nowValue instanceof Date?nowValue:new Date(nowValue);
   if(!input)return null;
-  const when=inferWhen(input,now);
-  const reminderScore=(/remind me|don't let me forget|dont let me forget|i forgot|forgot i|i just remembered/.test(lower)?3:0)+(when.date?2:0)+(/\bbefore\b|\bby\b|tonight|tomorrow|this week/.test(lower)?1:0);
+  const clause=actionClause(input),when=inferWhen(clause,now);
+  const reminderScore=(/remind me|don't let me forget|dont let me forget|i forgot|forgot i|i just remembered/.test(lower)?3:0)+(when.date?2:0)+(/\bbefore\b|\bby\b|tonight|tomorrow|this week/.test(clause.toLowerCase())?1:0);
   const taskScore=(/\bi (?:really )?(?:need|have|gotta|must) (?:to )?/.test(lower)?2:0)+(/\bwe (?:really )?(?:need|have|gotta|must) (?:to )?/.test(lower)?2:0);
   if(reminderScore===0&&taskScore===0)return null;
 
