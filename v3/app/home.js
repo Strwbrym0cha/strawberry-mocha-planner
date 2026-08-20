@@ -47,7 +47,8 @@ function collectSignals(state,now){
 }
 
 const signalCard=(key,icon,eyebrow,title,detail,count,priority=5)=>({key,kind:'signal',icon,eyebrow,title,detail,count:Number(count)||0,priority});
-const policyCard=(policy)=>({key:'brain-guidance',kind:'policy',icon:'🧠',eyebrow:'KATOS BRAIN',title:policy.headline,detail:`${policy.choiceCount} visible choice${policy.choiceCount===1?'':'s'} · ${policy.taskEnergyCeiling} effort ceiling · ${policy.initiationStyle.replaceAll('-',' ')}`,count:null,priority:1});
+const policyCard=policy=>({key:'brain-guidance',kind:'policy',icon:'🧠',eyebrow:'KATOS BRAIN',title:policy.headline,detail:`${policy.choiceCount} visible choice${policy.choiceCount===1?'':'s'} · ${policy.taskEnergyCeiling} effort ceiling · ${policy.initiationStyle.replaceAll('-',' ')}`,count:null,priority:1});
+const modeSuggestionCard=policy=>policy.modeSuggestion?{key:'mode-suggestion',kind:'mode-suggestion',icon:policy.modeSuggestion.icon,eyebrow:'BRAIN SUGGESTION',title:`Try ${policy.modeSuggestion.label}`,detail:policy.modeSuggestion.reason,count:null,priority:0}:null;
 
 function candidateCards(state,policy,signals){
   const mode=policy.context.mode,cards=[];
@@ -65,8 +66,10 @@ function candidateCards(state,policy,signals){
 }
 
 function fallbackCards(state,policy,signals){
-  const result=[policyCard(policy)];
-  if(policy.modeSuggestion)result.push({key:'mode-suggestion',kind:'mode-suggestion',icon:policy.modeSuggestion.icon,eyebrow:'BRAIN SUGGESTION',title:`Try ${policy.modeSuggestion.label}`,detail:policy.modeSuggestion.reason,count:null,priority:1});
+  const result=[];
+  const suggestion=modeSuggestionCard(policy);
+  if(suggestion)result.push(suggestion);
+  result.push(policyCard(policy));
   if(policy.context.currentActivity)result.push({key:'current-activity',kind:'context',icon:'📍',eyebrow:'RIGHT NOW',title:policy.context.currentActivity,detail:'KatOS will treat this as the current activity instead of pretending nothing is happening.',count:null,priority:2});
   if(policy.restAllowed&&(policy.context.energy==='drained'||policy.context.capacity==='soft'||policy.context.mode==='soft-reset'||policy.context.mode==='bedtime'))result.push({key:'rest',kind:'rest',icon:'🌙',eyebrow:'VALID OPTION',title:'Stopping can count',detail:'There is no rule requiring KatOS to fill empty space with more work.',count:null,priority:3});
   if(!signals.tasks.length&&!signals.reminders.length&&!signals.events.length&&!signals.schoolTasks.length&&!signals.workItems.length)result.push({key:'empty-life',kind:'empty',icon:'🌱',eyebrow:'V3 IS STILL NEW',title:'No live life data connected yet',detail:'That is intentional. V2 has not been imported, so Home is adapting to context without inventing fake obligations.',count:null,priority:9});
