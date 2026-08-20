@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff4f8">
+  <title>KatOS V3 Alpha 🍓</title>
+  <style>
+    :root{
+      --pink:#ee91b5;--pink-deep:#bd577e;--pink-soft:#fff0f6;
+      --mocha:#604239;--muted:#9d7e75;--cream:#fffaf6;--paper:#fffdfb;
+      --sage:#b9d5aa;--sage-soft:#f1f8ed;--line:#efd3df;--lav:#c9b4df;
+      --shadow:0 20px 55px rgba(96,66,57,.10)
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;color:var(--mocha);background:radial-gradient(circle at 7% 6%,#ffe1ee 0 12%,transparent 27%),radial-gradient(circle at 93% 8%,#e8f4df 0 12%,transparent 27%),linear-gradient(145deg,#fff6fa,#fffaf6 55%,#f4faef)}
+    body{padding:22px 18px 70px}
+    button,select,input{font:inherit}
+    button{cursor:pointer}
+    .shell{width:min(1120px,100%);margin:auto}
+    .hero{position:relative;overflow:hidden;padding:28px;border:1.5px solid var(--line);border-radius:34px;background:linear-gradient(135deg,rgba(255,239,246,.95),rgba(255,253,251,.96) 55%,rgba(240,248,235,.96));box-shadow:var(--shadow)}
+    .hero:after{content:"🍓  ✦  🎀  ✦  🍡";position:absolute;right:24px;top:20px;color:#d992ad;opacity:.42;letter-spacing:.24em;font-size:18px}
+    .eyebrow{font-size:10px;letter-spacing:.16em;font-weight:950;color:var(--pink-deep)}
+    h1{margin:7px 0 4px;font-size:clamp(34px,6vw,58px);line-height:.98;letter-spacing:-.055em}
+    .hero p{max-width:650px;margin:12px 0 0;color:var(--muted);line-height:1.55}
+    .status-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.75);font-size:11px;font-weight:850;color:#86655e}
+    .pill.safe{background:var(--sage-soft);border-color:#d4e6ca;color:#66855a}
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;margin-top:16px}
+    .card{background:rgba(255,253,251,.94);border:1.5px solid var(--line);border-radius:27px;padding:21px;box-shadow:0 12px 38px rgba(96,66,57,.07);min-width:0}
+    .card.full{grid-column:1/-1}
+    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:15px}
+    .card h2{margin:2px 0 2px;font-size:22px;letter-spacing:-.025em}
+    .card p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+    .count{display:grid;place-items:center;min-width:42px;height:42px;padding:0 10px;border-radius:15px;background:var(--pink-soft);color:var(--pink-deep);font-weight:950}
+    .context-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
+    label.field{display:grid;gap:6px;font-size:11px;font-weight:900;color:#8b625c}
+    label.field span{padding-left:2px}
+    select,input[type="text"]{width:100%;min-width:0;padding:12px 13px;border:1.5px solid #edc4d4;border-radius:15px;background:#fff;color:var(--mocha);outline:none}
+    select:focus,input[type="text"]:focus{border-color:var(--pink);box-shadow:0 0 0 4px rgba(238,145,181,.12)}
+    .context-wide{grid-column:1/-1}
+    .context-summary{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px;padding-top:13px;border-top:1px dashed #efd4df}
+    .context-chip{padding:7px 9px;border-radius:11px;background:linear-gradient(120deg,#fff0f6,#f4faef);font-size:11px;font-weight:850}
+    .rules{display:grid;gap:9px}
+    .rule{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:11px;align-items:center;padding:11px 12px;border:1px solid #f0d8e2;border-radius:17px;background:linear-gradient(130deg,#fff,#fff9fb)}
+    .rule-icon{font-size:22px}
+    .rule b{display:block;font-size:12px;margin-bottom:2px}
+    .rule small{display:block;color:var(--muted);font-size:10px;line-height:1.35}
+    .switch{position:relative;width:43px;height:25px;flex:0 0 auto}
+    .switch input{position:absolute;opacity:0;pointer-events:none}
+    .switch i{position:absolute;inset:0;border-radius:999px;background:#eadfe2;transition:.18s}
+    .switch i:after{content:"";position:absolute;width:19px;height:19px;left:3px;top:3px;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(96,66,57,.18);transition:.18s}
+    .switch input:checked+i{background:linear-gradient(100deg,var(--pink),var(--sage))}
+    .switch input:checked+i:after{transform:translateX(18px)}
+    .model-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+    .model{padding:13px;border:1px solid #eddae1;border-radius:18px;background:linear-gradient(145deg,#fff,#fff8fb 65%,#f5faef);min-width:0}
+    .model small{display:block;color:var(--pink-deep);font-weight:950;font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:7px}
+    .model div{font-size:11px;line-height:1.55;color:#7d5d56;overflow-wrap:anywhere}
+    .empty{padding:20px;text-align:center;border:1.5px dashed #e9cbd8;border-radius:19px;background:#fff9fb;color:var(--muted);font-size:12px;line-height:1.5}
+    .footer-actions{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}
+    .btn{border:1.5px solid var(--line);border-radius:15px;background:#fff;padding:10px 13px;color:#805c55;font-weight:900;font-size:11px}
+    .btn.primary{border-color:transparent;background:linear-gradient(105deg,var(--pink),var(--sage));color:#fff}
+    .save-state{font-size:10px;color:var(--muted)}
+    .dev-note{margin-top:16px;padding:14px 17px;border:1px dashed #eac5d4;border-radius:18px;background:rgba(255,255,255,.66);font-size:11px;color:#8e6d66;line-height:1.55}
+    @media(max-width:800px){.grid{grid-template-columns:1fr}.card.full{grid-column:auto}.model-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:560px){body{padding:10px 10px 48px}.hero{padding:22px 18px;border-radius:27px}.hero:after{display:none}.context-grid,.model-grid{grid-template-columns:1fr}.context-wide{grid-column:auto}.card{padding:17px;border-radius:22px}.rule{grid-template-columns:auto minmax(0,1fr) auto}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div class="eyebrow">🍓 KATOS V3 · ALPHA 1 · KAT-NATIVE FOUNDATION</div>
+      <h1>The new nervous system.</h1>
+      <p>V3 starts with who Kat is, how today feels, and the rules KatOS must respect. Nothing here reads or overwrites V2.</p>
+      <div class="status-row">
+        <span class="pill">🧠 Kat Model V1</span>
+        <span class="pill">📜 Constitution V1</span>
+        <span class="pill">🌤 Context V1</span>
+        <span class="pill safe">🔒 V2 untouched</span>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head"><div><div class="eyebrow">🌤 RIGHT NOW</div><h2>Current Context</h2><p>This is today’s operating weather, not a permanent label.</p></div><div class="count" id="contextModeIcon">🍓</div></div>
+        <div class="context-grid" id="contextFields"></div>
+        <div class="context-summary" id="contextSummary"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><div class="eyebrow">📜 PERSONAL LAWS</div><h2>Kat Constitution</h2><p>Explicit rules outrank learned patterns.</p></div><div class="count" id="activeRuleCount">0</div></div>
+        <div class="rules" id="rules"></div>
+      </section>
+
+      <section class="card full">
+        <div class="card-head"><div><div class="eyebrow">🍓 HOW KATOS SHOULD WORK WITH KAT</div><h2>Kat Model</h2><p>Stable-ish operating preferences. These are separate from what KatOS may observe over time.</p></div><div class="count">V1</div></div>
+        <div class="model-grid" id="katModel"></div>
+      </section>
+
+      <section class="card full">
+        <div class="card-head"><div><div class="eyebrow">🔎 LEARNED, NEVER LAW</div><h2>Pattern Shelf</h2><p>V3 can eventually notice patterns, but it cannot silently turn them into rules.</p></div><div class="count" id="patternCount">0</div></div>
+        <div id="patterns"></div>
+      </section>
+    </div>
+
+    <div class="footer-actions">
+      <span class="save-state" id="saveState">Stored only in sm_v3_beta.</span>
+      <div><button class="btn" id="resetContext" type="button">🌤 Reset today</button> <button class="btn" id="resetV3" type="button">↺ Reset V3 alpha</button></div>
+    </div>
+    <div class="dev-note"><b>Alpha boundary:</b> this screen is intentionally not the V3 Home dashboard yet. It is our foundation lab. Next we can build the first KatOS Brain rules against this state, then let Home and Mochini consume the same logic instead of inventing their own.</div>
+  </main>
+
+  <script type="module">
+    import{loadV3State,saveV3State,resetV3State,V3_STORAGE_KEY}from'./app/schema.js';
+    import{activeRules,setConstitutionRule}from'./app/constitution.js';
+    import{CONTEXT_OPTIONS,DEFAULT_CONTEXT,contextLabel,updateContext}from'./app/context.js';
+
+    let state=loadV3State();
+    const $=id=>document.getElementById(id);
+    const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const title=value=>String(value||'').replace(/([A-Z])/g,' $1').replace(/^./,char=>char.toUpperCase());
+
+    function persist(message='Saved to V3 beta'){
+      state=saveV3State(state);
+      $('saveState').textContent=`✓ ${message} · ${new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}`;
+      window.__katOSV3=state;
+    }
+
+    function contextSelect(key){
+      const current=state.context[key];
+      return `<label class="field"><span>${esc(title(key))}</span><select data-context="${esc(key)}">${CONTEXT_OPTIONS[key].map(option=>`<option value="${esc(option.value)}" ${option.value===current?'selected':''}>${option.icon} ${esc(option.label)}</option>`).join('')}</select></label>`;
+    }
+
+    function drawContext(){
+      $('contextFields').innerHTML=['brain','energy','capacity','pressure','socialBattery','mode'].map(contextSelect).join('')+`<label class="field context-wide"><span>Current activity · optional</span><input type="text" data-context-text="currentActivity" value="${esc(state.context.currentActivity)}" placeholder="e.g. eating breakfast, studying, winding down"></label><label class="field context-wide"><span>Context note · optional</span><input type="text" data-context-text="note" value="${esc(state.context.note)}" placeholder="Anything today-Kat wants the system to know"></label>`;
+      const keys=['brain','energy','capacity','pressure','socialBattery','mode'];
+      $('contextSummary').innerHTML=keys.map(key=>{const item=contextLabel(key,state.context[key]);return `<span class="context-chip">${item.icon} ${esc(item.label)}</span>`}).join('');
+      $('contextModeIcon').textContent=contextLabel('mode',state.context.mode).icon||'🍓';
+      document.querySelectorAll('[data-context]').forEach(select=>select.addEventListener('change',()=>{state={...state,context:updateContext(state.context,{[select.dataset.context]:select.value})};persist('Context updated');drawContext()}));
+      document.querySelectorAll('[data-context-text]').forEach(input=>input.addEventListener('change',()=>{state={...state,context:updateContext(state.context,{[input.dataset.contextText]:input.value})};persist('Context updated');drawContext()}));
+    }
+
+    function drawRules(){
+      const rules=state.profile.constitution||[];
+      $('activeRuleCount').textContent=activeRules(rules).length;
+      $('rules').innerHTML=rules.map(rule=>`<div class="rule"><span class="rule-icon">${esc(rule.icon)}</span><div><b>${esc(rule.title)}</b><small>${esc(rule.description)}</small></div><label class="switch" aria-label="Toggle ${esc(rule.title)}"><input type="checkbox" data-rule="${esc(rule.id)}" ${rule.enabled?'checked':''}><i></i></label></div>`).join('');
+      document.querySelectorAll('[data-rule]').forEach(input=>input.addEventListener('change',()=>{state={...state,profile:{...state.profile,constitution:setConstitutionRule(state.profile.constitution,input.dataset.rule,input.checked)}};persist('Constitution updated');drawRules()}));
+    }
+
+    function formatModelGroup(group){
+      return Object.entries(group||{}).map(([key,value])=>`${title(key)}: ${typeof value==='boolean'?(value?'yes':'no'):value}`).join('<br>');
+    }
+
+    function drawModel(){
+      const model=state.profile.katModel||{};
+      $('katModel').innerHTML=Object.entries(model).map(([key,value])=>`<article class="model"><small>${esc(title(key))}</small><div>${formatModelGroup(value)}</div></article>`).join('');
+    }
+
+    function drawPatterns(){
+      const patterns=state.profile.patterns||[];
+      $('patternCount').textContent=patterns.length;
+      $('patterns').innerHTML=patterns.length?`<div class="model-grid">${patterns.map(pattern=>`<article class="model"><small>${esc(pattern.status||'candidate')} · ${Math.round((Number(pattern.confidence)||0)*100)}%</small><div><b>${esc(pattern.label)}</b><br>${esc(pattern.description||'')}${pattern.evidenceCount?`<br>Evidence: ${Number(pattern.evidenceCount)}`:''}</div></article>`).join('')}</div>`:'<div class="empty">🌱 No learned patterns yet. Good. V3 starts by listening before it decides it knows anything.</div>';
+    }
+
+    function draw(){drawContext();drawRules();drawModel();drawPatterns();window.__katOSV3=state}
+
+    $('resetContext').addEventListener('click',()=>{
+      state={...state,context:updateContext(DEFAULT_CONTEXT,{})};
+      persist('Today reset to neutral');draw();
+    });
+    $('resetV3').addEventListener('click',()=>{
+      if(!confirm(`Reset only ${V3_STORAGE_KEY}? V2 will not be touched.`))return;
+      state=resetV3State();
+      $('saveState').textContent='↺ V3 alpha reset. V2 untouched.';
+      draw();
+    });
+
+    draw();
+    persist('V3 alpha ready');
+  </script>
+</body>
+</html>
