@@ -1,6 +1,6 @@
 import{buildBigMochiRequest,buildMochiniPresentation}from'../app/mochini.js?v=22.1.34-20260818';
 import{answerMochiniIntent,matchMochiniIntent}from'../app/mochini-intents.js?v=22.1.34-20260818';
-import{routeMochiniCapability}from'../app/mochini-capabilities.js?v=22.10.0-20260819';
+import{routeMochiniCapability}from'../app/mochini-nom-tags.js?v=22.11.0-20260819';
 import{appendConversation,clearConversation,conversationEvidence,conversationSession}from'../app/mochini-conversation.js?v=22.1.20-20260817';
 import{protectTaskFromMochini,protectionProposal}from'../app/mochini-actions.js?v=22.2.0-20260818';
 
