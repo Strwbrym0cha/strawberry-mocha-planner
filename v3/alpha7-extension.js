@@ -1,49 +1,8 @@
-import{ensureBehaviorSupport,evaluateBehaviorSupport,BEHAVIOR_PRINCIPLES}from'./app/behavior-support.js?v=3.0.0-alpha.7';
-
+import{ensureBehaviorSupport,evaluateBehaviorSupport,BEHAVIOR_PRINCIPLES}from'./app/behavior-support.js?v=3.0.0-alpha.8';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 let busy=false;
-
-function ensurePrefs(){
-  const current=window.__katOSV3;
-  if(!current)return null;
-  const normalized=ensureBehaviorSupport(current);
-  const incoming=current.profile?.preferences?.behaviorSupport;
-  if(!incoming){
-    current.profile=normalized.profile;
-    try{localStorage.setItem('sm_v3_beta',JSON.stringify({data:current}))}catch{}
-  }
-  return current;
-}
-
-function patchHero(){
-  const hero=document.querySelector('.hero');
-  if(!hero)return;
-  const eyebrow=hero.querySelector('.ey');
-  if(eyebrow)eyebrow.textContent='🍓 KATOS V3 · ALPHA 7 PREVIEW · BEHAVIOR SUPPORT + MOTION';
-  const pills=hero.querySelector('.pills');
-  if(pills&&!pills.querySelector('[data-alpha7-pill]'))pills.insertAdjacentHTML('beforeend','<span class="pill" data-alpha7-pill>🌷 Behavior Support V1</span><span class="pill" data-alpha7-pill>🌿 Motion Meadow V1</span>');
-}
-
-function renderStrip(){
-  const state=ensurePrefs();
-  const home=document.querySelector('.home');
-  if(!state||!home||document.getElementById('alpha7Strip'))return;
-  const support=evaluateBehaviorSupport(state);
-  const tactics=support.tactics.slice(0,4).map(item=>`<span class="behavior-tactic">${esc(item.icon)} ${esc(item.label)}</span>`).join('');
-  const strip=document.createElement('section');
-  strip.id='alpha7Strip';
-  strip.className='alpha7-strip';
-  strip.innerHTML=`<article class="behavior-support-card"><div class="alpha7-kicker">🧠 KAT-NATIVE BEHAVIOR SUPPORT</div><div class="alpha7-title">Make the helpful behavior easier to happen.</div><div class="alpha7-copy">KatOS now carries a self-management support pack based on antecedent arrangement, task analysis, shaping, behavioral momentum, Premack, differential reinforcement, prompt fading, self-monitoring, choice architecture, response-effort reduction, and reinforcement of initiation.</div><div class="behavior-tactics">${tactics}</div><div class="alpha7-law"><b>🌷 Core law:</b> starting counts. KatOS should reinforce initiation and useful approximations instead of only rewarding perfect completion.</div></article><a class="motion-launch-card" href="./motion.html?v=3.0.0-alpha.7"><div class="motion-launch-icon">🌿</div><div class="alpha7-kicker">MOTION MEADOW · ALPHA 7</div><div class="alpha7-title">Log movement without turning it into homework.</div><div class="alpha7-copy">Minutes moved are the headline. Distance, speed, incline, calories, and notes are optional context.</div><div class="motion-launch-cta">Open Motion Meadow →</div></a>`;
-  home.insertAdjacentElement('afterend',strip);
-}
-
-function sync(){
-  if(busy)return;busy=true;
-  requestAnimationFrame(()=>{busy=false;patchHero();renderStrip()});
-}
-
-const app=document.getElementById('app');
-if(app)new MutationObserver(sync).observe(app,{childList:true,subtree:true});
-sync();
-
-window.__katOSBehaviorPrinciples=BEHAVIOR_PRINCIPLES;
+function ensurePrefs(){const current=window.__katOSV3;if(!current)return null;const normalized=ensureBehaviorSupport(current);const incoming=current.profile?.preferences?.behaviorSupport;if(!incoming){current.profile=normalized.profile;try{localStorage.setItem('sm_v3_beta',JSON.stringify({data:current}))}catch{}}return current}
+function patchHero(){const hero=document.querySelector('.hero');if(!hero)return;const eyebrow=hero.querySelector('.ey');if(eyebrow)eyebrow.textContent='🍓 KATOS V3 · ALPHA 8 · MOTION COMPLETE + NOMS';const pills=hero.querySelector('.pills');if(pills&&!pills.querySelector('[data-alpha7-pill]'))pills.insertAdjacentHTML('beforeend','<span class="pill" data-alpha7-pill>🌷 Behavior Support V1</span><span class="pill" data-alpha7-pill>🌿 Motion Meadow V1 Complete</span>')}
+function renderStrip(){const state=ensurePrefs(),home=document.querySelector('.home');if(!state||!home||document.getElementById('alpha7Strip'))return;const support=evaluateBehaviorSupport(state),tactics=support.tactics.slice(0,4).map(item=>`<span class="behavior-tactic">${esc(item.icon)} ${esc(item.label)}</span>`).join('');const strip=document.createElement('section');strip.id='alpha7Strip';strip.className='alpha7-strip';strip.innerHTML=`<article class="behavior-support-card"><div class="alpha7-kicker">🧠 KAT-NATIVE BEHAVIOR SUPPORT</div><div class="alpha7-title">Make the helpful behavior easier to happen.</div><div class="alpha7-copy">KatOS uses antecedent arrangement, task analysis, shaping, behavioral momentum, Premack, differential reinforcement, prompt fading, self-monitoring, choice architecture, response-effort reduction, and reinforcement of initiation.</div><div class="behavior-tactics">${tactics}</div><div class="alpha7-law"><b>🌷 Core law:</b> starting counts.</div></article><a class="motion-launch-card" href="./motion.html?v=3.0.0-alpha.8"><div class="motion-launch-icon">🌿</div><div class="alpha7-kicker">MOTION MEADOW · V1 COMPLETE</div><div class="alpha7-title">Movement gets support, not pressure.</div><div class="alpha7-copy">Logs, recipes, Video Shelf, Brain-fit suggestions, weekly progress, and optional check-ins are live.</div><div class="motion-launch-cta">Open Motion Meadow →</div></a>`;home.insertAdjacentElement('afterend',strip)}
+function sync(){if(busy)return;busy=true;requestAnimationFrame(()=>{busy=false;patchHero();renderStrip()})}
+const app=document.getElementById('app');if(app)new MutationObserver(sync).observe(app,{childList:true,subtree:true});sync();window.__katOSBehaviorPrinciples=BEHAVIOR_PRINCIPLES;
