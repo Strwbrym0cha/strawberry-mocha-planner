@@ -1,10 +1,12 @@
 import{DEFAULT_CONSTITUTION,normalizeConstitution}from'./constitution.js';
 import{DEFAULT_KAT_MODEL,DEFAULT_PATTERNS,normalizeKatModel,normalizePatterns}from'./kat-model.js';
 import{DEFAULT_CONTEXT,normalizeContext}from'./context.js';
+import{normalizeTasks}from'./tasks.js';
+import{normalizeReminders}from'./reminders.js';
 
 export const V3_SCHEMA_VERSION=1;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.3';
+export const V3_BUILD='3.0.0-alpha.4';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -35,7 +37,7 @@ export const DEFAULT_V3_STATE={
   education:{courses:[],tasks:[],goals:[]},
   work:{items:[],schedule:{}},
   insights:{activityLog:[],observations:[],experiments:[]},
-  mochini:{conversation:[]},
+  mochini:{conversation:[],pendingProposal:null,lastProposal:null},
   meta:{
     build:V3_BUILD,
     createdAt:'',
@@ -76,8 +78,8 @@ export function normalizeV3State(value){
     context:normalizeContext(saved.context),
     life:{
       inbox:list(life.inbox),
-      tasks:list(life.tasks),
-      reminders:list(life.reminders),
+      tasks:normalizeTasks(life.tasks),
+      reminders:normalizeReminders(life.reminders),
       routines:list(life.routines),
       events:list(life.events),
       threads:list(life.threads)
@@ -94,7 +96,11 @@ export function normalizeV3State(value){
       observations:list(insights.observations),
       experiments:list(insights.experiments)
     },
-    mochini:{conversation:list(mochini.conversation)},
+    mochini:{
+      conversation:list(mochini.conversation),
+      pendingProposal:mochini.pendingProposal&&typeof mochini.pendingProposal==='object'?mochini.pendingProposal:null,
+      lastProposal:mochini.lastProposal&&typeof mochini.lastProposal==='object'?mochini.lastProposal:null
+    },
     meta:{
       build:V3_BUILD,
       createdAt:String(meta.createdAt||fallback.meta.createdAt),
