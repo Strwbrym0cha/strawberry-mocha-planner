@@ -51,11 +51,9 @@ Adaptive Home, Current Context, Kat Model, Constitution, KatOS Brain, Behavior S
 - Deterministic legacy IDs so repeated import does not duplicate the same V2 records.
 - Explicit V2 parity ledger covering every persisted V2 area as replace / absorb / retire.
 - Noms Nook V2 with Grocery Basket + Meal Map so V2 groceries/meal planning have native V3 destinations.
-- V3-only `/v3/` service worker.
-- Legacy root service-worker/cache detox to stop Safari from returning V2 markup for V3 routes.
+- V3-safe service-worker/cache strategy that never falls back to V2 markup.
 - Launch Bay with automated route/schema/service-worker/migration/parity checks.
 - Manual iPhone/iPad/desktop/touch/cloud/rollback readiness checklist.
-- Root cutover rehearsal only. Alpha 16 does **not** change `/`.
 
 ## Explicit parity decisions
 
@@ -74,16 +72,32 @@ Important absorptions/retirements include:
 - Hyperfixation state -> Current Context + Brain protection logic.
 - TaskBot state -> KatOS Brain + Mochini separation.
 
-## Root-switch gate
+## Public root cutover
 
-V2 does not leave `/` until all are true:
+On 2026-08-20 Kat explicitly approved the root cutover before final manual certification.
+
+Current deployment intent:
+- `/` loads KatOS V3 Alpha 16 directly.
+- `/v3/` remains the native V3 implementation path.
+- `/legacy-v2/` is the code-dungeon landing page.
+- `/v17/` remains untouched legacy runtime source/reference.
+- V2 is no longer the public default and receives no new features.
+
+This is a **live root cutover**, not a claim that every Stable certification check has passed.
+
+## Certification gate still pending
+
+Already satisfied:
 - [x] Every persisted V2 area has a replace / absorb / retire decision.
 - [x] No V3 design requires V2 runtime/UI code.
 - [x] Control Center + Archive are V3-native.
 - [x] Mochini V3 keeps permission-gated writes.
 - [x] V3 has native cloud/account persistence.
 - [x] Migration has preview, legacy capsule, V3 backup, receipt, and rollback.
-- [x] V3 has a dedicated cache/service-worker strategy that cannot fall back to V2 markup.
+- [x] V3 has a cache/service-worker strategy that cannot fall back to V2 markup.
+- [x] V3 owns the public root by explicit user approval.
+
+Still requires real runtime/manual evidence:
 - [ ] Launch Bay automated checks pass on the deployed site.
 - [ ] Refresh/persistence test passes.
 - [ ] Touch/forms test passes.
@@ -93,14 +107,6 @@ V2 does not leave `/` until all are true:
 - [ ] two-device cloud sync/conflict test passes.
 - [ ] migration rollback test passes.
 
-The unchecked items are intentionally runtime/manual checks. Source code is not allowed to mark them complete on its own.
-
-## Stable cutover
-
-Only after Launch Bay turns fully green:
-- `/` becomes V3;
-- V2 moves to `/legacy-v2/` or an equivalent read-only path;
-- V2 stops receiving features;
-- V3 remains the only active KatOS model.
+Once those are green, Alpha 16 can be certified as V3 Stable without another architecture migration.
 
 The constraint that never changes: **V3 never solves a missing feature by falling back to V2.**
