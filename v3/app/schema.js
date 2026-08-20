@@ -10,10 +10,15 @@ import{normalizeWork}from'./work.js';
 import{normalizeMoney}from'./money.js';
 import{normalizeRoutines,normalizeRoutineInstances}from'./routines.js';
 import{normalizeTimeEvents}from'./time.js';
+import{normalizeEducation}from'./study.js';
+import{normalizeThreads}from'./threads.js';
+import{normalizeGrowth}from'./growth.js';
+import{normalizeActivityLog}from'./activity.js';
+import{normalizeResetSessions}from'./soft-reset.js';
 
-export const V3_SCHEMA_VERSION=2;
+export const V3_SCHEMA_VERSION=3;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.10';
+export const V3_BUILD='3.0.0-alpha.12';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -23,31 +28,34 @@ export const DEFAULT_V3_STATE={
   schemaVersion:V3_SCHEMA_VERSION,
   profile:{constitution:clone(DEFAULT_CONSTITUTION),katModel:clone(DEFAULT_KAT_MODEL),preferences:{},patterns:clone(DEFAULT_PATTERNS)},
   context:clone(DEFAULT_CONTEXT),
-  life:{inbox:[],tasks:[],reminders:[],routines:normalizeRoutines([]),routineInstances:normalizeRoutineInstances([]),events:normalizeTimeEvents([]),threads:[]},
+  life:{inbox:[],tasks:[],reminders:[],routines:normalizeRoutines([]),routineInstances:normalizeRoutineInstances([]),events:normalizeTimeEvents([]),threads:normalizeThreads([])},
   nourish:{noms:normalizeNoms({foods:[],recipes:[],history:[]}),sips:normalizeSips({fridge:[],history:[]})},
   movement:normalizeMovement({sessions:[],routines:[],videos:[],weighIns:[]}),
-  education:{courses:[],tasks:[],goals:[]},
+  education:normalizeEducation({}),
   work:normalizeWork({items:[],schedule:{}}),
   money:normalizeMoney({}),
-  insights:{activityLog:[],observations:[],experiments:[]},
+  growth:normalizeGrowth({}),
+  insights:{activityLog:normalizeActivityLog([]),observations:[],experiments:[],resetSessions:normalizeResetSessions([])},
   mochini:{conversation:[],pendingProposal:null,lastProposal:null,lastContextInference:null},
   meta:{build:V3_BUILD,createdAt:'',updatedAt:''}
 };
 
 export function createInitialV3State(){const now=new Date().toISOString(),state=clone(DEFAULT_V3_STATE);state.meta.createdAt=now;state.meta.updatedAt=now;state.context.updatedAt=now;return state}
 export function normalizeV3State(value){
-  const saved=object(value),profile=object(saved.profile),life=object(saved.life),nourish=object(saved.nourish),education=object(saved.education),insights=object(saved.insights),mochini=object(saved.mochini),meta=object(saved.meta),fallback=createInitialV3State();
+  const saved=object(value),profile=object(saved.profile),life=object(saved.life),nourish=object(saved.nourish),insights=object(saved.insights),mochini=object(saved.mochini),meta=object(saved.meta),fallback=createInitialV3State();
+  const growthSource=Object.keys(object(saved.growth)).length?saved.growth:{experiments:list(insights.experiments)};
   return{
     schemaVersion:V3_SCHEMA_VERSION,
     profile:{constitution:normalizeConstitution(profile.constitution),katModel:normalizeKatModel(profile.katModel),preferences:object(profile.preferences),patterns:normalizePatterns(profile.patterns)},
     context:normalizeContext(saved.context),
-    life:{inbox:list(life.inbox),tasks:normalizeTasks(life.tasks),reminders:normalizeReminders(life.reminders),routines:normalizeRoutines(life.routines),routineInstances:normalizeRoutineInstances(life.routineInstances),events:normalizeTimeEvents(life.events),threads:list(life.threads)},
+    life:{inbox:list(life.inbox),tasks:normalizeTasks(life.tasks),reminders:normalizeReminders(life.reminders),routines:normalizeRoutines(life.routines),routineInstances:normalizeRoutineInstances(life.routineInstances),events:normalizeTimeEvents(life.events),threads:normalizeThreads(life.threads)},
     nourish:{noms:normalizeNoms(nourish.noms),sips:normalizeSips(nourish.sips)},
     movement:normalizeMovement(saved.movement),
-    education:{...fallback.education,...education},
+    education:normalizeEducation(saved.education),
     work:normalizeWork(saved.work),
     money:normalizeMoney(saved.money),
-    insights:{activityLog:list(insights.activityLog),observations:list(insights.observations),experiments:list(insights.experiments)},
+    growth:normalizeGrowth(growthSource),
+    insights:{activityLog:normalizeActivityLog(insights.activityLog),observations:list(insights.observations),experiments:list(insights.experiments),resetSessions:normalizeResetSessions(insights.resetSessions)},
     mochini:{conversation:list(mochini.conversation).slice(-80),pendingProposal:mochini.pendingProposal&&typeof mochini.pendingProposal==='object'?mochini.pendingProposal:null,lastProposal:mochini.lastProposal&&typeof mochini.lastProposal==='object'?mochini.lastProposal:null,lastContextInference:mochini.lastContextInference&&typeof mochini.lastContextInference==='object'?mochini.lastContextInference:null},
     meta:{build:V3_BUILD,createdAt:String(meta.createdAt||fallback.meta.createdAt),updatedAt:String(meta.updatedAt||fallback.meta.updatedAt)}
   };
