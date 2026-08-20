@@ -4,10 +4,11 @@ import{DEFAULT_CONTEXT,normalizeContext}from'./context.js';
 import{normalizeTasks}from'./tasks.js';
 import{normalizeReminders}from'./reminders.js';
 import{normalizeSips}from'./sips.js';
+import{normalizeMovement}from'./motion.js';
 
 export const V3_SCHEMA_VERSION=1;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.6';
+export const V3_BUILD='3.0.0-alpha.7';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -15,121 +16,40 @@ const list=value=>Array.isArray(value)?value:[];
 
 export const DEFAULT_V3_STATE={
   schemaVersion:V3_SCHEMA_VERSION,
-  profile:{
-    constitution:clone(DEFAULT_CONSTITUTION),
-    katModel:clone(DEFAULT_KAT_MODEL),
-    preferences:{},
-    patterns:clone(DEFAULT_PATTERNS)
-  },
+  profile:{constitution:clone(DEFAULT_CONSTITUTION),katModel:clone(DEFAULT_KAT_MODEL),preferences:{},patterns:clone(DEFAULT_PATTERNS)},
   context:clone(DEFAULT_CONTEXT),
-  life:{
-    inbox:[],
-    tasks:[],
-    reminders:[],
-    routines:[],
-    events:[],
-    threads:[]
-  },
-  nourish:{
-    noms:{foods:[],recipes:[],history:[]},
-    sips:normalizeSips({fridge:[],history:[]})
-  },
-  movement:{sessions:[],routines:[],videos:[],weighIns:[]},
+  life:{inbox:[],tasks:[],reminders:[],routines:[],events:[],threads:[]},
+  nourish:{noms:{foods:[],recipes:[],history:[]},sips:normalizeSips({fridge:[],history:[]})},
+  movement:normalizeMovement({sessions:[],routines:[],videos:[],weighIns:[]}),
   education:{courses:[],tasks:[],goals:[]},
   work:{items:[],schedule:{}},
   insights:{activityLog:[],observations:[],experiments:[]},
   mochini:{conversation:[],pendingProposal:null,lastProposal:null,lastContextInference:null},
-  meta:{
-    build:V3_BUILD,
-    createdAt:'',
-    updatedAt:''
-  }
+  meta:{build:V3_BUILD,createdAt:'',updatedAt:''}
 };
 
 export function createInitialV3State(){
-  const now=new Date().toISOString();
-  const state=clone(DEFAULT_V3_STATE);
-  state.meta.createdAt=now;
-  state.meta.updatedAt=now;
-  state.context.updatedAt=now;
-  return state;
+  const now=new Date().toISOString(),state=clone(DEFAULT_V3_STATE);
+  state.meta.createdAt=now;state.meta.updatedAt=now;state.context.updatedAt=now;return state;
 }
 
 export function normalizeV3State(value){
-  const saved=object(value);
-  const profile=object(saved.profile);
-  const life=object(saved.life);
-  const nourish=object(saved.nourish);
-  const movement=object(saved.movement);
-  const education=object(saved.education);
-  const work=object(saved.work);
-  const insights=object(saved.insights);
-  const mochini=object(saved.mochini);
-  const meta=object(saved.meta);
-  const fallback=createInitialV3State();
-
+  const saved=object(value),profile=object(saved.profile),life=object(saved.life),nourish=object(saved.nourish),education=object(saved.education),work=object(saved.work),insights=object(saved.insights),mochini=object(saved.mochini),meta=object(saved.meta),fallback=createInitialV3State();
   return{
     schemaVersion:V3_SCHEMA_VERSION,
-    profile:{
-      constitution:normalizeConstitution(profile.constitution),
-      katModel:normalizeKatModel(profile.katModel),
-      preferences:object(profile.preferences),
-      patterns:normalizePatterns(profile.patterns)
-    },
+    profile:{constitution:normalizeConstitution(profile.constitution),katModel:normalizeKatModel(profile.katModel),preferences:object(profile.preferences),patterns:normalizePatterns(profile.patterns)},
     context:normalizeContext(saved.context),
-    life:{
-      inbox:list(life.inbox),
-      tasks:normalizeTasks(life.tasks),
-      reminders:normalizeReminders(life.reminders),
-      routines:list(life.routines),
-      events:list(life.events),
-      threads:list(life.threads)
-    },
-    nourish:{
-      noms:{...fallback.nourish.noms,...object(nourish.noms)},
-      sips:normalizeSips(nourish.sips)
-    },
-    movement:{...fallback.movement,...movement},
+    life:{inbox:list(life.inbox),tasks:normalizeTasks(life.tasks),reminders:normalizeReminders(life.reminders),routines:list(life.routines),events:list(life.events),threads:list(life.threads)},
+    nourish:{noms:{...fallback.nourish.noms,...object(nourish.noms)},sips:normalizeSips(nourish.sips)},
+    movement:normalizeMovement(saved.movement),
     education:{...fallback.education,...education},
     work:{...fallback.work,...work},
-    insights:{
-      activityLog:list(insights.activityLog),
-      observations:list(insights.observations),
-      experiments:list(insights.experiments)
-    },
-    mochini:{
-      conversation:list(mochini.conversation).slice(-80),
-      pendingProposal:mochini.pendingProposal&&typeof mochini.pendingProposal==='object'?mochini.pendingProposal:null,
-      lastProposal:mochini.lastProposal&&typeof mochini.lastProposal==='object'?mochini.lastProposal:null,
-      lastContextInference:mochini.lastContextInference&&typeof mochini.lastContextInference==='object'?mochini.lastContextInference:null
-    },
-    meta:{
-      build:V3_BUILD,
-      createdAt:String(meta.createdAt||fallback.meta.createdAt),
-      updatedAt:String(meta.updatedAt||fallback.meta.updatedAt)
-    }
+    insights:{activityLog:list(insights.activityLog),observations:list(insights.observations),experiments:list(insights.experiments)},
+    mochini:{conversation:list(mochini.conversation).slice(-80),pendingProposal:mochini.pendingProposal&&typeof mochini.pendingProposal==='object'?mochini.pendingProposal:null,lastProposal:mochini.lastProposal&&typeof mochini.lastProposal==='object'?mochini.lastProposal:null,lastContextInference:mochini.lastContextInference&&typeof mochini.lastContextInference==='object'?mochini.lastContextInference:null},
+    meta:{build:V3_BUILD,createdAt:String(meta.createdAt||fallback.meta.createdAt),updatedAt:String(meta.updatedAt||fallback.meta.updatedAt)}
   };
 }
 
-export function loadV3State(storage=localStorage){
-  try{
-    const raw=storage.getItem(V3_STORAGE_KEY);
-    if(!raw)return createInitialV3State();
-    const parsed=JSON.parse(raw);
-    return normalizeV3State(parsed?.data||parsed);
-  }catch{
-    return createInitialV3State();
-  }
-}
-
-export function saveV3State(state,storage=localStorage){
-  const next=normalizeV3State({...state,meta:{...state?.meta,updatedAt:new Date().toISOString()}});
-  storage.setItem(V3_STORAGE_KEY,JSON.stringify({data:next}));
-  return next;
-}
-
-export function resetV3State(storage=localStorage){
-  const next=createInitialV3State();
-  storage.setItem(V3_STORAGE_KEY,JSON.stringify({data:next}));
-  return next;
-}
+export function loadV3State(storage=localStorage){try{const raw=storage.getItem(V3_STORAGE_KEY);if(!raw)return createInitialV3State();const parsed=JSON.parse(raw);return normalizeV3State(parsed?.data||parsed)}catch{return createInitialV3State()}}
+export function saveV3State(state,storage=localStorage){const next=normalizeV3State({...state,meta:{...state?.meta,updatedAt:new Date().toISOString()}});storage.setItem(V3_STORAGE_KEY,JSON.stringify({data:next}));return next}
+export function resetV3State(storage=localStorage){const next=createInitialV3State();storage.setItem(V3_STORAGE_KEY,JSON.stringify({data:next}));return next}
