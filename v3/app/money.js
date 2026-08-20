@@ -4,6 +4,7 @@ const list=value=>Array.isArray(value)?value:[];
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const text=value=>String(value??'').trim();
 const number=value=>Math.max(0,Number(value)||0);
+const signed=value=>Number(value)||0;
 const makeId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
 const pad=value=>String(value).padStart(2,'0');
 export const localDateKey=(value=new Date())=>{const d=value instanceof Date?value:new Date(value);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
@@ -43,7 +44,7 @@ export function normalizeEarning(value,index=0){
   };
 }
 
-export function normalizeAccount(value,index=0){const saved=object(value);return{id:text(saved.id)||`account-${index}`,name:text(saved.name)||'Account',type:['checking','savings','cash','other'].includes(saved.type)?saved.type:'checking',balance:number(saved.balance),createdAt:text(saved.createdAt)}}
+export function normalizeAccount(value,index=0){const saved=object(value);return{id:text(saved.id)||`account-${index}`,name:text(saved.name)||'Account',type:['checking','savings','cash','other'].includes(saved.type)?saved.type:'checking',balance:signed(saved.balance),createdAt:text(saved.createdAt)}}
 export function normalizeBill(value,index=0){const saved=object(value);return{id:text(saved.id)||`bill-${index}`,name:text(saved.name)||'Bill',amount:number(saved.amount),dueDate:text(saved.dueDate),recurring:saved.recurring!==false,paid:saved.paid===true,createdAt:text(saved.createdAt)}}
 export function normalizeSpending(value,index=0){const saved=object(value),loggedAt=text(saved.loggedAt)||new Date().toISOString();return{id:text(saved.id)||`spend-${index}`,description:text(saved.description)||'Spending',amount:number(saved.amount),category:text(saved.category)||'Other',date:text(saved.date)||localDateKey(loggedAt),loggedAt,source:text(saved.source)||'manual'}}
 export function normalizeSavingsGoal(value,index=0){const saved=object(value);return{id:text(saved.id)||`goal-${index}`,name:text(saved.name)||'Savings goal',current:number(saved.current),target:number(saved.target),createdAt:text(saved.createdAt)}}
