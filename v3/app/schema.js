@@ -6,7 +6,7 @@ import{normalizeReminders}from'./reminders.js';
 
 export const V3_SCHEMA_VERSION=1;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.4';
+export const V3_BUILD='3.0.0-alpha.5';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -37,7 +37,7 @@ export const DEFAULT_V3_STATE={
   education:{courses:[],tasks:[],goals:[]},
   work:{items:[],schedule:{}},
   insights:{activityLog:[],observations:[],experiments:[]},
-  mochini:{conversation:[],pendingProposal:null,lastProposal:null},
+  mochini:{conversation:[],pendingProposal:null,lastProposal:null,lastContextInference:null},
   meta:{
     build:V3_BUILD,
     createdAt:'',
@@ -97,9 +97,10 @@ export function normalizeV3State(value){
       experiments:list(insights.experiments)
     },
     mochini:{
-      conversation:list(mochini.conversation),
+      conversation:list(mochini.conversation).slice(-80),
       pendingProposal:mochini.pendingProposal&&typeof mochini.pendingProposal==='object'?mochini.pendingProposal:null,
-      lastProposal:mochini.lastProposal&&typeof mochini.lastProposal==='object'?mochini.lastProposal:null
+      lastProposal:mochini.lastProposal&&typeof mochini.lastProposal==='object'?mochini.lastProposal:null,
+      lastContextInference:mochini.lastContextInference&&typeof mochini.lastContextInference==='object'?mochini.lastContextInference:null
     },
     meta:{
       build:V3_BUILD,
