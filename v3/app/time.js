@@ -1,4 +1,4 @@
-import{isArchived}from'./archive-policy.js?v=1';
+import{isArchived}from'./archive-policy.js?v=2';
 export const TIME_VERSION=3;
 
 const list=value=>Array.isArray(value)?value:[];
@@ -31,7 +31,7 @@ function timeItem(input={}){return{source:text(input.source)||'native',sourceId:
 function nativeItems(state,date){return normalizeTimeEvents(state?.life?.events).filter(item=>item.date===date&&!isArchived(state,'event',item.id)).map(item=>timeItem({...item,source:'native',sourceId:item.id,id:`native:${item.id}`,detail:item.notes,editable:true}))}
 function shiftItems(state,date){return list(state?.work?.shifts).filter(item=>text(item.date)===date&&!isArchived(state,'shift',item.id)).map(item=>timeItem({source:'work-shift',sourceId:item.id,id:`work-shift:${item.id}`,title:item.label||'Work shift',type:'shift',date,startTime:item.startTime,endTime:item.endTime,protected:true,location:item.location,detail:item.status==='working'?'Clocked in':item.status==='done'?'Shift completed':'Boss Bitch shift'}))}
 function taskDeadlineItems(state,date){return list(state?.life?.tasks).filter(item=>!item.done&&text(item.date)===date&&!isArchived(state,'task',item.id)).map(item=>timeItem({source:'task-deadline',sourceId:item.id,id:`task-deadline:${item.id}`,title:item.text||'Task deadline',type:'deadline',date,allDay:true,protected:item.protected===true,detail:'Sweet To-Do due today'}))}
-function reminderItems(state,date){return list(state?.life?.reminders).filter(item=>!item.completed&&text(item.date)===date&&text(item.time)).map(item=>timeItem({source:'little-ping',sourceId:item.id,id:`little-ping:${item.id}`,title:item.title||'Little Ping',type:'reminder',date,startTime:item.time,protected:false,detail:'Little Ping'}))}
+function reminderItems(state,date){return list(state?.life?.reminders).filter(item=>!item.completed&&text(item.date)===date&&text(item.time)&&!isArchived(state,'reminder',item.id)).map(item=>timeItem({source:'little-ping',sourceId:item.id,id:`little-ping:${item.id}`,title:item.title||'Little Ping',type:'reminder',date,startTime:item.time,protected:false,detail:'Little Ping'}))}
 function workDeadlineItems(state,date){
   const queue=list(state?.work?.items).filter(item=>!item.done&&text(item.dueDate)===date&&!isArchived(state,'work-item',item.id)).map(item=>timeItem({source:'work-deadline',sourceId:item.id,id:`work-deadline:${item.id}`,title:item.text||'Work deadline',type:'deadline',date,allDay:true,protected:item.protected===true,detail:'Boss Bitch work item due'}));
   const training=list(state?.work?.training).filter(item=>!item.done&&text(item.dueDate)===date&&!isArchived(state,'training',item.id)).map(item=>timeItem({source:'training-deadline',sourceId:item.id,id:`training-deadline:${item.id}`,title:item.title||'Training deadline',type:'deadline',date,allDay:true,protected:true,detail:'Training Ladder due'}));
