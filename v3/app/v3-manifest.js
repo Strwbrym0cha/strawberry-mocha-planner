@@ -1,7 +1,8 @@
-export const V3_MANIFEST_VERSION=1;
+export const V3_MANIFEST_VERSION=2;
 
 export const V3_REPLACEMENT_POLICY={
   generation:'v3',
+  currentAlpha:'alpha.10',
   rule:'replace-absorb-retire',
   allowLegacyDataReadForMigration:true,
   allowLegacyRuntimeImports:false,
@@ -25,8 +26,8 @@ export const V3_FEATURES=[
   {id:'noms',label:'Noms Nook',status:'complete',strategy:'replace',critical:false},
   {id:'boss-bitch',label:'Boss Bitch',status:'complete',strategy:'replace',critical:false},
   {id:'money-cafe',label:'Money Cafe',status:'complete',strategy:'replace',critical:false},
-  {id:'routines',label:'Routines V3',status:'planned',strategy:'replace',critical:true,target:'alpha.10'},
-  {id:'berry-busy',label:'Berry Busy V3 / Time Map',status:'planned',strategy:'replace',critical:true,target:'alpha.10'},
+  {id:'routines',label:'Routines V3',status:'complete',strategy:'replace',critical:true,completedIn:'alpha.10'},
+  {id:'berry-busy',label:'Berry Busy V3 / Time Map',status:'complete',strategy:'replace',critical:true,completedIn:'alpha.10'},
   {id:'study-nook',label:'Study Nook V3',status:'planned',strategy:'replace',critical:true,target:'alpha.11'},
   {id:'projects',label:'Threads / Project Patch V3',status:'planned',strategy:'replace',critical:true,target:'alpha.11'},
   {id:'goals-growth-wins',label:'Goals + Growth + Wins',status:'planned',strategy:'absorb',critical:true,target:'alpha.12'},
@@ -40,12 +41,6 @@ export const V3_FEATURES=[
 ];
 
 export function v3Readiness(features=V3_FEATURES){
-  const critical=features.filter(item=>item.critical);
-  const complete=critical.filter(item=>item.status==='complete').length;
-  return{
-    complete,
-    total:critical.length,
-    percent:critical.length?Math.round(complete/critical.length*100):100,
-    blockers:critical.filter(item=>item.status!=='complete')
-  };
+  const critical=features.filter(item=>item.critical),complete=critical.filter(item=>item.status==='complete').length;
+  return{complete,total:critical.length,percent:critical.length?Math.round(complete/critical.length*100):100,blockers:critical.filter(item=>item.status!=='complete')};
 }
