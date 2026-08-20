@@ -1,8 +1,9 @@
 import{inferContextPatch,updateContext,describeContextPatch}from'../app/context.js?v=3.0.0-alpha.5';
 import{evaluateStateBrain}from'../app/brain.js';
+import{inventorySummary,normalizeNoms}from'../app/noms.js?v=3.0.0-alpha.16';
 import{proposeFromMessage,stageProposal}from'./actions.js?v=3.0.0-alpha.5';
 
-export const MOCHINI_CONVERSATION_VERSION=1;
+export const MOCHINI_CONVERSATION_VERSION=2;
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -47,10 +48,21 @@ function contextAcknowledgement(changes,policy){
   return policy?.headline?`${lead} ${policy.headline}`:lead;
 }
 
-function neutralReply(policy){
-  if(policy?.context?.brain==='scattered')return`I’m with you 😊 I’m keeping the decision surface small. ${policy.headline}`;
-  if(policy?.context?.energy==='drained')return`I’m with you 😊 I’m not adding pressure just because there’s empty space. ${policy.headline}`;
-  return`I’m with you 😊 I didn’t hear anything that needs changing or adding, so I’m leaving your setup as-is.`;
+function groceryNudge(state){
+  const noms=normalizeNoms(state.nourish?.noms),summary=inventorySummary(noms);
+  if(!summary.shouldSuggestTrip)return'';
+  const names=summary.needsTrip.slice(0,3).map(item=>item.name),more=summary.needsTripCount>3?` + ${summary.needsTripCount-3} more`:'';
+  return`🛒 Tiny fridge note: ${names.join(', ')}${more} ${summary.out.length?'is getting pretty empty':'is running low'}. A grocery trip soon might save Future You some food roulette. I can leave it as a suggestion unless you want to add the low Noms to the Grocery Basket.`;
+}
+
+function neutralReply(policy,state){
+  const grocery=groceryNudge(state);
+  const base=policy?.context?.brain==='scattered'
+    ?`I’m with you 😊 I’m keeping the decision surface small. ${policy.headline}`
+    :policy?.context?.energy==='drained'
+      ?`I’m with you 😊 I’m not adding pressure just because there’s empty space. ${policy.headline}`
+      :`I’m with you 😊 I didn’t hear anything that needs changing or adding, so I’m leaving your setup as-is.`;
+  return[base,grocery].filter(Boolean).join(' ');
 }
 
 export function processMochiniMessage(state={},message,nowValue=new Date()){
@@ -67,11 +79,11 @@ export function processMochiniMessage(state={},message,nowValue=new Date()){
   const proposal=existingPending?null:proposeFromMessage(input,now);
   if(proposal)next=stageProposal(next,proposal);
 
-  const contextText=contextAcknowledgement(contextChanges,policy);
+  const contextText=contextAcknowledgement(contextChanges,policy),grocery=contextChanges.length?groceryNudge(next):'';
   let reply='';
-  if(proposal)reply=[contextText,proposal.reply].filter(Boolean).join(' ');
-  else if(existingPending)reply=[contextText,'I’m also still holding the last action proposal for your approval, so I won’t stack another one on top of it.'].filter(Boolean).join(' ');
-  else reply=contextText||neutralReply(policy);
+  if(proposal)reply=[contextText,proposal.reply,grocery].filter(Boolean).join(' ');
+  else if(existingPending)reply=[contextText,'I’m also still holding the last action proposal for your approval, so I won’t stack another one on top of it.',grocery].filter(Boolean).join(' ');
+  else reply=contextText?[contextText,grocery].filter(Boolean).join(' '):neutralReply(policy,next);
 
   const inference=contextChanges.length?{
     id:makeId('context-inference'),
