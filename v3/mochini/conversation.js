@@ -1,9 +1,10 @@
 import{inferContextPatch,updateContext,describeContextPatch}from'../app/context.js?v=3.0.0-alpha.5';
 import{evaluateStateBrain}from'../app/brain.js';
 import{inventorySummary,normalizeNoms}from'../app/noms.js?v=3.0.0-alpha.16';
+import{isArchived}from'../app/archive-policy.js?v=2';
 import{proposeFromMessage,stageProposal}from'./actions.js?v=3.0.0-alpha.5';
 
-export const MOCHINI_CONVERSATION_VERSION=2;
+export const MOCHINI_CONVERSATION_VERSION=3;
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -49,7 +50,7 @@ function contextAcknowledgement(changes,policy){
 }
 
 function groceryNudge(state){
-  const noms=normalizeNoms(state.nourish?.noms),summary=inventorySummary(noms);
+  const raw=normalizeNoms(state.nourish?.noms),noms={...raw,foods:raw.foods.filter(item=>!isArchived(state,'nom-food',item.id))},summary=inventorySummary(noms);
   if(!summary.shouldSuggestTrip)return'';
   const names=summary.needsTrip.slice(0,3).map(item=>item.name),more=summary.needsTripCount>3?` + ${summary.needsTripCount-3} more`:'';
   return`🛒 Tiny fridge note: ${names.join(', ')}${more} ${summary.out.length?'is getting pretty empty':'is running low'}. A grocery trip soon might save Future You some food roulette. I can leave it as a suggestion unless you want to add the low Noms to the Grocery Basket.`;
