@@ -8,10 +8,12 @@ import{normalizeMovement}from'./motion.js';
 import{normalizeNoms}from'./noms.js';
 import{normalizeWork}from'./work.js';
 import{normalizeMoney}from'./money.js';
+import{normalizeRoutines,normalizeRoutineInstances}from'./routines.js';
+import{normalizeTimeEvents}from'./time.js';
 
-export const V3_SCHEMA_VERSION=1;
+export const V3_SCHEMA_VERSION=2;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.9';
+export const V3_BUILD='3.0.0-alpha.10';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -21,7 +23,7 @@ export const DEFAULT_V3_STATE={
   schemaVersion:V3_SCHEMA_VERSION,
   profile:{constitution:clone(DEFAULT_CONSTITUTION),katModel:clone(DEFAULT_KAT_MODEL),preferences:{},patterns:clone(DEFAULT_PATTERNS)},
   context:clone(DEFAULT_CONTEXT),
-  life:{inbox:[],tasks:[],reminders:[],routines:[],events:[],threads:[]},
+  life:{inbox:[],tasks:[],reminders:[],routines:normalizeRoutines([]),routineInstances:normalizeRoutineInstances([]),events:normalizeTimeEvents([]),threads:[]},
   nourish:{noms:normalizeNoms({foods:[],recipes:[],history:[]}),sips:normalizeSips({fridge:[],history:[]})},
   movement:normalizeMovement({sessions:[],routines:[],videos:[],weighIns:[]}),
   education:{courses:[],tasks:[],goals:[]},
@@ -39,7 +41,7 @@ export function normalizeV3State(value){
     schemaVersion:V3_SCHEMA_VERSION,
     profile:{constitution:normalizeConstitution(profile.constitution),katModel:normalizeKatModel(profile.katModel),preferences:object(profile.preferences),patterns:normalizePatterns(profile.patterns)},
     context:normalizeContext(saved.context),
-    life:{inbox:list(life.inbox),tasks:normalizeTasks(life.tasks),reminders:normalizeReminders(life.reminders),routines:list(life.routines),events:list(life.events),threads:list(life.threads)},
+    life:{inbox:list(life.inbox),tasks:normalizeTasks(life.tasks),reminders:normalizeReminders(life.reminders),routines:normalizeRoutines(life.routines),routineInstances:normalizeRoutineInstances(life.routineInstances),events:normalizeTimeEvents(life.events),threads:list(life.threads)},
     nourish:{noms:normalizeNoms(nourish.noms),sips:normalizeSips(nourish.sips)},
     movement:normalizeMovement(saved.movement),
     education:{...fallback.education,...education},
