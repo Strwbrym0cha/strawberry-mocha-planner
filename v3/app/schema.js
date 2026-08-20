@@ -6,10 +6,12 @@ import{normalizeReminders}from'./reminders.js';
 import{normalizeSips}from'./sips.js';
 import{normalizeMovement}from'./motion.js';
 import{normalizeNoms}from'./noms.js';
+import{normalizeWork}from'./work.js';
+import{normalizeMoney}from'./money.js';
 
 export const V3_SCHEMA_VERSION=1;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.8';
+export const V3_BUILD='3.0.0-alpha.9';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -23,7 +25,8 @@ export const DEFAULT_V3_STATE={
   nourish:{noms:normalizeNoms({foods:[],recipes:[],history:[]}),sips:normalizeSips({fridge:[],history:[]})},
   movement:normalizeMovement({sessions:[],routines:[],videos:[],weighIns:[]}),
   education:{courses:[],tasks:[],goals:[]},
-  work:{items:[],schedule:{}},
+  work:normalizeWork({items:[],schedule:{}}),
+  money:normalizeMoney({}),
   insights:{activityLog:[],observations:[],experiments:[]},
   mochini:{conversation:[],pendingProposal:null,lastProposal:null,lastContextInference:null},
   meta:{build:V3_BUILD,createdAt:'',updatedAt:''}
@@ -31,7 +34,7 @@ export const DEFAULT_V3_STATE={
 
 export function createInitialV3State(){const now=new Date().toISOString(),state=clone(DEFAULT_V3_STATE);state.meta.createdAt=now;state.meta.updatedAt=now;state.context.updatedAt=now;return state}
 export function normalizeV3State(value){
-  const saved=object(value),profile=object(saved.profile),life=object(saved.life),nourish=object(saved.nourish),education=object(saved.education),work=object(saved.work),insights=object(saved.insights),mochini=object(saved.mochini),meta=object(saved.meta),fallback=createInitialV3State();
+  const saved=object(value),profile=object(saved.profile),life=object(saved.life),nourish=object(saved.nourish),education=object(saved.education),insights=object(saved.insights),mochini=object(saved.mochini),meta=object(saved.meta),fallback=createInitialV3State();
   return{
     schemaVersion:V3_SCHEMA_VERSION,
     profile:{constitution:normalizeConstitution(profile.constitution),katModel:normalizeKatModel(profile.katModel),preferences:object(profile.preferences),patterns:normalizePatterns(profile.patterns)},
@@ -39,7 +42,9 @@ export function normalizeV3State(value){
     life:{inbox:list(life.inbox),tasks:normalizeTasks(life.tasks),reminders:normalizeReminders(life.reminders),routines:list(life.routines),events:list(life.events),threads:list(life.threads)},
     nourish:{noms:normalizeNoms(nourish.noms),sips:normalizeSips(nourish.sips)},
     movement:normalizeMovement(saved.movement),
-    education:{...fallback.education,...education},work:{...fallback.work,...work},
+    education:{...fallback.education,...education},
+    work:normalizeWork(saved.work),
+    money:normalizeMoney(saved.money),
     insights:{activityLog:list(insights.activityLog),observations:list(insights.observations),experiments:list(insights.experiments)},
     mochini:{conversation:list(mochini.conversation).slice(-80),pendingProposal:mochini.pendingProposal&&typeof mochini.pendingProposal==='object'?mochini.pendingProposal:null,lastProposal:mochini.lastProposal&&typeof mochini.lastProposal==='object'?mochini.lastProposal:null,lastContextInference:mochini.lastContextInference&&typeof mochini.lastContextInference==='object'?mochini.lastContextInference:null},
     meta:{build:V3_BUILD,createdAt:String(meta.createdAt||fallback.meta.createdAt),updatedAt:String(meta.updatedAt||fallback.meta.updatedAt)}
