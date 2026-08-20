@@ -4,6 +4,7 @@ import{DEFAULT_CONTEXT,normalizeContext}from'./context.js';
 
 export const V3_SCHEMA_VERSION=1;
 export const V3_STORAGE_KEY='sm_v3_beta';
+export const V3_BUILD='3.0.0-alpha.2';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -36,7 +37,7 @@ export const DEFAULT_V3_STATE={
   insights:{activityLog:[],observations:[],experiments:[]},
   mochini:{conversation:[]},
   meta:{
-    build:'3.0.0-alpha.1',
+    build:V3_BUILD,
     createdAt:'',
     updatedAt:''
   }
@@ -95,7 +96,7 @@ export function normalizeV3State(value){
     },
     mochini:{conversation:list(mochini.conversation)},
     meta:{
-      build:String(meta.build||fallback.meta.build),
+      build:V3_BUILD,
       createdAt:String(meta.createdAt||fallback.meta.createdAt),
       updatedAt:String(meta.updatedAt||fallback.meta.updatedAt)
     }
