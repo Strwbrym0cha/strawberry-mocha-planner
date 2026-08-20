@@ -16,9 +16,9 @@ import{normalizeGrowth}from'./growth.js';
 import{normalizeActivityLog}from'./activity.js';
 import{normalizeResetSessions}from'./soft-reset.js';
 
-export const V3_SCHEMA_VERSION=6;
+export const V3_SCHEMA_VERSION=7;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.16.1';
+export const V3_BUILD='3.0.0-alpha.16.2';
 const clone=v=>structuredClone(v),object=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{},list=v=>Array.isArray(v)?v:[];
 export const DEFAULT_V3_STATE={schemaVersion:V3_SCHEMA_VERSION,profile:{constitution:clone(DEFAULT_CONSTITUTION),katModel:clone(DEFAULT_KAT_MODEL),preferences:{},patterns:clone(DEFAULT_PATTERNS)},context:clone(DEFAULT_CONTEXT),life:{inbox:[],tasks:[],reminders:[],routines:normalizeRoutines([]),routineInstances:normalizeRoutineInstances([]),events:normalizeTimeEvents([]),threads:normalizeThreads([])},nourish:{noms:normalizeNoms({foods:[],recipes:[],history:[]}),sips:normalizeSips({fridge:[],history:[]})},movement:normalizeMovement({sessions:[],routines:[],videos:[],weighIns:[]}),education:normalizeEducation({}),work:normalizeWork({items:[],schedule:{}}),money:normalizeMoney({}),growth:normalizeGrowth({}),insights:{activityLog:normalizeActivityLog([]),observations:[],experiments:[],resetSessions:normalizeResetSessions([]),legacyNotes:[]},mochini:{conversation:[],pendingProposal:null,lastProposal:null,lastContextInference:null},meta:{build:V3_BUILD,createdAt:'',updatedAt:'',legacyMigration:{}}};
 export function createInitialV3State(){const now=new Date().toISOString(),s=clone(DEFAULT_V3_STATE);s.meta.createdAt=now;s.meta.updatedAt=now;s.context.updatedAt=now;return s}
