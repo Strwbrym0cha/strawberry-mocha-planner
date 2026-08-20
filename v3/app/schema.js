@@ -4,7 +4,7 @@ import{DEFAULT_CONTEXT,normalizeContext}from'./context.js';
 
 export const V3_SCHEMA_VERSION=1;
 export const V3_STORAGE_KEY='sm_v3_beta';
-export const V3_BUILD='3.0.0-alpha.2';
+export const V3_BUILD='3.0.0-alpha.3';
 
 const clone=value=>structuredClone(value);
 const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
