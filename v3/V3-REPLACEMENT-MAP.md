@@ -29,7 +29,9 @@ The rule is **replace, absorb, or retire**.
 Cross-module data should have one source of truth. Screens are views, not duplicate databases. Examples:
 - Boss Bitch and Money Cafe share one earnings ledger.
 - Sip Station logs every drink, while Water Goal is a filtered view of that same history.
-- Home consumes Brain output instead of recreating decision rules.
+- Berry Busy displays Boss Bitch shifts and linked deadlines without copying them.
+- Routines use reusable templates plus separate dated instances.
+- Home consumes Brain, Time Map, and Routine outputs instead of recreating decision rules.
 
 ## Already V3-native
 
@@ -47,27 +49,37 @@ Cross-module data should have one source of truth. Screens are views, not duplic
 - Noms Nook
 - Boss Bitch
 - Money Cafe
+- Routines V3 — Alpha 10 implementation complete; device smoke test pending
+- Berry Busy V3 / Time Map — Alpha 10 implementation complete; device smoke test pending
+
+## Alpha 10 architecture
+
+### Routines V3
+- one routine system, not duplicate routine sections;
+- routine steps are native steps, not existing task records;
+- reusable template + per-date instance model;
+- daily, weekday, weekend, selected-day, and manual recurrence;
+- today can be completed, partially completed, skipped, deferred, or reactivated without damaging the template;
+- skip tomorrow creates tomorrow-specific state only;
+- template editing preserves stable step IDs by position where possible;
+- partial routine progress counts;
+- Adaptive Home can surface the next unfinished step;
+- activity history records routine lifecycle/progress events.
+
+### Berry Busy V3 / Time Map
+- V3-native events, appointments, deadlines, and time blocks;
+- Now / Next / Later and compact week views;
+- protected commitments feed Adaptive Home priority;
+- Boss Bitch shifts are linked views, not copied calendar records;
+- task deadlines, timed Little Pings, work deadlines, and Training Ladder deadlines can appear as linked time items;
+- native Time Map records can be created, edited, and deleted in Berry Busy;
+- linked records remain editable only at their source module.
 
 ## Replacement queue
 
 ### Critical before V2 can leave the root
 
-1. **Routines V3**
-   - one routine system, not duplicate routine sections;
-   - routine steps are native steps, not existing task records;
-   - daily/weekly/selected-day recurrence;
-   - today instance can be completed, partially completed, skipped, or deferred without damaging the template;
-   - partial routine counts;
-   - Brain can recommend a next step without nagging;
-   - activity history records routine progress.
-
-2. **Berry Busy V3 / Time Map**
-   - V3-native events, appointments, shifts, deadlines, and time blocks;
-   - day/week views that answer "what affects today?" rather than recreating a giant calendar app;
-   - protected commitments feed Home/Brain;
-   - work shifts remain shared with Boss Bitch rather than duplicated.
-
-3. **Study Nook V3**
+1. **Study Nook V3**
    - courses/programs;
    - assignments and deadlines;
    - study sessions/focus history;
@@ -75,49 +87,49 @@ Cross-module data should have one source of truth. Screens are views, not duplic
    - Brain-fit study recommendations;
    - school information remains distinct from work training while sharing common focus/time primitives.
 
-4. **Threads / Project Patch V3**
+2. **Threads / Project Patch V3**
    - projects as containers, not oversized tasks;
    - notes, deadlines, resources, related tasks, reminders, progress, and Mochini context in one thread;
    - Universal Inbox can classify new material into a thread when appropriate.
 
-5. **Goals + Growth + Wins**
+3. **Goals + Growth + Wins**
    - replace the useful parts of Growth Garden, Dream Board, and Win Shelf with one coherent growth system;
    - outcome goals, gentle habits/experiments, milestones, and wins stay related without becoming duplicate trackers;
    - initiating and partial progress can count where appropriate.
 
-6. **Brain / Recovery / Kat Labs experience**
+4. **Brain / Recovery / Kat Labs experience**
    - do not recreate three old pages just because V2 had them;
    - Current Context + Brain + Behavior Support already provide the engine;
    - add a V3-native Soft Reset flow, transparent pattern review, experiments, and "why did KatOS suggest this?" explanations;
    - learned patterns remain separate from explicit rules and never silently become obligations.
 
-7. **Control Center**
+5. **Control Center**
    - replace Behind the Bows + useful Berry Base controls;
    - Kat Model editor, Constitution, behavior-support settings, module preferences, data/privacy controls, migrations, diagnostics, and build info;
    - fewer scattered settings screens.
 
-8. **Memory / Archive**
+6. **Memory / Archive**
    - replace Memory Box with searchable activity/history/archive views;
    - archived tasks/projects/routines/wins remain retrievable without crowding active modules.
 
-9. **Mochini V3 completion**
+7. **Mochini V3 completion**
    - preserve deterministic Constitution/Brain authority;
    - richer language understanding may propose actions, but writes remain permissioned;
    - context self-report may update temporary Current Context transparently;
    - no V2 Mochini runtime reuse.
 
-10. **V3 Cloud + Account Sync**
-    - rebuild sign-in/cloud persistence natively for the V3 schema;
-    - V3 must not depend on the V2 root iframe/cloud bridge;
-    - sync the complete V3 state safely across phone/iPad/computer;
-    - define conflict handling and backup/recovery before root cutover.
+8. **V3 Cloud + Account Sync**
+   - rebuild sign-in/cloud persistence natively for the V3 schema;
+   - V3 must not depend on the V2 root iframe/cloud bridge;
+   - sync the complete V3 state safely across phone/iPad/computer;
+   - define conflict handling and backup/recovery before root cutover.
 
-11. **V2 -> V3 Data Migration**
-    - explicit one-way importer into V3 models;
-    - preview what will migrate before writing;
-    - preserve a backup of V2 data;
-    - migration code may READ legacy shapes but the resulting V3 state must be normalized V3 data;
-    - migration code is removable after the transition and is not a permanent runtime dependency.
+9. **V2 -> V3 Data Migration**
+   - explicit one-way importer into V3 models;
+   - preview what will migrate before writing;
+   - preserve a backup of V2 data;
+   - migration code may READ legacy shapes but the resulting V3 state must be normalized V3 data;
+   - migration code is removable after the transition and is not a permanent runtime dependency.
 
 ## V2 features that should be absorbed instead of copied
 
@@ -128,6 +140,8 @@ Cross-module data should have one source of truth. Screens are views, not duplic
 - **Berry Base** -> Control Center / system diagnostics where useful.
 - **Coin Purse** -> Money Cafe.
 - **Boss Mode** -> Boss Bitch.
+- **Old routine sections** -> Routines V3 template/instance system.
+- **Old Berry Busy** -> Berry Busy V3 Time Map.
 
 ## Root-switch gate
 
@@ -135,8 +149,8 @@ V2 does not leave `/` until all of these are true:
 
 - [ ] Every critical V2 function is replaced, absorbed, or intentionally retired.
 - [ ] No V3 page imports, embeds, or executes V2 runtime/UI code.
-- [ ] Routines V3 works end-to-end.
-- [ ] Time/calendar commitments work end-to-end.
+- [ ] Routines V3 passes iPhone/iPad/desktop smoke tests end-to-end.
+- [ ] Time/calendar commitments pass iPhone/iPad/desktop smoke tests end-to-end.
 - [ ] Study, projects, goals/growth, archive, and settings are V3-native.
 - [ ] V3 cloud/account sync is working across devices.
 - [ ] V2 -> V3 migration has preview, backup, and rollback safety.
@@ -151,9 +165,9 @@ After the gate passes:
 - legacy V2 is read-only/maintenance-only;
 - no new features are added to V2.
 
-## Release direction from Alpha 9
+## Release direction from Alpha 10
 
-- **Alpha 10:** Routines V3 + Berry Busy V3 foundation
+- **Alpha 10:** Routines V3 + Berry Busy V3 — implemented; device smoke test pending
 - **Alpha 11:** Study Nook V3 + Threads/Projects
 - **Alpha 12:** Goals/Growth/Wins + Soft Reset/Pattern Lab experience
 - **Alpha 13:** Control Center + Memory/Archive + Mochini completion pass
