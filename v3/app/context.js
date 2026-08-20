@@ -1,4 +1,4 @@
-export const CONTEXT_VERSION=1;
+export const CONTEXT_VERSION=2;
 
 export const CONTEXT_OPTIONS={
   brain:[
@@ -75,17 +75,38 @@ export function contextLabel(key,value){
 export function inferContextPatch(text){
   const input=String(text||'').toLowerCase();
   const patch={};
-  if(/brain (is )?(soup|mush)|scattered|all over the place|can't focus|cant focus/.test(input))patch.brain='scattered';
-  if(/locked in|hyperfocus|hyperfocused|hyperfixated/.test(input))patch.brain='locked-in';
-  if(/exhausted|drained|dead tired|no energy|wiped/.test(input))patch.energy='drained';
-  if(/energized|full of energy|wired|ready to go/.test(input))patch.energy='energized';
-  if(/soft day|take it easy|low capacity|bare minimum/.test(input))patch.capacity='soft';
-  if(/big day|ambitious|i can do a lot|high capacity/.test(input))patch.capacity='big';
-  if(/urgent|emergency|asap|running out of time/.test(input))patch.pressure='urgent';
-  if(/bedtime|going to bed|wind down|winding down/.test(input))patch.mode='bedtime';
-  if(/study mode|studying|school mode/.test(input))patch.mode='study';
-  if(/work mode|boss mode/.test(input))patch.mode='boss';
+
+  if(/brain (?:is )?(?:soup|mush|fried)|scattered|all over the place|can(?:not|'t|t) focus|cannot focus|too many thoughts|overwhelmed|overstimulated/.test(input))patch.brain='scattered';
+  if(/locked in|hyperfocus(?:ed)?|hyperfixated|in the zone|on a roll|super focused|really focused/.test(input))patch.brain='locked-in';
+  if(/feeling (?:pretty )?(?:okay|fine|steady)|brain (?:is )?(?:okay|fine|steady)|focus is okay/.test(input))patch.brain='steady';
+
+  if(/exhausted|drained|dead tired|no energy|zero energy|wiped|so tired|really tired|low energy|running on empty/.test(input))patch.energy='drained';
+  if(/energized|full of energy|wired|ready to go|tons of energy|so much energy/.test(input))patch.energy='energized';
+  if(/energy (?:is )?(?:okay|fine|normal)|i feel okay|feeling okay/.test(input))patch.energy='okay';
+
+  if(/soft day|take it easy|low capacity|bare minimum|don(?:'t|t) wanna do anything|do not want to do anything|can(?:'t|t) do much|cannot do much|keep it small|easy day/.test(input))patch.capacity='soft';
+  if(/big day|ambitious|i can do a lot|high capacity|feeling ambitious|let(?:'s|s) get a lot done/.test(input))patch.capacity='big';
+  if(/normal day|regular day|capacity (?:is )?(?:okay|normal)/.test(input))patch.capacity='normal';
+
+  if(/urgent|emergency|asap|running out of time|time crunch|crunch time|has to happen now|need this now/.test(input))patch.pressure='urgent';
+  else if(/some pressure|kinda rushed|kind of rushed|a little rushed|deadline coming up|getting close/.test(input))patch.pressure='some';
+  if(/no rush|not urgent|plenty of time|we have time/.test(input))patch.pressure='chill';
+
+  if(/don(?:'t|t) wanna talk to anyone|do not want to talk to anyone|social battery (?:is )?(?:dead|empty|low)|leave me alone|people are too much|hiding from people/.test(input))patch.socialBattery='hiding';
+  if(/feeling social|social battery (?:is )?(?:good|full)|i wanna see people|want to see people|people-compatible/.test(input))patch.socialBattery='social';
+
+  if(/bedtime|going to bed|go to bed|wind down|winding down|getting ready for bed/.test(input))patch.mode='bedtime';
+  if(/study mode|i(?:'m| am) studying|school mode|time to study|about to study/.test(input))patch.mode='study';
+  if(/work mode|boss mode|i(?:'m| am) working|time to work/.test(input))patch.mode='boss';
   if(/soft reset/.test(input))patch.mode='soft-reset';
   if(/hyperfixation mode/.test(input))patch.mode='hyperfixation';
+  if(/home reset|cleaning the house|reset the house|apartment reset/.test(input))patch.mode='home-reset';
+  if(/going out|leaving the house|about to leave|getting ready to go out/.test(input))patch.mode='going-out';
+  if(/normal mode|back to normal|regular mode/.test(input))patch.mode='normal';
+
   return patch;
+}
+
+export function describeContextPatch(patch={}){
+  return Object.entries(patch).filter(([key,value])=>CONTEXT_OPTIONS[key]?.some(option=>option.value===value)).map(([key,value])=>({key,...contextLabel(key,value)}));
 }
