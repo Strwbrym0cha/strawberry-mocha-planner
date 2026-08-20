@@ -2,9 +2,9 @@
 
 ## North Star
 
-**V3 is the new KatOS. V2 is reference material, not a dependency.**
+**V3 is the new KatOS. V2 is reference material and migration input, not a dependency.**
 
-V3 may inspect V2 behavior and read V2 data during explicit migration, but V3 may NOT iframe V2 pages, import/execute V2 runtime UI, fall back to a V2 screen, or keep V2 data shapes as its permanent model.
+V3 may read V2 data during explicit migration. V3 may not iframe V2 pages, import or execute V2 runtime UI, fall back to V2 screens, or keep V2 data shapes as its permanent model.
 
 The rule is **replace, absorb, or retire**.
 
@@ -14,115 +14,93 @@ The rule is **replace, absorb, or retire**.
 
 Cross-module information has one source of truth. Screens are views, not duplicate databases.
 
-Examples:
 - Boss Bitch + Money Cafe share one earnings ledger.
-- Berry Busy derives one Time Map from native time plus linked module records.
+- Berry Busy derives one Time Map from native time and linked module records.
 - Routines use reusable templates + separate dated instances.
-- Threads reference real tasks/reminders/events/courses/etc. by ID instead of cloning them.
-- Wins may be derived views of Activity History instead of duplicate records.
-- Patterns remain separate from explicit preferences/rules until Kat promotes one.
+- Threads reference real tasks/reminders/events/courses/etc. by ID.
+- Wins may be derived from Activity History.
+- Patterns remain observations until Kat explicitly promotes one.
+- Noms availability replaces the old duplicate pantry concept; Grocery Basket and Meal Map remain real V3-native functions.
 
-## V3-native systems implemented
+## Implemented release stack
 
 ### Foundation through Alpha 9
-- Adaptive Home
-- Current Context
-- Kat Model
-- Kat Constitution
-- KatOS Brain
-- Behavior Support
-- Sweet To-Dos
-- Little Pings
-- Mochini core conversation/context/action gate
-- Sip Station
-- Motion Meadow
-- Noms Nook
-- Boss Bitch
-- Money Cafe
+Adaptive Home, Current Context, Kat Model, Constitution, KatOS Brain, Behavior Support, Sweet To-Dos, Little Pings, Mochini core, Sip Station, Motion Meadow, Noms Nook, Boss Bitch, Money Cafe.
 
 ### Alpha 10
-- **Routines V3**: template/instance model, native steps, recurrence, partial progress, skip/defer/reactivate, skip tomorrow, template editing, Home integration, activity events.
-- **Berry Busy V3 / Time Map**: Now/Next/Later, compact week strip, native time records, protected commitments, linked work/task/reminder/training data.
+- Routines V3: templates, dated instances, recurrence, partial completion, skip/defer/reactivate, skip tomorrow, editing, Home integration.
+- Berry Busy V3 / Time Map: Now/Next/Later, week strip, native time records, protected commitments, linked module time.
 
-### Alpha 11 + 12 merged into Alpha 12
-- **Study Nook V3**: programs, courses, course work, deadlines, Brain-fit study recommendations, focus-session history, Berry Busy integration.
-- **Threads V3**: ongoing-life containers with notes, resources, deadlines, status, and references to existing KatOS records without cloning.
-- **Growth Room**: dreams/outcome/practice goals, milestones, experiments, manual wins, and activity-derived wins.
-- **Reset Lab**: context-aware Soft Reset sessions plus transparent Pattern Lab candidates.
-- **Pattern permission model**: observations show evidence/confidence; Kat may keep observing, dismiss, or explicitly promote one to a preference. Patterns never silently become rules.
-- **Adaptive Home V4**: real Study Nook recommendations, active-goal milestones, Soft Reset prioritization, Time/Routine integration.
-- **Time Map V2**: Study deadlines, Thread deadlines, and Goal target dates appear as linked derived time items.
-- **Activity primitives**: new systems write context snapshots to a shared activity history for later archive/pattern use.
+### Alpha 12, merged Alpha 11 + 12
+- Study Nook V3.
+- Threads V3.
+- Growth Room + Wins + Experiments.
+- Reset Lab + Pattern Lab.
+- Activity History primitives.
+- Adaptive Home + Time Map integration.
 
-## Remaining critical replacement queue
+### Alpha 14, merged Alpha 13 + 14
+- Control Center.
+- Memory Box / Archive.
+- Mochini V3 completion foundation.
+- Native V3 Cloud + Account Sync with dedicated V3 tables, revision checks, snapshots, and conflict stops.
 
-### Alpha 13 + 14 merged into Alpha 14
-1. **Control Center**
-   - absorb Behind the Bows + useful Berry Base controls;
-   - Kat Model editor, Constitution, Behavior Support settings, module preferences, Pattern permissions, data/privacy, diagnostics, build info.
+### Alpha 16, merged Alpha 15 + 16
+- Conservative V2 -> V3 migration engine.
+- Migration Lab with preview, exact V2 capsule, pre-migration V3 backup, explicit import, receipt, and rollback.
+- Deterministic legacy IDs so repeated import does not duplicate the same V2 records.
+- Explicit V2 parity ledger covering every persisted V2 area as replace / absorb / retire.
+- Noms Nook V2 with Grocery Basket + Meal Map so V2 groceries/meal planning have native V3 destinations.
+- V3-only `/v3/` service worker.
+- Legacy root service-worker/cache detox to stop Safari from returning V2 markup for V3 routes.
+- Launch Bay with automated route/schema/service-worker/migration/parity checks.
+- Manual iPhone/iPad/desktop/touch/cloud/rollback readiness checklist.
+- Root cutover rehearsal only. Alpha 16 does **not** change `/`.
 
-2. **Memory / Archive**
-   - searchable history/archive across completed and inactive records;
-   - activity timeline and recovery of archived information without crowding live modules.
+## Explicit parity decisions
 
-3. **Mochini V3 completion**
-   - capability registry across V3 modules;
-   - read Current Context, Time, Routines, Study, Threads, Growth, Noms, Sips, Motion, Work, Money summaries;
-   - proposals/writes remain permission-gated;
-   - no V2 Mochini runtime reuse.
+The executable ledger is `v3/app/parity.js`.
 
-4. **Native V3 Cloud + Account Sync**
-   - V3-native sign-in and cloud persistence for the V3 schema;
-   - local-first/offline tolerance;
-   - revision/conflict handling;
-   - backup snapshots + recovery;
-   - safe phone/iPad/computer sync;
-   - no dependency on the V2 root iframe/cloud bridge.
-
-### Alpha 15
-5. **V2 -> V3 Data Migration + Parity Audit**
-   - explicit one-way legacy reader;
-   - preview counts and transformations before writing;
-   - V2 backup + pre-migration V3 snapshot;
-   - normalize everything into V3-native models;
-   - report every legacy record as migrated/transformed/review-needed/retired;
-   - rollback option;
-   - final replace/absorb/retire parity report.
-
-### Alpha 16
-6. **Device hardening + root cutover rehearsal**
-   - iPhone/iPad/desktop smoke tests;
-   - Safari cache hardening;
-   - offline/two-device/conflict tests;
-   - malformed-state recovery;
-   - root switch rehearsal.
+Important absorptions/retirements include:
+- V2 guided task-linked routines -> standalone Routines V3 steps.
+- habits -> Growth Experiments.
+- old day mood/energy fields -> Current Context + Activity History.
+- old daily notes -> Activity History / Memory Box.
+- parked projects -> paused Threads.
+- pantry -> saved Noms availability.
+- Emergency Noms -> tagged saved Noms.
+- Finance Friday workflow state -> retired in favor of live Money Cafe information.
+- old brain/recovery state -> Current Context + Reset Lab.
+- Hyperfixation state -> Current Context + Brain protection logic.
+- TaskBot state -> KatOS Brain + Mochini separation.
 
 ## Root-switch gate
 
 V2 does not leave `/` until all are true:
-- [ ] Every critical V2 function is replaced, absorbed, or intentionally retired.
-- [ ] No V3 page imports, embeds, or executes V2 runtime/UI code.
-- [ ] All implemented V3 modules pass device smoke tests.
-- [ ] Control Center + Archive are V3-native.
-- [ ] Mochini understands the complete V3 capability surface while keeping write approval gates.
-- [ ] V3 cloud/account sync works across devices.
-- [ ] V2 -> V3 migration has preview, backup, accounting, and rollback safety.
-- [ ] Existing V3 modules preserve one another's state on every save.
-- [ ] Root deployment has a cache-busting plan.
+- [x] Every persisted V2 area has a replace / absorb / retire decision.
+- [x] No V3 design requires V2 runtime/UI code.
+- [x] Control Center + Archive are V3-native.
+- [x] Mochini V3 keeps permission-gated writes.
+- [x] V3 has native cloud/account persistence.
+- [x] Migration has preview, legacy capsule, V3 backup, receipt, and rollback.
+- [x] V3 has a dedicated cache/service-worker strategy that cannot fall back to V2 markup.
+- [ ] Launch Bay automated checks pass on the deployed site.
+- [ ] Refresh/persistence test passes.
+- [ ] Touch/forms test passes.
+- [ ] iPad portrait + landscape pass.
+- [ ] iPhone pass.
+- [ ] desktop pass.
+- [ ] two-device cloud sync/conflict test passes.
+- [ ] migration rollback test passes.
 
-After the gate passes:
+The unchecked items are intentionally runtime/manual checks. Source code is not allowed to mark them complete on its own.
+
+## Stable cutover
+
+Only after Launch Bay turns fully green:
 - `/` becomes V3;
-- V2 moves to `/legacy-v2/` or equivalent;
-- legacy V2 becomes read-only/maintenance-only;
-- no new features go to V2.
+- V2 moves to `/legacy-v2/` or an equivalent read-only path;
+- V2 stops receiving features;
+- V3 remains the only active KatOS model.
 
-## Release runway
-
-- **Alpha 10:** Routines + Berry Busy — implemented; device smoke testing pending.
-- **Alpha 12:** Alpha 11+12 merged: Study + Threads + Growth/Wins + Reset/Patterns — implemented; device smoke testing pending.
-- **Alpha 14:** Alpha 13+14 merged: Control Center + Archive + Mochini completion + native V3 Cloud/Account Sync.
-- **Alpha 15:** V2 migration tooling + parity audit.
-- **Alpha 16:** device hardening + root cutover rehearsal.
-- **V3 Stable:** root becomes the new KatOS; V2 goes to the code dungeons.
-
-The roadmap may change when a better V3-native design appears. The constraint that does not change is: **V3 never solves a missing feature by falling back to V2.**
+The constraint that never changes: **V3 never solves a missing feature by falling back to V2.**
