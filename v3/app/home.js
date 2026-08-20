@@ -1,7 +1,8 @@
 import{evaluateStateBrain,brainStatusChips}from'./brain.js';
 import{contextLabel}from'./context.js';
+import{recommendTasks}from'./tasks.js';
 
-export const HOME_VERSION=1;
+export const HOME_VERSION=2;
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -47,19 +48,34 @@ function collectSignals(state,now){
 }
 
 const signalCard=(key,icon,eyebrow,title,detail,count,priority=5)=>({key,kind:'signal',icon,eyebrow,title,detail,count:Number(count)||0,priority});
-const policyCard=policy=>({key:'brain-guidance',kind:'policy',icon:'🧠',eyebrow:'KATOS BRAIN',title:policy.headline,detail:`${policy.choiceCount} visible choice${policy.choiceCount===1?'':'s'} · ${policy.taskEnergyCeiling} effort ceiling · ${policy.initiationStyle.replaceAll('-',' ')}`,count:null,priority:1});
-const modeSuggestionCard=policy=>policy.modeSuggestion?{key:'mode-suggestion',kind:'mode-suggestion',icon:policy.modeSuggestion.icon,eyebrow:'BRAIN SUGGESTION',title:`Try ${policy.modeSuggestion.label}`,detail:policy.modeSuggestion.reason,count:null,priority:0}:null;
+const policyCard=policy=>({key:'brain-guidance',kind:'policy',icon:'🧠',eyebrow:'KATOS BRAIN',title:policy.headline,detail:`${policy.choiceCount} visible choice${policy.choiceCount===1?'':'s'} · ${policy.taskEnergyCeiling} effort ceiling · ${policy.initiationStyle.replaceAll('-',' ')}`,count:null,priority:4});
+
+function taskCards(policy,signals){
+  return recommendTasks(signals.tasks,policy,signals.today).map((entry,index)=>{
+    const task=entry.task;
+    const meta=[`${task.minutes} min`,`${task.energy} energy`,task.initiation==='sticky'?'sticky start':'easy start',task.protected?'protected':'flexible'].join(' · ');
+    return{
+      key:`task-${task.id}`,
+      kind:'task-choice',
+      taskId:task.id,
+      icon:task.protected?'🛡️':'📝',
+      eyebrow:task.protected?'PROTECTED SWEET TO-DO':'SWEET TO-DO',
+      title:task.text,
+      detail:`${meta}${entry.reasons.length?` · ${entry.reasons.join(', ')}`:''}`,
+      count:null,
+      priority:task.protected?0:1+index
+    };
+  });
+}
 
 function candidateCards(state,policy,signals){
-  const mode=policy.context.mode,cards=[];
-  if(signals.protectedTasks.length)cards.push(signalCard('protected','🛡️','PROTECTED','Needs to stay visible',`${signals.protectedTasks.length} protected commitment${signals.protectedTasks.length===1?'':'s'} still open.`,signals.protectedTasks.length,policy.protectedCommitments==='front'?0:2));
+  const mode=policy.context.mode,cards=[...taskCards(policy,signals)];
   if(signals.events.length)cards.push(signalCard('events','📅','TODAY','Time-bound plans',`${signals.events.length} event${signals.events.length===1?'':'s'} on today’s calendar.`,signals.events.length,mode==='going-out'?1:3));
   if(signals.beforeBed.length)cards.push(signalCard('bed-pings','🌙','LITTLE PINGS','Before-bed pings',`${signals.beforeBed.length} thing${signals.beforeBed.length===1?'':'s'} waiting for tonight.`,signals.beforeBed.length,mode==='bedtime'?1:4));
   else if(signals.dueReminders.length)cards.push(signalCard('pings','🔔','LITTLE PINGS','Still hanging around',`${signals.dueReminders.length} reminder${signals.dueReminders.length===1?'':'s'} due or undated.`,signals.dueReminders.length,4));
   if(signals.routines.length)cards.push(signalCard('routines','🎀','ROUTINES','Rhythms available',`${signals.routines.length} routine${signals.routines.length===1?'':'s'} can carry the next steps for you.`,signals.routines.length,mode==='bedtime'||mode==='home-reset'?2:5));
   if(signals.schoolTasks.length)cards.push(signalCard('school','🎓','STUDY NOOK','School lane',`${signals.schoolTasks.length} open school item${signals.schoolTasks.length===1?'':'s'}.`,signals.schoolTasks.length,mode==='study'?1:6));
   if(signals.workItems.length)cards.push(signalCard('work','💼','BOSS MODE','Work lane',`${signals.workItems.length} open work item${signals.workItems.length===1?'':'s'}.`,signals.workItems.length,mode==='boss'?1:6));
-  if(signals.tasks.length)cards.push(signalCard('tasks','📝','SWEET TO-DOS','Open choices',`${signals.tasks.length} open task${signals.tasks.length===1?'':'s'} exist in V3. Home will only surface as many as the Brain allows.`,signals.tasks.length,7));
   if(signals.movementRoutines.length&&!signals.movementToday.length)cards.push(signalCard('motion','🌷','MOTION','Movement is available',`${signals.movementRoutines.length} saved movement option${signals.movementRoutines.length===1?'':'s'} available.`,signals.movementRoutines.length,mode==='soft-reset'?3:8));
   if(signals.nomHistory.length||signals.sipHistory.length)cards.push(signalCard('nourish','🍱','NOURISH','Today has a trail',`${signals.nomHistory.length} Nom log${signals.nomHistory.length===1?'':'s'} · ${signals.sipHistory.length} Sip log${signals.sipHistory.length===1?'':'s'}.`,signals.nomHistory.length+signals.sipHistory.length,9));
   return cards;
@@ -67,8 +83,7 @@ function candidateCards(state,policy,signals){
 
 function fallbackCards(state,policy,signals){
   const result=[];
-  const suggestion=modeSuggestionCard(policy);
-  if(suggestion)result.push(suggestion);
+  if(policy.modeSuggestion)result.push({key:'mode-suggestion',kind:'mode-suggestion',icon:policy.modeSuggestion.icon,eyebrow:'BRAIN SUGGESTION',title:`Try ${policy.modeSuggestion.label}`,detail:policy.modeSuggestion.reason,count:null,priority:1});
   result.push(policyCard(policy));
   if(policy.context.currentActivity)result.push({key:'current-activity',kind:'context',icon:'📍',eyebrow:'RIGHT NOW',title:policy.context.currentActivity,detail:'KatOS will treat this as the current activity instead of pretending nothing is happening.',count:null,priority:2});
   if(policy.restAllowed&&(policy.context.energy==='drained'||policy.context.capacity==='soft'||policy.context.mode==='soft-reset'||policy.context.mode==='bedtime'))result.push({key:'rest',kind:'rest',icon:'🌙',eyebrow:'VALID OPTION',title:'Stopping can count',detail:'There is no rule requiring KatOS to fill empty space with more work.',count:null,priority:3});
