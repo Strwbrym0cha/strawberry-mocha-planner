@@ -1,110 +1,29 @@
-export const NOMS_VERSION=1;
-
-export const NOM_KINDS=[
-  {value:'meal',icon:'🍱',label:'Meal'},
-  {value:'snack',icon:'🍓',label:'Snack'},
-  {value:'sweet',icon:'🍰',label:'Sweet'},
-  {value:'drink-food',icon:'🥛',label:'Drink / shake'},
-  {value:'other',icon:'✨',label:'Other'}
-];
-
-const list=value=>Array.isArray(value)?value:[];
-const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
-const text=value=>String(value??'').trim();
-const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
-const makeId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
-const pad=value=>String(value).padStart(2,'0');
-export const localDateKey=(value=new Date())=>{const d=value instanceof Date?value:new Date(value);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
-const tags=value=>(Array.isArray(value)?value:String(value||'').split(',')).map(item=>text(item).toLowerCase()).filter(Boolean).filter((item,index,array)=>array.indexOf(item)===index).slice(0,20);
-const kindExists=value=>NOM_KINDS.some(item=>item.value===value);
-export const nomKindMeta=value=>NOM_KINDS.find(item=>item.value===value)||NOM_KINDS.at(-1);
-
-export function normalizeFood(value,index=0){
-  const saved=object(value);
-  return{
-    id:text(saved.id)||`food-${index}`,
-    name:text(saved.name)||'Saved food',
-    kind:kindExists(saved.kind)?saved.kind:'other',
-    tags:tags(saved.tags),
-    effort:['zero','low','medium','high'].includes(saved.effort)?saved.effort:'low',
-    prepMinutes:clamp(Number(saved.prepMinutes)||0,0,240),
-    available:saved.available!==false,
-    favorite:saved.favorite===true,
-    notes:text(saved.notes),
-    createdAt:text(saved.createdAt)
-  };
-}
-
-export function normalizeRecipe(value,index=0){
-  const saved=object(value);
-  return{
-    id:text(saved.id)||`recipe-${index}`,
-    name:text(saved.name)||'Saved recipe',
-    kind:kindExists(saved.kind)?saved.kind:'meal',
-    tags:tags(saved.tags),
-    effort:['zero','low','medium','high'].includes(saved.effort)?saved.effort:'medium',
-    prepMinutes:clamp(Number(saved.prepMinutes)||15,0,360),
-    ingredients:list(saved.ingredients).map(text).filter(Boolean),
-    notes:text(saved.notes),
-    available:saved.available!==false,
-    favorite:saved.favorite===true,
-    createdAt:text(saved.createdAt)
-  };
-}
-
-export function normalizeNomLog(value,index=0){
-  const saved=object(value),loggedAt=text(saved.loggedAt||saved.createdAt)||new Date().toISOString();
-  return{
-    id:text(saved.id)||`nom-log-${index}`,
-    name:text(saved.name)||'Nom',
-    sourceType:['food','recipe','manual'].includes(saved.sourceType)?saved.sourceType:'manual',
-    sourceId:text(saved.sourceId),
-    kind:kindExists(saved.kind)?saved.kind:'other',
-    tags:tags(saved.tags),
-    note:text(saved.note||saved.notes),
-    date:text(saved.date)||localDateKey(loggedAt),
-    loggedAt
-  };
-}
-
-export function normalizeNoms(value){
-  const saved=object(value);
-  return{
-    foods:list(saved.foods).map(normalizeFood),
-    recipes:list(saved.recipes).map(normalizeRecipe),
-    history:list(saved.history).map(normalizeNomLog),
-    currentNom:saved.currentNom&&typeof saved.currentNom==='object'?normalizeNomLog(saved.currentNom):null
-  };
-}
-
+export const NOMS_VERSION=2;
+export const NOM_KINDS=[{value:'meal',icon:'🍱',label:'Meal'},{value:'snack',icon:'🍓',label:'Snack'},{value:'sweet',icon:'🍰',label:'Sweet'},{value:'drink-food',icon:'🥛',label:'Drink / shake'},{value:'other',icon:'✨',label:'Other'}];
+export const MEAL_SLOTS=['breakfast','lunch','dinner','snack','any'];
+const list=value=>Array.isArray(value)?value:[];const object=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};const text=value=>String(value??'').trim();const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));const makeId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;const pad=value=>String(value).padStart(2,'0');export const localDateKey=(value=new Date())=>{const d=value instanceof Date?value:new Date(value);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};const tags=value=>(Array.isArray(value)?value:String(value||'').split(',')).map(item=>text(item).toLowerCase()).filter(Boolean).filter((item,index,array)=>array.indexOf(item)===index).slice(0,20);const kindExists=value=>NOM_KINDS.some(item=>item.value===value);export const nomKindMeta=value=>NOM_KINDS.find(item=>item.value===value)||NOM_KINDS.at(-1);
+export function normalizeFood(value,index=0){const saved=object(value);return{id:text(saved.id)||`food-${index}`,name:text(saved.name)||'Saved food',kind:kindExists(saved.kind)?saved.kind:'other',tags:tags(saved.tags),effort:['zero','low','medium','high'].includes(saved.effort)?saved.effort:'low',prepMinutes:clamp(Number(saved.prepMinutes)||0,0,240),available:saved.available!==false,favorite:saved.favorite===true,notes:text(saved.notes),createdAt:text(saved.createdAt)}}
+export function normalizeRecipe(value,index=0){const saved=object(value);return{id:text(saved.id)||`recipe-${index}`,name:text(saved.name)||'Saved recipe',kind:kindExists(saved.kind)?saved.kind:'meal',tags:tags(saved.tags),effort:['zero','low','medium','high'].includes(saved.effort)?saved.effort:'medium',prepMinutes:clamp(Number(saved.prepMinutes)||15,0,360),ingredients:list(saved.ingredients).map(text).filter(Boolean),notes:text(saved.notes),available:saved.available!==false,favorite:saved.favorite===true,createdAt:text(saved.createdAt)}}
+export function normalizeNomLog(value,index=0){const saved=object(value),loggedAt=text(saved.loggedAt||saved.createdAt)||new Date().toISOString();return{id:text(saved.id)||`nom-log-${index}`,name:text(saved.name)||'Nom',sourceType:['food','recipe','manual'].includes(saved.sourceType)?saved.sourceType:'manual',sourceId:text(saved.sourceId),kind:kindExists(saved.kind)?saved.kind:'other',tags:tags(saved.tags),note:text(saved.note||saved.notes),date:text(saved.date)||localDateKey(loggedAt),loggedAt}}
+export function normalizeGrocery(value,index=0){const saved=object(value);return{id:text(saved.id)||`grocery-${index}`,name:text(saved.name||saved.title||saved.text)||'Grocery item',quantity:text(saved.quantity||saved.qty),store:text(saved.store),note:text(saved.note||saved.notes),checked:saved.checked===true||saved.done===true,createdAt:text(saved.createdAt)||new Date().toISOString()}}
+export function normalizeMealPlanItem(value,index=0){const saved=object(value),slot=MEAL_SLOTS.includes(saved.slot)?saved.slot:'any';return{id:text(saved.id)||`meal-plan-${index}`,date:text(saved.date)||localDateKey(),slot,label:text(saved.label||saved.name||saved.title)||'Planned Nom',sourceType:['food','recipe','manual'].includes(saved.sourceType)?saved.sourceType:'manual',sourceId:text(saved.sourceId),note:text(saved.note||saved.notes),createdAt:text(saved.createdAt)||new Date().toISOString()}}
+export function normalizeNoms(value){const saved=object(value);return{foods:list(saved.foods).map(normalizeFood),recipes:list(saved.recipes).map(normalizeRecipe),history:list(saved.history).map(normalizeNomLog),currentNom:saved.currentNom&&typeof saved.currentNom==='object'?normalizeNomLog(saved.currentNom):null,groceries:list(saved.groceries||saved.groceryList).map(normalizeGrocery),mealPlan:list(saved.mealPlan).map(normalizeMealPlanItem)}}
 export function addFood(noms,input={}){const current=normalizeNoms(noms),now=new Date().toISOString(),item=normalizeFood({...input,id:makeId('food'),createdAt:now});return{...current,foods:[...current.foods,item]}}
 export function deleteFood(noms,id){const current=normalizeNoms(noms);return{...current,foods:current.foods.filter(item=>item.id!==String(id))}}
 export function toggleFoodAvailable(noms,id){const current=normalizeNoms(noms);return{...current,foods:current.foods.map(item=>item.id===String(id)?{...item,available:!item.available}:item)}}
-
 export function addRecipe(noms,input={}){const current=normalizeNoms(noms),now=new Date().toISOString(),item=normalizeRecipe({...input,id:makeId('recipe'),ingredients:Array.isArray(input.ingredients)?input.ingredients:String(input.ingredients||'').split(',').map(x=>x.trim()),createdAt:now});return{...current,recipes:[...current.recipes,item]}}
 export function deleteRecipe(noms,id){const current=normalizeNoms(noms);return{...current,recipes:current.recipes.filter(item=>item.id!==String(id))}}
 export function toggleRecipeAvailable(noms,id){const current=normalizeNoms(noms);return{...current,recipes:current.recipes.map(item=>item.id===String(id)?{...item,available:!item.available}:item)}}
-
-export function logNom(noms,input={},nowValue=new Date()){
-  const current=normalizeNoms(noms),now=nowValue instanceof Date?nowValue:new Date(nowValue),entry=normalizeNomLog({...input,id:makeId('nom-log'),loggedAt:now.toISOString(),date:text(input.date)||localDateKey(now)});
-  return{...current,history:[...current.history,entry],currentNom:entry};
-}
+export function logNom(noms,input={},nowValue=new Date()){const current=normalizeNoms(noms),now=nowValue instanceof Date?nowValue:new Date(nowValue),entry=normalizeNomLog({...input,id:makeId('nom-log'),loggedAt:now.toISOString(),date:text(input.date)||localDateKey(now)});return{...current,history:[...current.history,entry],currentNom:entry}}
 export function clearCurrentNom(noms){const current=normalizeNoms(noms);return{...current,currentNom:null}}
 export function deleteNomLog(noms,id){const current=normalizeNoms(noms);return{...current,history:current.history.filter(item=>item.id!==String(id)),currentNom:current.currentNom?.id===String(id)?null:current.currentNom}}
 export function todayNomLogs(noms,nowValue=new Date()){const current=normalizeNoms(noms),today=localDateKey(nowValue);return current.history.filter(item=>item.date===today||String(item.loggedAt||'').startsWith(today))}
-
-const effortRank={zero:0,low:1,medium:2,high:3};
-export function recommendNoms(noms,policy={},requestedTags=[]){
-  const current=normalizeNoms(noms),wanted=tags(requestedTags),context=policy.context||{},ceiling=policy.taskEnergyCeiling==='low'?1:policy.taskEnergyCeiling==='high'?3:2;
-  const pool=[...current.foods.filter(x=>x.available).map(item=>({sourceType:'food',item})),...current.recipes.filter(x=>x.available).map(item=>({sourceType:'recipe',item}))];
-  const strict=wanted.length?pool.filter(entry=>wanted.every(tag=>entry.item.tags.includes(tag))):pool;
-  const ranked=strict.map(entry=>{const item=entry.item;let score=0;if((effortRank[item.effort]??1)<=ceiling)score+=4;else score-=5;if(context.energy==='drained'&&item.effort==='zero')score+=5;if(context.energy==='drained'&&item.prepMinutes<=10)score+=3;if(context.capacity==='soft'&&item.prepMinutes<=15)score+=2;if(item.favorite)score+=2;if(item.tags.includes('easy'))score+=1;if(item.tags.includes('safe'))score+=1;return{...entry,score}}).sort((a,b)=>b.score-a.score||a.item.prepMinutes-b.item.prepMinutes||a.item.name.localeCompare(b.item.name));
-  return ranked.slice(0,Math.max(1,Math.min(3,policy.choiceCount||3)));
-}
-
-export function nomRecommendationMessage(noms,policy={},requestedTags=[]){
-  const wanted=tags(requestedTags),picks=recommendNoms(noms,policy,wanted);
-  if(wanted.length&&!picks.length)return`I don't have anything saved and available with all of those tags yet, so I won't invent a Nom.`;
-  if(!picks.length)return`Noms Nook doesn't have any available foods or recipes saved yet.`;
-  return policy.context?.energy==='drained'?'I kept prep and effort low because today-Kat is drained.':'These are pulled only from your saved, available Noms.';
-}
+export function addGrocery(noms,input={}){const current=normalizeNoms(noms),item=normalizeGrocery({...input,id:makeId('grocery'),createdAt:new Date().toISOString()});return{...current,groceries:[...current.groceries,item]}}
+export function toggleGrocery(noms,id){const current=normalizeNoms(noms);return{...current,groceries:current.groceries.map(item=>item.id===String(id)?{...item,checked:!item.checked}:item)}}
+export function deleteGrocery(noms,id){const current=normalizeNoms(noms);return{...current,groceries:current.groceries.filter(item=>item.id!==String(id))}}
+export function clearCheckedGroceries(noms){const current=normalizeNoms(noms);return{...current,groceries:current.groceries.filter(item=>!item.checked)}}
+export function addMealPlanItem(noms,input={}){const current=normalizeNoms(noms),item=normalizeMealPlanItem({...input,id:makeId('meal-plan'),createdAt:new Date().toISOString()});return{...current,mealPlan:[...current.mealPlan,item]}}
+export function deleteMealPlanItem(noms,id){const current=normalizeNoms(noms);return{...current,mealPlan:current.mealPlan.filter(item=>item.id!==String(id))}}
+export function plannedNomsForDate(noms,date=localDateKey()){return normalizeNoms(noms).mealPlan.filter(item=>item.date===String(date)).sort((a,b)=>MEAL_SLOTS.indexOf(a.slot)-MEAL_SLOTS.indexOf(b.slot)||a.label.localeCompare(b.label))}
+const effortRank={zero:0,low:1,medium:2,high:3};export function recommendNoms(noms,policy={},requestedTags=[]){const current=normalizeNoms(noms),wanted=tags(requestedTags),context=policy.context||{},ceiling=policy.taskEnergyCeiling==='low'?1:policy.taskEnergyCeiling==='high'?3:2;const pool=[...current.foods.filter(x=>x.available).map(item=>({sourceType:'food',item})),...current.recipes.filter(x=>x.available).map(item=>({sourceType:'recipe',item}))];const strict=wanted.length?pool.filter(entry=>wanted.every(tag=>entry.item.tags.includes(tag))):pool;const ranked=strict.map(entry=>{const item=entry.item;let score=0;if((effortRank[item.effort]??1)<=ceiling)score+=4;else score-=5;if(context.energy==='drained'&&item.effort==='zero')score+=5;if(context.energy==='drained'&&item.prepMinutes<=10)score+=3;if(context.capacity==='soft'&&item.prepMinutes<=15)score+=2;if(item.favorite)score+=2;if(item.tags.includes('easy'))score+=1;if(item.tags.includes('safe'))score+=1;return{...entry,score}}).sort((a,b)=>b.score-a.score||a.item.prepMinutes-b.item.prepMinutes||a.item.name.localeCompare(b.item.name));return ranked.slice(0,Math.max(1,Math.min(3,policy.choiceCount||3)))}
+export function nomRecommendationMessage(noms,policy={},requestedTags=[]){const wanted=tags(requestedTags),picks=recommendNoms(noms,policy,wanted);if(wanted.length&&!picks.length)return`I don't have anything saved and available with all of those tags yet, so I won't invent a Nom.`;if(!picks.length)return`Noms Nook doesn't have any available foods or recipes saved yet.`;return policy.context?.energy==='drained'?'I kept prep and effort low because today-Kat is drained.':'These are pulled only from your saved, available Noms.'}
