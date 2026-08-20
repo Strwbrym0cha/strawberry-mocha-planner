@@ -1,6 +1,6 @@
-import{inferContextPatch,updateContext,describeContextPatch}from'../app/context.js';
+import{inferContextPatch,updateContext,describeContextPatch}from'../app/context.js?v=3.0.0-alpha.5';
 import{evaluateStateBrain}from'../app/brain.js';
-import{proposeFromMessage,stageProposal}from'./actions.js';
+import{proposeFromMessage,stageProposal}from'./actions.js?v=3.0.0-alpha.5';
 
 export const MOCHINI_CONVERSATION_VERSION=1;
 
