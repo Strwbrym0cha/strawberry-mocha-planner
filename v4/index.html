@@ -4,13 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#fff7fb">
-  <meta name="sm-build" content="4.0.0-preview.2-parity3-tools2">
+  <meta name="sm-build" content="4.0.0-preview.2-parity3-tools2-rootfix1">
   <title>KatOS V4 Preview 🎀</title>
+  <link rel="manifest" href="../manifest.json?v=4">
+  <link rel="icon" href="../icon.svg">
   <link rel="stylesheet" href="./styles.css?v=4.0.0-preview.2">
   <link rel="stylesheet" href="./record-tools.css?v=4.0.0-tools1">
 </head>
 <body>
   <div id="app" class="loading">🎀 KatOS V4 is putting on lip gloss…</div>
   <script type="module" src="./loader.js?v=4.0.0-parity3-tools2"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('../sw.js?v=4.0.0-tools2').catch(error => console.warn('KatOS service worker update skipped:', error));
+      });
+    }
+  </script>
 </body>
 </html>
