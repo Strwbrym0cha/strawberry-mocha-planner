@@ -11,6 +11,7 @@ try{
  await import('./preserve.js?v=4.0.0-parity3');
  await import('./record-tools.js?v=4.0.0-tools1');
  await import('./archive-tools.js?v=4.0.0-tools1');
+ await import('./motion-week.js?v=4.0.0-motionweek1');
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }catch(error){
  console.error(error);
