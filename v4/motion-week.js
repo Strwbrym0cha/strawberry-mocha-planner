@@ -45,10 +45,10 @@ function render(){
   injectStyle();
   const active=document.querySelector('.nav-btn.active[data-view="motion"]');
   if(!active)return;
+  if(document.querySelector('[data-motion-week]'))return;
   const page=document.querySelector('.main .page');
   const grid=page?.querySelector(':scope > .grid');
   if(!grid)return;
-  document.querySelector('[data-motion-week]')?.remove();
   const days=breakdown(rt.getState());
   const total=days.reduce((sum,day)=>sum+day.minutes,0);
   const sessions=days.reduce((sum,day)=>sum+day.sessions,0);
