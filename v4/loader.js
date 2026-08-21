@@ -18,6 +18,7 @@ try{
  await import('./archive-tools.js?v=4.0.0-tools1');
  setTimeout(()=>URL.revokeObjectURL(url),1000);
  await optionalImport('./motion-week.js?v=4.0.0-motionweek2','weekly motion');
+ await optionalImport('./time-calendar.js?v=4.0.0-calendar1','month calendar');
 }catch(error){
  console.error(error);
  const app=document.getElementById('app');if(app)app.innerHTML=`<main style="padding:28px;font-family:-apple-system,sans-serif;color:#6f4153"><h2>🎀 V4 tripped over her skirt.</h2><p>${String(error.message||error)}</p><p>Your V4 data is still safe.</p></main>`;
