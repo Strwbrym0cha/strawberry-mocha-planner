@@ -5,7 +5,7 @@ const obj=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
 const text=v=>String(v??'').trim();
 const pad=v=>String(v).padStart(2,'0');
 export const localDateKey=(value=new Date())=>{const d=value instanceof Date?value:new Date(value);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
-const onDate=(value,date)=>text(value).slice(0,10)===date;
+const recordDate=(item,timeKeys=[])=>{const explicit=text(item?.date);if(/^\d{4}-\d{2}-\d{2}$/.test(explicit))return explicit;for(const key of timeKeys){const stamp=text(item?.[key]);if(!stamp)continue;const d=new Date(stamp);if(!Number.isNaN(d.getTime()))return localDateKey(d)}return''};
 const names=(items,read,max=8)=>list(items).map(read).map(text).filter(Boolean).slice(0,max);
 
 export const REVIEW_MOODS=[
@@ -42,17 +42,17 @@ export function reviewForDate(reviews,date=localDateKey()){return normalizeDayRe
 
 export function buildDaySnapshot(state={},date=localDateKey()){
  const life=obj(state.life),education=obj(state.education),work=obj(state.work),movement=obj(state.movement),nourish=obj(state.nourish),growth=obj(state.growth);
- const tasks=list(life.tasks).filter(x=>x.date===date||onDate(x.completedAt,date));
+ const tasks=list(life.tasks).filter(x=>recordDate(x,['completedAt','updatedAt','createdAt'])===date);
  const completedTasks=tasks.filter(x=>x.done===true||x.completed===true||x.status==='complete'||x.status==='completed');
  const openTasks=tasks.filter(x=>!completedTasks.includes(x));
  const routines=routineSummary(life.routines,life.routineInstances,date),routineRows=list(routines.rows);
  const events=list(life.events).filter(x=>x.date===date);
- const movementSessions=list(movement.sessions).filter(x=>x.date===date||onDate(x.completedAt,date)||onDate(x.createdAt,date));
- const noms=list(nourish.noms?.history).filter(x=>x.date===date||onDate(x.loggedAt,date));
- const sips=list(nourish.sips?.history).filter(x=>x.date===date||onDate(x.loggedAt,date));
- const study=list(education.sessions).filter(x=>x.date===date||onDate(x.completedAt,date)||onDate(x.createdAt,date));
+ const movementSessions=list(movement.sessions).filter(x=>recordDate(x,['completedAt','createdAt'])===date);
+ const noms=list(nourish.noms?.history).filter(x=>recordDate(x,['loggedAt','createdAt'])===date);
+ const sips=list(nourish.sips?.history).filter(x=>recordDate(x,['loggedAt','createdAt'])===date);
+ const study=list(education.sessions).filter(x=>recordDate(x,['completedAt','createdAt'])===date);
  const shifts=list(work.shifts).filter(x=>x.date===date);
- const wins=list(growth.wins).filter(x=>x.date===date||onDate(x.createdAt,date));
+ const wins=list(growth.wins).filter(x=>recordDate(x,['createdAt'])===date);
  return{
   date,
   tasks:{done:completedTasks.length,open:openTasks.length,doneTitles:names(completedTasks,x=>x.text||x.title),openTitles:names(openTasks,x=>x.text||x.title)},
