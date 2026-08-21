@@ -2,4 +2,5 @@ document.addEventListener('click',e=>{const v=e.target.closest('[data-view]');if
 
 document.addEventListener('submit',e=>{const form=e.target.closest('form[data-form]');if(!form)return;e.preventDefault();handleForm(form)});
 window.addEventListener('storage',e=>{if(e.key==='sm_v4_beta'){state=loadState();render()}});
+window.__KATOS_V4_RUNTIME={getState:()=>state,setState:(next,msg='Saved')=>{state=next;persist(msg);return state},render,setView,today,fmtDate,fmtTime,currency,makeId};
 render();
