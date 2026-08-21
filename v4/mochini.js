@@ -20,19 +20,38 @@ function whatNowReply(state){const task=nextTaskSuggestion(state);const today=lo
 function proposedTask(label,date=''){return{id:makeId('proposal'),kind:'task',title:label,payload:{text:label,date,minutes:15,energy:'medium',initiation:'easy',mode:'any',protected:false}}}
 function proposedReminder(label,date=''){return{id:makeId('proposal'),kind:'reminder',title:label,payload:{title:label,date,time:'',timing:'specific'}}}
 
+function recentUserMessages(state){return list(state.mochini?.conversation).filter(turn=>turn.role==='user').map(turn=>text(turn.text)).filter(Boolean).slice(-6)}
+function previousUserMessage(state){const messages=recentUserMessages(state);return messages.length>1?messages.at(-2):''}
+function hangoutContext(raw){const s=text(raw);const patterns=[/\b(?:hang out|hangout|chill|spend time|go out)\s+with\s+([^,.!?]+)/i,/\bsee\s+([^,.!?]+)\s+(?:today|tomorrow|this weekend|later)/i];for(const pattern of patterns){const match=s.match(pattern);if(match?.[1])return{person:titleCase(match[1].trim().replace(/\s+(today|tomorrow|later|this weekend)$/i,'')),text:s}}return null}
+function recentHangoutContext(state){const messages=recentUserMessages(state);for(let i=messages.length-2;i>=0;i--){const found=hangoutContext(messages[i]);if(found)return found}return null}
+function isCasualHangoutStatement(raw){return /\b(?:wanna|want to|would like to|feel like|thinking about)\s+(?:hang out|hangout|chill|spend time|go out)\b/i.test(raw)&&!!hangoutContext(raw)}
+function hangoutStarterReply(raw){const ctx=hangoutContext(raw);if(!ctx)return'';return`Okayyy, ${ctx.person} time 👀 Are we feeling stay-in-and-cuddle, food + wandering around somewhere, or an actual activity? I can help you pick without turning it into a task.`}
+function casualFollowupReply(state,raw){
+  const l=lower(raw),followup=/^(what should we do|what can we do|what do we do|what should we do together|any ideas|give me ideas|where should we go|what should we do for fun|what can we do for fun)[?.!]*$/i.test(text(raw));
+  if(!followup)return'';
+  const hangout=recentHangoutContext(state);
+  if(hangout){return`With ${hangout.person}? Bet 😭 Pick your flavor: 1) grab food and wander a store/bookshop, 2) movie + snacks, 3) arcade/mini golf/bowling, 4) coffee or boba + a drive and yap session, or 5) stay in with takeout and a show. Tell me “cheap,” “at home,” “outside,” or “date-ish” and I’ll narrow it down.`}
+  const previous=previousUserMessage(state);
+  if(previous)return`I’m following you. You were talking about “${previous}.” Give me the vibe you want from it and I’ll actually help you choose instead of filing it somewhere.`;
+  return`Absolutely. Give me one crumb of context about who “we” is and the vibe you want, and I’ll give you actual options.`
+}
+function conversationalFallback(state,raw){const previous=previousUserMessage(state);if(previous&&/^(why|how|what about|and then|okay but|but what|tell me more)\b/i.test(raw))return`I’m following the thread. You were talking about “${previous}.” Keep going and I’ll stay with that topic instead of trying to turn it into planner data.`;return`I’m with you 😊 I’m keeping that as conversation. You can keep talking, ask me for ideas, or ask me to help decide something. I won’t turn it into planner data unless you actually ask me to.`}
+
 export function processMochini(state,input){let next=clone(state),raw=stripLead(input),reply='';if(!raw)return{state:next,reply:'Girl you have to give me at least one crumb of context 😭'};next=addTurn(next,'user',raw);
   if(/^(what should i do( now)?|what do i do( now)?|pick for me)$/i.test(raw)){reply=whatNowReply(next);next=addTurn(next,'assistant',reply);return{state:next,reply}}
+  const conversationalFollowup=casualFollowupReply(next,raw);if(conversationalFollowup){reply=conversationalFollowup;next=addTurn(next,'assistant',reply,{conversation:true,followup:true});return{state:next,reply}}
   if(looksBrainDump(raw)){const bucket=chooseBucket(raw),entry={id:makeId('dump'),text:raw.replace(/^(brain dump|random thought|idea:)\s*/i,''),bucket,createdAt:new Date().toISOString()};next.v4.brainDump=[...list(next.v4.brainDump),entry];reply=bucket==='closed'?`Locked it in the Closed Drawer 🔒 I won’t resurface it automatically.`:`Got it. I tossed that into ${bucket==='inbox'?'the unsorted pile':bucket} so you didn’t have to organize it first.`;next=addTurn(next,'assistant',reply);return{state:next,reply}}
   const date=relativeDate(raw),multi=splitActions(raw);
   if(multi.length>=2&&!explicitReminder(raw)){next.mochini.pendingProposal={id:makeId('proposal-batch'),kind:'task-batch',title:`${multi.length} Sweet To-Dos`,payload:{items:multi.map(label=>proposedTask(label,date).payload)}};reply=`I caught ${multi.length} separate things instead of making one giant Franken-task 😭 Want me to add all ${multi.length} to Sweet To-Dos?`;next=addTurn(next,'assistant',reply,{proposal:true});return{state:next,reply}}
   if(explicitReminder(raw)){const label=cleanTaskLabel(raw);next.mochini.pendingProposal=proposedReminder(label,date);reply=`Yep 🔔 I read that as a Little Ping: “${label}.” Add it?`;next=addTurn(next,'assistant',reply,{proposal:true});return{state:next,reply}}
   if(explicitTask(raw)){const label=cleanTaskLabel(raw);next.mochini.pendingProposal=proposedTask(label,date);reply=`Got you 📝 “${label}” belongs in Sweet To-Dos. Add it?`;next=addTurn(next,'assistant',reply,{proposal:true});return{state:next,reply}}
+  if(isCasualHangoutStatement(raw)){reply=hangoutStarterReply(raw);next=addTurn(next,'assistant',reply,{conversation:true,topic:'hangout'});return{state:next,reply}}
   if(looksAmbiguousAction(raw)){const label=cleanTaskLabel(raw);next.mochini.pendingProposal={id:makeId('clarify'),kind:'clarify-task-reminder',title:label,payload:{label,date}};reply=`I’m a little confused on the context 😊 Do you want “${label}” in Sweet To-Dos or as a Little Ping?`;next=addTurn(next,'assistant',reply,{clarify:true});return{state:next,reply}}
   const l=lower(raw);if(/\b(exhausted|drained|tired|no energy)\b/.test(l)){next.context={...next.context,energy:'drained',capacity:'soft'};reply=`Got you. I’m treating today like low-capacity mode, not a moral emergency. We can shrink choices instead of pretending you suddenly became a productivity robot.`}
   else if(/\b(locked in|lock in|so much energy|energized|productive)\b/.test(l)){next.context={...next.context,energy:'energized',capacity:'big'};reply=`Okayyy, power is online ⚡ I’ll favor the important/high-energy stuff first and leave the softer tasks for the landing.`}
   else if(/\b(overwhelmed|too much|scattered)\b/.test(l)){next.context={...next.context,brain:'scattered',capacity:'soft'};reply=`I hear scattered. I’ll keep the visible choice set small and favor things that transition cleanly.`}
-  else reply=`I’m with you 😊 I heard that as conversation, not an obligation. If you want me to turn any part of it into a task, Ping, plan, or brain dump, tell me and I’ll sort it.`;
-  next=addTurn(next,'assistant',reply);return{state:next,reply}
+  else reply=conversationalFallback(next,raw);
+  next=addTurn(next,'assistant',reply,{conversation:true});return{state:next,reply}
 }
 
 export function resolveClarification(state,target){const next=clone(state),p=next.mochini?.pendingProposal;if(!p||p.kind!=='clarify-task-reminder')return next;next.mochini.pendingProposal=target==='reminder'?proposedReminder(p.payload.label,p.payload.date):proposedTask(p.payload.label,p.payload.date);const message=target==='reminder'?`Perfect 🔔 I’ll stage it as a Little Ping. Nothing is created until you approve it.`:`Perfect 📝 I’ll stage it as a Sweet To-Do. Nothing is created until you approve it.`;return addTurn(next,'assistant',message,{proposal:true})}
