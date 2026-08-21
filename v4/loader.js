@@ -20,6 +20,7 @@ try{
  await optionalImport('./motion-week.js?v=4.0.0-motionweek2','weekly motion');
  await optionalImport('./time-calendar.js?v=4.0.0-calendar1','month calendar');
  await optionalImport('./money-accounts.js?v=4.0.0-accounts1','account balances');
+ await optionalImport('./work-schedule.js?v=4.0.0-workschedule1','work schedule');
 }catch(error){
  console.error(error);
  const app=document.getElementById('app');if(app)app.innerHTML=`<main style="padding:28px;font-family:-apple-system,sans-serif;color:#6f4153"><h2>🎀 V4 tripped over her skirt.</h2><p>${String(error.message||error)}</p><p>Your V4 data is still safe.</p></main>`;
