@@ -1,5 +1,5 @@
 import * as store from './store.js?v=4.0.0-preview.2';
-import * as mochini from './mochini.js?v=4.0.0-convo1';
+import * as mochini from './mochini.js?v=4.0.0-routetime1';
 window.__KATOS_V4_DEPS={store,mochini};
 const PARTS=8;
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=4.0.0-parity3`);
@@ -21,6 +21,7 @@ try{
  await optionalImport('./time-calendar.js?v=4.0.0-calendar1','month calendar');
  await optionalImport('./money-accounts.js?v=4.0.0-accounts1','account balances');
  await optionalImport('./work-schedule.js?v=4.0.0-workschedule1','work schedule');
+ await optionalImport('./routine-timing.js?v=4.0.0-routetime1','routine timing');
 }catch(error){
  console.error(error);
  const app=document.getElementById('app');if(app)app.innerHTML=`<main style="padding:28px;font-family:-apple-system,sans-serif;color:#6f4153"><h2>🎀 V4 tripped over her skirt.</h2><p>${String(error.message||error)}</p><p>Your V4 data is still safe.</p></main>`;
