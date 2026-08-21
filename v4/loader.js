@@ -1,5 +1,5 @@
 import * as store from './store.js?v=4.0.0-preview.2';
-import * as mochini from './mochini.js?v=4.0.0-preview.2';
+import * as mochini from './mochini.js?v=4.0.0-convo1';
 window.__KATOS_V4_DEPS={store,mochini};
 const PARTS=8;
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=4.0.0-parity3`);
