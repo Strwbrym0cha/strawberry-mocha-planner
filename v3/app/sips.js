@@ -1,4 +1,4 @@
-export const SIPS_VERSION=1;
+export const SIPS_VERSION=2;
 export const DEFAULT_WATER_GOAL_OZ=64;
 
 export const DRINK_TYPES=[
@@ -18,6 +18,7 @@ const typeExists=value=>DRINK_TYPES.some(type=>type.value===value);
 const makeId=()=>`sip-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
 const pad=value=>String(value).padStart(2,'0');
 export const localDateKey=(value=new Date())=>{const d=value instanceof Date?value:new Date(value);return`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`};
+const entryDate=value=>{const saved=value&&typeof value==='object'?value:{};const explicit=text(saved.date);if(/^\d{4}-\d{2}-\d{2}$/.test(explicit))return explicit;const stamp=text(saved.loggedAt||saved.createdAt);return stamp?localDateKey(stamp):localDateKey()};
 
 export function drinkTypeMeta(value){
   return DRINK_TYPES.find(type=>type.value===value)||DRINK_TYPES.at(-1);
@@ -33,7 +34,7 @@ export function normalizeSipEntry(value,index=0){
     name:text(saved.name)||drinkTypeMeta(type).label,
     ounces,
     type,
-    date:text(saved.date)||localDateKey(loggedAt),
+    date:entryDate({...saved,loggedAt}),
     loggedAt,
     source:text(saved.source)||'manual'
   };
@@ -80,9 +81,13 @@ export function setWaterGoal(sips,ounces){
   return{...current,waterGoalOz:clamp(Number(ounces)||DEFAULT_WATER_GOAL_OZ,8,256)};
 }
 
+export function sipEntriesForDate(sips,date=localDateKey()){
+  const current=normalizeSips(sips),wanted=String(date);
+  return current.history.filter(entry=>entry.date===wanted);
+}
+
 export function todaySipEntries(sips,nowValue=new Date()){
-  const current=normalizeSips(sips),today=localDateKey(nowValue);
-  return current.history.filter(entry=>entry.date===today||String(entry.loggedAt||'').startsWith(today));
+  return sipEntriesForDate(sips,localDateKey(nowValue));
 }
 
 export function sipTotals(sips,nowValue=new Date()){
