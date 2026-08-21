@@ -1,0 +1,15 @@
+const waitRuntime=()=>new Promise(resolve=>{const tick=()=>window.__KATOS_V4_RUNTIME?resolve(window.__KATOS_V4_RUNTIME):setTimeout(tick,25);tick()});
+const rt=await waitRuntime();
+const store=window.__KATOS_V4_DEPS.store;
+const clone=v=>structuredClone(v);
+const list=v=>Array.isArray(v)?v:[];
+const obj=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
+const PATHS={task:'life.tasks',reminder:'life.reminders',routine:'life.routines',event:'life.events',thread:'life.threads',food:'nourish.noms.foods',recipe:'nourish.noms.recipes','motion-recipe':'movement.routines','motion-session':'movement.sessions','work-item':'work.items',shift:'work.shifts',training:'work.training',career:'work.career',bill:'money.bills',debt:'money.debts',course:'education.courses','study-item':'education.items',goal:'growth.goals',win:'growth.wins',experiment:'growth.experiments',person:'v4.people',hobby:'v4.hobbies',admin:'v4.admin',wish:'v4.shopping',dump:'v4.brainDump'};
+const bits=p=>String(p).split('.');
+const getAt=(root,path)=>bits(path).reduce((v,k)=>v?.[k],root);
+const setAt=(root,path,value)=>{const b=bits(path);let cur=root;for(let i=0;i<b.length-1;i++){cur[b[i]]=obj(cur[b[i]]);cur=cur[b[i]]}cur[b.at(-1)]=value};
+function nativeArchivedHost(node){const host=node.closest?.('.row');if(!host)return null;const restore=host.querySelector('[data-action="restore"][data-kind][data-id]');return restore?{host,restore}:null}
+function cleanButtons(){document.querySelectorAll('.row').forEach(host=>{const restore=host.querySelector('[data-action="restore"][data-kind][data-id]');if(!restore)return;host.querySelectorAll('[data-record-tools-action="archive"]').forEach(b=>b.remove());const del=host.querySelector('[data-record-tools-action="delete"]');if(del){del.textContent='× Delete forever';del.classList.add('danger')}})}
+function deleteNative(kind,id){if(!confirm('Delete this archived record forever?'))return;let state=clone(rt.getState());const path=PATHS[kind];if(kind==='debt')state=store.removeDebt(state,id);else if(path){const rows=list(getAt(state,path)).filter(x=>String(x?.id)!==String(id));setAt(state,path,rows);if(kind==='routine')state.life.routineInstances=list(state.life?.routineInstances).filter(x=>String(x.routineId)!==String(id))}state.v4={...obj(state.v4),archive:list(state.v4?.archive).filter(x=>!(String(x.kind)===String(kind)&&String(x.id)===String(id)))};rt.setState(state,'Archived record deleted forever')}
+document.addEventListener('click',e=>{const action=e.target.closest?.('[data-record-tools-action]');if(!action)return;const native=nativeArchivedHost(action);if(!native)return;if(action.dataset.recordToolsAction==='archive'){e.preventDefault();e.stopImmediatePropagation();return}if(action.dataset.recordToolsAction==='delete'){e.preventDefault();e.stopImmediatePropagation();deleteNative(native.restore.dataset.kind,native.restore.dataset.id)}},true);
+let queued=false;const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;cleanButtons()})};new MutationObserver(schedule).observe(document.getElementById('app'),{childList:true,subtree:true});schedule();
