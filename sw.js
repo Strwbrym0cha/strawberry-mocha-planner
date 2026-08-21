@@ -1,4 +1,4 @@
-const CACHE='katos-v4-root-tools2-workschedule1';
+const CACHE='katos-v4-root-tools2-convo1';
 const SCOPE=self.registration.scope;
 const url=p=>new URL(p,SCOPE).toString();
 const CORE=[
@@ -7,9 +7,9 @@ const CORE=[
   url('./v4/index.html'),
   url('./v4/styles.css?v=4.0.0-preview.2'),
   url('./v4/record-tools.css?v=4.0.0-tools1'),
-  url('./v4/loader.js?v=4.0.0-parity3-tools2-workschedule1'),
+  url('./v4/loader.js?v=4.0.0-parity3-tools2-convo1'),
   url('./v4/store.js?v=4.0.0-preview.2'),
-  url('./v4/mochini.js?v=4.0.0-preview.2'),
+  url('./v4/mochini.js?v=4.0.0-convo1'),
   url('./v4/preserve.js?v=4.0.0-parity3'),
   url('./v4/record-tools.js?v=4.0.0-tools1'),
   url('./v4/archive-tools.js?v=4.0.0-tools1'),
