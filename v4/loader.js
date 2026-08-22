@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery7';
+const RECOVERY='4.0.0-recovery8';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 
 async function optionalImport(path,label){
