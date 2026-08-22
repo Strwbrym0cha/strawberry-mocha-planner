@@ -1,4 +1,4 @@
-import * as store from './store.js?v=4.0.0-preview.2';
+import * as store from './store.js?v=4.0.0-hobbytypefix1';
 import * as mochini from './mochini.js?v=4.0.0-routetime1';
 window.__KATOS_V4_DEPS={store,mochini};
 const PARTS=8;
