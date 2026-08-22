@@ -22,6 +22,7 @@ try{
  await optionalImport('./money-accounts.js?v=4.0.0-accounts1','account balances');
  await optionalImport('./work-schedule.js?v=4.0.0-workschedule1','work schedule');
  await optionalImport('./routine-timing.js?v=4.0.0-routetime2','routine timing');
+ await optionalImport('./hobby-types.js?v=4.0.0-hobbytypes1','hobby types');
  await optionalImport('./hobby-shelf.js?v=4.0.0-hobbyshelf1','interactive hobby shelf');
 }catch(error){
  console.error(error);
