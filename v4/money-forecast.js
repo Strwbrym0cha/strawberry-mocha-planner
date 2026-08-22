@@ -3,7 +3,7 @@ const rt=await waitRuntime();
 const store=window.__KATOS_V4_DEPS.store;
 const list=v=>Array.isArray(v)?v:[];
 const text=v=>String(v??'').trim();
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const money=v=>Math.round((Number(v)||0)*100)/100;
 const currency=v=>rt.currency?rt.currency(v):new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(money(v));
 const today=()=>rt.today?rt.today():new Date().toISOString().slice(0,10);
@@ -54,7 +54,7 @@ function render(){
  const tabs=document.querySelector('[data-money-tab="overview"].active')?.closest('.tabs');
  const parent=tabs?.parentElement;if(!parent)return;
  const card=document.createElement('section');card.className='money-forecast-card';card.dataset.moneyForecast='1';card.innerHTML=markup(rt.getState());
- if(host)host.insertAdjacentElement('afterend',card);else{const summary=parent.querySelector('.summary-grid');if(summary)summary.insertAdjacentElement('afterend',card);else parent.appendChild(card)}
+ if(host)host.insertAdjacentElement('beforebegin',card);else{const summary=parent.querySelector('.summary-grid');if(summary)summary.insertAdjacentElement('afterend',card);else parent.appendChild(card)}
 }
 function updateSpend(input){const card=input.closest('[data-money-forecast]');if(!card)return;const state=rt.getState(),projected=money(currentCash(state)+futurePaychecks(state).reduce((sum,p)=>sum+p._forecast.amount,0)),spend=Math.max(0,Number(input.value)||0);const out=card.querySelector('[data-money-spend-left]');if(out)out.textContent=currency(projected-spend)}
 document.addEventListener('input',e=>{const input=e.target.closest?.('[data-money-spend-test]');if(input)updateSpend(input)},true);
