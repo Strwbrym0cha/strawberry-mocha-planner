@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery10';
+const RECOVERY='4.0.0-recovery11';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 
 async function optionalImport(path,label){
@@ -33,6 +33,7 @@ try{
  await optionalImport(`./motion-week.js?v=${RECOVERY}`,'weekly motion');
  await optionalImport(`./time-calendar.js?v=${RECOVERY}`,'month calendar');
  await optionalImport(`./money-accounts.js?v=${RECOVERY}`,'account balances');
+ await optionalImport(`./money-forecast.js?v=${RECOVERY}`,'expected cash forecast');
  await optionalImport(`./money-due-dates.js?v=${RECOVERY}`,'money due date labels');
  await optionalImport(`./money-subscriptions.js?v=${RECOVERY}`,'subscriptions manager');
  await optionalImport(`./money-paycheck-calc.js?v=${RECOVERY}`,'paycheck gross calculator');
