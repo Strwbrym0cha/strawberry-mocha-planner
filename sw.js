@@ -1,4 +1,4 @@
-const CACHE='katos-v4-root-tools2-routetime2';
+const CACHE='katos-v4-root-tools2-hobbyshelf1';
 const SCOPE=self.registration.scope;
 const url=p=>new URL(p,SCOPE).toString();
 const CORE=[
@@ -7,7 +7,7 @@ const CORE=[
   url('./v4/index.html'),
   url('./v4/styles.css?v=4.0.0-preview.2'),
   url('./v4/record-tools.css?v=4.0.0-tools1'),
-  url('./v4/loader.js?v=4.0.0-parity3-tools2-routetime2'),
+  url('./v4/loader.js?v=4.0.0-parity3-tools2-hobbyshelf1'),
   url('./v4/store.js?v=4.0.0-preview.2'),
   url('./v4/mochini.js?v=4.0.0-routetime1'),
   url('./v4/preserve.js?v=4.0.0-parity3'),
@@ -18,6 +18,7 @@ const CORE=[
   url('./v4/money-accounts.js?v=4.0.0-accounts1'),
   url('./v4/work-schedule.js?v=4.0.0-workschedule1'),
   url('./v4/routine-timing.js?v=4.0.0-routetime2'),
+  url('./v4/hobby-shelf.js?v=4.0.0-hobbyshelf1'),
   ...Array.from({length:8},(_,i)=>url(`./v4/parts/app-${String(i+1).padStart(2,'0')}.txt?v=4.0.0-parity3`)),
   url('./manifest.json?v=4'),
   url('./icon.svg')
