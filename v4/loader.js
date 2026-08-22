@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery3';
+const RECOVERY='4.0.0-recovery4';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 
 async function optionalImport(path,label){
@@ -35,8 +35,8 @@ try{
  await optionalImport(`./money-accounts.js?v=${RECOVERY}`,'account balances');
  await optionalImport(`./work-schedule.js?v=${RECOVERY}`,'work schedule');
  await optionalImport(`./routine-timing.js?v=${RECOVERY}`,'routine timing');
- await optionalImport(`./hobby-lanes.js?v=${RECOVERY}`,'hobby category lanes');
  await optionalImport(`./hobby-shelf.js?v=${RECOVERY}`,'interactive hobby shelf');
+ await optionalImport(`./hobby-lanes-view.js?v=${RECOVERY}`,'hobby category view');
 }catch(error){
  console.error(`KatOS V4 failed during ${stage}:`,error);
  const app=document.getElementById('app');
