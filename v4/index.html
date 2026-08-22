@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#fff7fb">
-  <meta name="sm-build" content="4.0.0-preview.2-recovery7">
+  <meta name="sm-build" content="4.0.0-preview.2-recovery8">
   <title>KatOS V4 Preview 🎀</title>
   <link rel="manifest" href="../manifest.json?v=4">
   <link rel="icon" href="../icon.svg">
-  <link rel="stylesheet" href="./styles.css?v=4.0.0-recovery7">
-  <link rel="stylesheet" href="./record-tools.css?v=4.0.0-recovery7">
+  <link rel="stylesheet" href="./styles.css?v=4.0.0-recovery8">
+  <link rel="stylesheet" href="./record-tools.css?v=4.0.0-recovery8">
 </head>
 <body>
   <div id="app" class="loading">🎀 KatOS V4 is putting on lip gloss…</div>
@@ -24,7 +24,7 @@
         const keys=await caches.keys();
         await Promise.all(keys.filter(key=>key.startsWith('strawberry-mocha-')||key.startsWith('katos-v3-')||key.startsWith('katos-v4-')).map(key=>caches.delete(key)));
       }
-      await import(`./loader.js?v=4.0.0-recovery7&t=${Date.now()}`);
+      await import(`./loader.js?v=4.0.0-recovery8&t=${Date.now()}`);
     }catch(error){
       console.error('KatOS recovery boot failed:',error);
       if(app)app.innerHTML=`<main style="padding:28px;font-family:-apple-system,sans-serif;color:#6f4153"><h2>🎀 Recovery boot tripped.</h2><p>${String(error.message||error)}</p><p>Your V4 data is still safe.</p></main>`;
