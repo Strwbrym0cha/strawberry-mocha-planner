@@ -1,19 +1,10 @@
-const CACHE='katos-v4-root-tools2-recovery1';
+const CACHE='katos-v4-recovery2';
 const SCOPE=self.registration.scope;
 const url=p=>new URL(p,SCOPE).toString();
 const CORE=[
   url('./index.html'),
   url('./v4/'),
   url('./v4/index.html'),
-  url('./v4/styles.css?v=4.0.0-preview.2'),
-  url('./v4/record-tools.css?v=4.0.0-tools1'),
-  url('./v4/loader.js?v=4.0.0-parity3-tools2-recovery1'),
-  url('./v4/store.js?v=4.0.0-recovery1'),
-  url('./v4/mochini.js?v=4.0.0-routetime1'),
-  url('./v4/preserve.js?v=4.0.0-parity3'),
-  url('./v4/record-tools.js?v=4.0.0-tools1'),
-  url('./v4/archive-tools.js?v=4.0.0-tools1'),
-  ...Array.from({length:8},(_,i)=>url(`./v4/parts/app-${String(i+1).padStart(2,'0')}.txt?v=4.0.0-parity3`)),
   url('./manifest.json?v=4'),
   url('./icon.svg')
 ];
@@ -41,25 +32,17 @@ self.addEventListener('fetch',event=>{
 
   event.respondWith(
     fetch(request,{cache:'no-store'}).then(response=>{
-      if(response&&response.ok){
-        const cacheable=
-          requestUrl.pathname===scopeUrl.pathname||
-          requestUrl.pathname.endsWith('/index.html')||
-          requestUrl.pathname.includes('/v4/')||
-          requestUrl.pathname.endsWith('/manifest.json')||
-          requestUrl.pathname.endsWith('/icon.svg');
-        if(cacheable){
-          const copy=response.clone();
-          caches.open(CACHE).then(cache=>cache.put(request,copy)).catch(()=>{});
-        }
+      if(response&&response.ok&&request.mode==='navigate'){
+        const copy=response.clone();
+        caches.open(CACHE).then(cache=>cache.put(request,copy)).catch(()=>{});
       }
       return response;
     }).catch(async()=>{
-      const cached=await caches.match(request,{ignoreSearch:true});
+      const cached=await caches.match(request);
       if(cached)return cached;
       if(request.mode==='navigate'){
-        if(requestUrl.pathname.includes('/v4/'))return caches.match(url('./v4/index.html'),{ignoreSearch:true});
-        return caches.match(url('./index.html'),{ignoreSearch:true});
+        if(requestUrl.pathname.includes('/v4/'))return caches.match(url('./v4/index.html'));
+        return caches.match(url('./index.html'));
       }
       return Response.error();
     })
