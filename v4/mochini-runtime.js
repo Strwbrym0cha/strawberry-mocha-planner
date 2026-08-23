@@ -32,6 +32,7 @@ async function handleMochiniSubmit(form){
   const latest=rt.getState();
   current=mochini.appendMochiniResponse(latest,response.ok?response.message:response.error,{conversation:true,ai:response.ok,aiError:!response.ok,intent:result.intent||'reasoning'});
   rt.setState(current,response.ok?'Mochini replied':'Mochini hit a snag');
+  if(!response.ok&&response.kind==='auth')window.dispatchEvent(new CustomEvent('katos-auth-required',{detail:{message:response.error}}));
 }
 
 document.addEventListener('submit',event=>{
