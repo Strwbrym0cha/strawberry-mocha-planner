@@ -68,15 +68,33 @@ function casualFollowupReply(state,raw){
 function hangoutChoiceReply(state,raw){const hangout=recentHangoutContext(state);if(!hangout)return'';if(!/^(let'?s|we should|we can|i'?m feeling|i want to|i wanna|stay in|movie|food|arcade|bowling|mini golf|coffee|boba)\b/i.test(text(raw)))return'';return`Cute, locked in as the vibe, not a task 😭💕 ${hangout.person} + ${text(raw).replace(/^let'?s\s+(do\s+)?/i,'').replace(/[.!]+$/,'')}. If you want, I can keep helping you flesh out the plan.`}
 function conversationalFallback(state,raw){const previous=previousUserMessage(state);if(previous&&/^(why|how|what about|and then|okay but|but what|tell me more)\b/i.test(raw))return`I’m following the thread. You were talking about “${previous}.” Keep going and I’ll stay with that topic instead of trying to turn it into planner data.`;return`I’m with you 😊 I’m keeping that as conversation. You can keep talking, ask me for ideas, or ask me to help decide something. I won’t turn it into planner data unless you actually ask me to.`}
 
-export function processMochini(state,input){let next=clone(state),raw=stripLead(input),reply='';if(!raw)return{state:next,reply:'Girl you have to give me at least one crumb of context 😭'};next=addTurn(next,'user',raw);
-  if(/^(what should i do( now)?|what do i do( now)?|pick for me)$/i.test(raw)){reply=whatNowReply(next);next=addTurn(next,'assistant',reply);return{state:next,reply}}
+function greetingReply(raw,now=new Date()){
+  const l=lower(raw).replace(/[.!?]+$/,'').trim();
+  if(!/^(hi|hii+|hey|heyy+|hello|hiya|good morning|good afternoon|good evening)(?:\s+mochini)?$/.test(l))return'';
+  if(l.startsWith('good morning'))return`Good morninggg 🍓 I’m awake and conducting tiny bean business. What’s up?`;
+  if(l.startsWith('good afternoon'))return`Good afternoonnn 🍡✨ I’m here. What are we getting into?`;
+  if(l.startsWith('good evening'))return`Good evening ✨ Tiny bean reporting for duty. What’s on your mind?`;
+  return`Hiiii 🍡✨ I’m here. What’s up?`;
+}
+export function classifyMochiniAIIntent(raw){
+  const l=lower(raw);
+  if(/\b(help me (?:plan|decide|figure out|prioriti[sz]e)|can you help me (?:plan|decide|figure out|prioriti[sz]e)|how should i (?:plan|decide|prioriti[sz]e)|what should i do (?:tomorrow|today|this week|this weekend)|unscheduled day|open day|free day)\b/.test(l))return'planning';
+  if(/\b(should i|what would make sense|help me choose|which should i|break (?:this|it) down|think through|reason through)\b/.test(l))return'reasoning';
+  return'';
+}
+export function appendMochiniResponse(state,message,meta={}){const next=clone(state);return addTurn(next,'assistant',message,meta)}
+
+export function processMochini(state,input){let next=clone(state),raw=stripLead(input),reply='';if(!raw)return{state:next,reply:'Girl you have to give me at least one crumb of context 😭',route:'local',requiresAI:false};next=addTurn(next,'user',raw);
+  const greeting=greetingReply(raw);if(greeting){next=addTurn(next,'assistant',greeting,{conversation:true,greeting:true,local:true});return{state:next,reply:greeting,route:'local',requiresAI:false,intent:'greeting'}}
+  if(/^(what should i do( now)?|what do i do( now)?|pick for me)$/i.test(raw)){reply=whatNowReply(next);next=addTurn(next,'assistant',reply);return{state:next,reply,route:'local',requiresAI:false,intent:'what_now'}}
   const conversationalFollowup=casualFollowupReply(next,raw);if(conversationalFollowup){reply=conversationalFollowup;next=addTurn(next,'assistant',reply,{conversation:true,followup:true});return{state:next,reply}}
   const hangoutChoice=hangoutChoiceReply(next,raw);if(hangoutChoice&&!explicitTask(raw)&&!explicitReminder(raw)){reply=hangoutChoice;next=addTurn(next,'assistant',reply,{conversation:true,topic:'hangout'});return{state:next,reply}}
   if(looksBrainDump(raw)){const bucket=chooseBucket(raw),entry={id:makeId('dump'),text:raw.replace(/^(brain dump|random thought|idea:)\s*/i,''),bucket,createdAt:new Date().toISOString()};next.v4.brainDump=[...list(next.v4.brainDump),entry];reply=bucket==='closed'?`Locked it in the Closed Drawer 🔒 I won’t resurface it automatically.`:`Got it. I tossed that into ${bucket==='inbox'?'the unsorted pile':bucket} so you didn’t have to organize it first.`;next=addTurn(next,'assistant',reply);return{state:next,reply}}
   const date=relativeDate(raw),multi=splitActions(raw);
   if(multi.length>=2&&!explicitReminder(raw)){next.mochini.pendingProposal={id:makeId('proposal-batch'),kind:'task-batch',title:`${multi.length} Sweet To-Dos`,payload:{items:multi.map(label=>proposedTask(label,date).payload)}};reply=`I caught ${multi.length} separate things instead of making one giant Franken-task 😭 Want me to add all ${multi.length} to Sweet To-Dos?`;next=addTurn(next,'assistant',reply,{proposal:true});return{state:next,reply}}
   if(explicitReminder(raw)){const label=cleanTaskLabel(raw);next.mochini.pendingProposal=proposedReminder(label,date);reply=`Yep 🔔 I read that as a Little Ping: “${label}.” Add it?`;next=addTurn(next,'assistant',reply,{proposal:true});return{state:next,reply}}
-  if(explicitTask(raw)){const label=cleanTaskLabel(raw);next.mochini.pendingProposal=proposedTask(label,date);reply=`Got you 📝 “${label}” belongs in Sweet To-Dos. Add it?`;next=addTurn(next,'assistant',reply,{proposal:true});return{state:next,reply}}
+  if(explicitTask(raw)){const label=cleanTaskLabel(raw);next.mochini.pendingProposal=proposedTask(label,date);reply=`Got you 📝 “${label}” belongs in Sweet To-Dos. Add it?`;next=addTurn(next,'assistant',reply,{proposal:true});return{state:next,reply,route:'local',requiresAI:false,intent:'task_proposal'}}
+  const aiIntent=classifyMochiniAIIntent(raw);if(aiIntent)return{state:next,reply:'',route:'ai',requiresAI:true,intent:aiIntent};
   if(isCasualHangoutStatement(raw)){reply=hangoutStarterReply(raw);next=addTurn(next,'assistant',reply,{conversation:true,topic:'hangout'});return{state:next,reply}}
   if(looksAmbiguousAction(raw)){const label=cleanTaskLabel(raw);next.mochini.pendingProposal={id:makeId('clarify'),kind:'clarify-task-reminder',title:label,payload:{label,date}};reply=`I’m a little confused on the context 😊 Do you want “${label}” in Sweet To-Dos or as a Little Ping?`;next=addTurn(next,'assistant',reply,{clarify:true});return{state:next,reply}}
   const l=lower(raw);if(/\b(exhausted|drained|tired|no energy)\b/.test(l)){next.context={...next.context,energy:'drained',capacity:'soft'};reply=`Got you. I’m treating today like low-capacity mode, not a moral emergency. We can shrink choices instead of pretending you suddenly became a productivity robot.`}
