@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery12';
+const RECOVERY='4.0.0-recovery13';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 
 async function optionalImport(path,label){
@@ -9,12 +9,13 @@ async function optionalImport(path,label){
 let stage='starting';
 try{
  stage='Store + Mochini';
-  const [store,mochini,life]=await Promise.all([
+  const [store,mochini,life,ai]=await Promise.all([
   import(`./store.js?v=${RECOVERY}`),
   import(`./mochini.js?v=${RECOVERY}`),
-  import(`./mochini-life.js?v=${RECOVERY}`)
+  import(`./mochini-life.js?v=${RECOVERY}`),
+  import(`./mochini-ai.js?v=${RECOVERY}`)
   ]);
-  window.__KATOS_V4_DEPS={store,mochini,life};
+  window.__KATOS_V4_DEPS={store,mochini,life,ai};
 
  stage='core runtime chunks';
  const chunks=await Promise.all(urls.map(async url=>{
@@ -28,6 +29,7 @@ try{
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 
  stage='optional parity tools';
+ await optionalImport(`./mochini-runtime.js?v=${RECOVERY}`,'Mochini conversation routing');
  await optionalImport(`./preserve.js?v=${RECOVERY}`,'parity');
  await optionalImport(`./record-tools.js?v=${RECOVERY}`,'record tools');
  await optionalImport(`./archive-tools.js?v=${RECOVERY}`,'archive tools');
