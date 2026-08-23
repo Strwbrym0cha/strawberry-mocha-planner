@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery13';
+const RECOVERY='4.0.0-recovery14';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 
 async function optionalImport(path,label){
@@ -13,6 +13,7 @@ try{
   import(`./store.js?v=${RECOVERY}`),
   import(`./mochini.js?v=${RECOVERY}`),
   import(`./mochini-life.js?v=${RECOVERY}`),
+  import(`./mochini-lore.js?v=${RECOVERY}`),
   import(`./mochini-ai.js?v=${RECOVERY}`)
   ]);
   window.__KATOS_V4_DEPS={store,mochini,life,lore,ai};
