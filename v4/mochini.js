@@ -11,7 +11,7 @@ function relativeDate(raw){const l=lower(raw);for(const[k,offset]of Object.entri
 function cleanTaskLabel(s){return titleCase(text(s).replace(/^(i\s+)?(need|have|got)\s+to\s+/i,'').replace(/^(please\s+)?(add|make|create)\s+(a\s+)?(task|to-?do)\s+(to\s+)?/i,'').replace(/^(remind me to|add (a )?reminder to|make (a )?reminder to)\s+/i,'').replace(/\b(today|tomorrow)\b/ig,'').replace(/[.!]+$/,'').trim())}
 function splitActions(raw){let s=stripLead(raw);const numbered=[...s.matchAll(/(?:^|\s)(?:\d+[.)]|[-•])\s*([^]+?)(?=(?:\s\d+[.)]|\s[-•]|$))/g)].map(m=>cleanTaskLabel(m[1])).filter(Boolean);if(numbered.length>=2)return numbered.slice(0,3);s=s.replace(/^(okay|ok|now|then|also|i have to|i need to)\s*/i,'').trim();const parts=s.split(/\s+(?:and then|then|and also|also|and)\s+/i).map(cleanTaskLabel).filter(x=>x&&x.split(/\s+/).length<=16);return parts.length>=2?parts.slice(0,3):[]}
 function explicitReminder(raw){return /\b(remind me|add (me )?(a )?reminder|make (me )?(a )?reminder|little ping|ping me)\b/i.test(raw)}
-function explicitTask(raw){return /\b(add (me )?(a )?(task|to-?do)|make (me )?(a )?(task|to-?do)|sweet to-?do|task:)\b/i.test(raw)}
+function explicitTask(raw){return /\b(add (me )?(a )?(task|to-?do)|make (me )?(a )?(task|to-?do)|sweet to-?do|task:)\b/i.test(raw)||/^add\s+.+\b(today|tomorrow)\b/i.test(stripLead(raw))}
 function looksAmbiguousAction(raw){const s=stripLead(raw);return /^(need|need to|gotta|got to|have to|remember to)\b/i.test(s)&&s.split(/\s+/).length<=8}
 function looksBrainDump(raw){return /\b(brain dump|random thought|idea:|kat ?os idea|hobby idea|language idea)\b/i.test(raw)}
 function chooseBucket(raw){const l=lower(raw);if(/negative|rant|hate|awful|terrible|closed drawer/.test(l))return'closed';if(/language/.test(l))return'language';if(/hobby/.test(l))return'hobby';if(/kat ?os/.test(l))return'katos';if(/idea/.test(l))return'idea';return'inbox'}
@@ -103,8 +103,8 @@ export function processMochini(state,input){let next=clone(state),raw=stripLead(
   const l=lower(raw);if(/\b(exhausted|drained|tired|no energy)\b/.test(l)){next.context={...next.context,energy:'drained',capacity:'soft'};reply=`Got you. I’m treating today like low-capacity mode, not a moral emergency. We can shrink choices instead of pretending you suddenly became a productivity robot.`}
   else if(/\b(locked in|lock in|so much energy|energized|productive)\b/.test(l)){next.context={...next.context,energy:'energized',capacity:'big'};reply=`Okayyy, power is online ⚡ I’ll favor the important/high-energy stuff first and leave the softer tasks for the landing.`}
   else if(/\b(overwhelmed|too much|scattered)\b/.test(l)){next.context={...next.context,brain:'scattered',capacity:'soft'};reply=`I hear scattered. I’ll keep the visible choice set small and favor things that transition cleanly.`}
-  else reply=conversationalFallback(next,raw);
-  next=addTurn(next,'assistant',reply,{conversation:true});return{state:next,reply}
+  else return{state:next,reply:'',route:'ai',requiresAI:true,intent:'open_conversation'};
+  next=addTurn(next,'assistant',reply,{conversation:true});return{state:next,reply,route:'local',requiresAI:false}
 }
 
 export function resolveClarification(state,target){const next=clone(state),p=next.mochini?.pendingProposal;if(!p||p.kind!=='clarify-task-reminder')return next;next.mochini.pendingProposal=target==='reminder'?proposedReminder(p.payload.label,p.payload.date):proposedTask(p.payload.label,p.payload.date);const message=target==='reminder'?`Perfect 🔔 I’ll stage it as a Little Ping. Nothing is created until you approve it.`:`Perfect 📝 I’ll stage it as a Sweet To-Do. Nothing is created until you approve it.`;return addTurn(next,'assistant',message,{proposal:true})}
