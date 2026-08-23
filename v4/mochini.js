@@ -1,4 +1,4 @@
-import{makeId,localDateKey,isArchived}from'./store.js?v=4.0.0-preview.2';
+import{makeId,localDateKey,isArchived}from'./store.js?v=4.0.0-preview.2';import{getLoreResponse}from'./mochini-lore.js';
 const text=v=>String(v??'').trim();
 const list=v=>Array.isArray(v)?v:[];
 const clone=v=>structuredClone(v);
@@ -87,6 +87,7 @@ export function appendMochiniResponse(state,message,meta={}){const next=clone(st
 
 export function processMochini(state,input){let next=clone(state),raw=stripLead(input),reply='';if(!raw)return{state:next,reply:'Girl you have to give me at least one crumb of context 😭',route:'local',requiresAI:false};next=addTurn(next,'user',raw);
   const greeting=greetingReply(raw);if(greeting){next=addTurn(next,'assistant',greeting,{conversation:true,greeting:true,local:true});return{state:next,reply:greeting,route:'local',requiresAI:false,intent:'greeting'}}
+  const loreReply=getLoreResponse(next?.mochini?.lore,next?.mochini?.life,raw);if(loreReply){next=addTurn(next,'assistant',loreReply,{conversation:true,self:true,lore:true,local:true});return{state:next,reply:loreReply,route:'local',requiresAI:false,intent:'mochini_lore'}}
   const selfReply=mochiniSelfReply(next,raw);if(selfReply){next=addTurn(next,'assistant',selfReply,{conversation:true,self:true,local:true});return{state:next,reply:selfReply,route:'local',requiresAI:false,intent:'mochini_self'}}
   if(/^(what should i do( now)?|what do i do( now)?|pick for me)$/i.test(raw)){reply=whatNowReply(next);next=addTurn(next,'assistant',reply);return{state:next,reply,route:'local',requiresAI:false,intent:'what_now'}}
   const conversationalFollowup=casualFollowupReply(next,raw);if(conversationalFollowup){reply=conversationalFollowup;next=addTurn(next,'assistant',reply,{conversation:true,followup:true});return{state:next,reply}}

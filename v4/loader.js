@@ -9,13 +9,13 @@ async function optionalImport(path,label){
 let stage='starting';
 try{
  stage='Store + Mochini';
-  const [store,mochini,life,ai]=await Promise.all([
+  const [store,mochini,life,lore,ai]=await Promise.all([
   import(`./store.js?v=${RECOVERY}`),
   import(`./mochini.js?v=${RECOVERY}`),
   import(`./mochini-life.js?v=${RECOVERY}`),
   import(`./mochini-ai.js?v=${RECOVERY}`)
   ]);
-  window.__KATOS_V4_DEPS={store,mochini,life,ai};
+  window.__KATOS_V4_DEPS={store,mochini,life,lore,ai};
 
  stage='core runtime chunks';
  const chunks=await Promise.all(urls.map(async url=>{
