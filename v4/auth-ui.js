@@ -2,6 +2,7 @@ const PROJECT_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const PUBLISHABLE_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
 const SESSION_KEYS=['sm_v16_session','sb-sigjwmgekmrwehylvuvu-auth-token'];
 const text=v=>String(v??'').trim();
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let lastEmail='';
 
 function storageHost(){
@@ -83,11 +84,11 @@ function installStyles(){
 function ensureControl(){
   const foot=document.querySelector('.sidebar-foot');if(!foot)return;
   let wrap=document.getElementById('katos-auth-control');if(!wrap){wrap=document.createElement('div');wrap.id='katos-auth-control';foot.appendChild(wrap)}
-  const status=sessionStatus();wrap.innerHTML=`<button type="button" data-katos-auth-open><span>🔐 Account</span><span>${status.active?'✓':'→'}</span></button><small>${status.label}${status.active&&lastEmail?` · ${lastEmail}`:''}</small>`;
+  const status=sessionStatus(),signature=`${status.active?'1':'0'}|${status.label}|${lastEmail}`;if(wrap.dataset.authSignature===signature)return;wrap.dataset.authSignature=signature;wrap.innerHTML=`<button type="button" data-katos-auth-open><span>🔐 Account</span><span>${status.active?'✓':'→'}</span></button><small>${esc(status.label)}${status.active&&lastEmail?` · ${esc(lastEmail)}`:''}</small>`;
 }
 function closeModal(){document.querySelector('.katos-auth-overlay')?.remove()}
 function openModal(message=''){
-  closeModal();const status=sessionStatus();const overlay=document.createElement('div');overlay.className='katos-auth-overlay';overlay.innerHTML=`<section class="katos-auth-card" role="dialog" aria-modal="true" aria-label="KatOS account"><div class="katos-auth-head"><div><h2>🔐 KatOS Account</h2><p>${status.active?'You are signed in.':'Sign in so Mochini can use her thinking brain.'}</p></div><button type="button" class="katos-auth-close" data-katos-auth-close aria-label="Close">×</button></div>${status.active?`<div><b>${lastEmail||'Signed in'}</b><p style="margin:6px 0 14px;color:#987080;font-size:13px">Your planner data stays on this device. Signing out only clears the auth session.</p><div class="katos-auth-actions"><button type="button" class="danger" data-katos-auth-signout>Sign out</button><button type="button" data-katos-auth-close>Close</button></div></div>`:`<form class="katos-auth-form" data-katos-auth-form><label>Email<input name="email" type="email" autocomplete="email" value="${lastEmail.replace(/"/g,'&quot;')}" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><div class="katos-auth-actions"><button class="primary" type="submit">Sign in</button><button type="button" data-katos-auth-close>Cancel</button></div></form>`}<div class="katos-auth-note" data-katos-auth-note>${message}</div></section>`;
+  closeModal();const status=sessionStatus();const overlay=document.createElement('div');overlay.className='katos-auth-overlay';overlay.innerHTML=`<section class="katos-auth-card" role="dialog" aria-modal="true" aria-label="KatOS account"><div class="katos-auth-head"><div><h2>🔐 KatOS Account</h2><p>${status.active?'You are signed in.':'Sign in so Mochini can use her thinking brain.'}</p></div><button type="button" class="katos-auth-close" data-katos-auth-close aria-label="Close">×</button></div>${status.active?`<div><b>${esc(lastEmail||'Signed in')}</b><p style="margin:6px 0 14px;color:#987080;font-size:13px">Your planner data stays on this device. Signing out only clears the auth session.</p><div class="katos-auth-actions"><button type="button" class="danger" data-katos-auth-signout>Sign out</button><button type="button" data-katos-auth-close>Close</button></div></div>`:`<form class="katos-auth-form" data-katos-auth-form><label>Email<input name="email" type="email" autocomplete="email" value="${esc(lastEmail)}" required></label><label>Password<input name="password" type="password" autocomplete="current-password" required></label><div class="katos-auth-actions"><button class="primary" type="submit">Sign in</button><button type="button" data-katos-auth-close>Cancel</button></div></form>`}<div class="katos-auth-note" data-katos-auth-note>${esc(message)}</div></section>`;
   document.body.appendChild(overlay);overlay.querySelector('input[name="email"]')?.focus();
 }
 
