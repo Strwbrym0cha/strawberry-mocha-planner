@@ -1,6 +1,6 @@
 const {V4_BUILD,loadState,saveState,resetV4FromV3,makeId,localDateKey,money,isArchived,archiveItem,restoreItem,upsertDebt,removeDebt,syncDebtFromBill,activeRows}=window.__KATOS_V4_DEPS.store;
 const {processMochini,resolveClarification,rejectProposal,clearChat}=window.__KATOS_V4_DEPS.mochini;
-const {berry,dialogue,elapsedEnergy,getMochiniLifeDebugState,idle,mood,poke,refresh,react,requiresMochiniAI}=window.__KATOS_V4_DEPS.life;
+const {berry,beginVisit,dialogue,elapsedEnergy,getMochiniLifeDebugState,idle,mood,poke,refresh,react,requiresMochiniAI}=window.__KATOS_V4_DEPS.life;
 
 const app=document.getElementById('app');
 let state=loadState();
