@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery15';
+const RECOVERY='4.0.0-recovery16';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 
 async function optionalImport(path,label){
@@ -34,6 +34,7 @@ try{
  await optionalImport(`./mochini-runtime.js?v=${RECOVERY}`,'Mochini conversation routing');
  await optionalImport(`./auth-ui.js?v=${RECOVERY}`,'account controls');
  await optionalImport(`./preserve.js?v=${RECOVERY}`,'parity');
+ await optionalImport(`./study-program-progress.js?v=${RECOVERY}`,'study program progress');
  await optionalImport(`./record-tools.js?v=${RECOVERY}`,'record tools');
  await optionalImport(`./archive-tools.js?v=${RECOVERY}`,'archive tools');
  await optionalImport(`./motion-week.js?v=${RECOVERY}`,'weekly motion');
