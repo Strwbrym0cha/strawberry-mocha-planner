@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery19';
+const RECOVERY='4.0.0-recovery20';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -57,6 +57,7 @@ try{
  await optionalImport(`./preserve.js?v=${RECOVERY}`,'parity');
  await optionalImport(`./study-program-progress.js?v=${RECOVERY}`,'study program progress');
  await optionalImport(`./study-program-actions.js?v=${RECOVERY}`,'study program actions');
+ await optionalImport(`./study-course-program-link.js?v=${RECOVERY}`,'study course/program linking');
  await optionalImport(`./record-tools.js?v=${RECOVERY}`,'record tools');
  await optionalImport(`./archive-tools.js?v=${RECOVERY}`,'archive tools');
  await optionalImport(`./motion-week.js?v=${RECOVERY}`,'weekly motion');
