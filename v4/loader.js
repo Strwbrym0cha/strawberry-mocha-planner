@@ -9,14 +9,15 @@ async function optionalImport(path,label){
 let stage='starting';
 try{
  stage='Store + Mochini';
-  const [store,mochini,life,lore,ai]=await Promise.all([
+  const [store,mochini,life,lore,ai,gig]=await Promise.all([
   import(`./store.js?v=${RECOVERY}`),
   import(`./mochini.js?v=${RECOVERY}`),
   import(`./mochini-life.js?v=${RECOVERY}`),
   import(`./mochini-lore.js?v=${RECOVERY}`),
-  import(`./mochini-ai.js?v=${RECOVERY}`)
+  import(`./mochini-ai.js?v=${RECOVERY}`),
+  import(`./money-cafe-gig.js?v=${RECOVERY}`)
   ]);
-  window.__KATOS_V4_DEPS={store,mochini,life,lore,ai};
+  window.__KATOS_V4_DEPS={store,mochini,life,lore,ai,gig};
 
  stage='core runtime chunks';
  const chunks=await Promise.all(urls.map(async url=>{
