@@ -1,6 +1,31 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery18';
+const RECOVERY='4.0.0-recovery19';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
+const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+
+async function fetchRuntimeChunk(url){
+ const bare=url.split('?')[0],candidates=[url,bare];
+ let lastError=null;
+ for(let ci=0;ci<candidates.length;ci++){
+  const candidate=candidates[ci];
+  for(let attempt=1;attempt<=3;attempt++){
+   try{
+    const r=await fetch(candidate,{cache:'no-store'});
+    if(r.ok)return r.text();
+    const error=new Error(`Failed to load ${candidate} (${r.status})`);
+    if(!TRANSIENT_HTTP.has(r.status))throw error;
+    lastError=error;
+   }catch(error){
+    lastError=error;
+    if(error?.message?.match(/\((4\d\d)\)$/)&&!error.message.match(/\((408|425|429)\)$/))throw error;
+   }
+   if(attempt<3)await wait(250*attempt);
+  }
+  if(ci===0)console.warn(`KatOS retrying ${bare} without the cache-busting query after transient load failures.`,lastError);
+ }
+ throw new Error(`${lastError?.message||`Failed to load ${url}`} after retries`);
+}
 
 async function optionalImport(path,label){
  try{return await import(path)}catch(error){console.warn(`KatOS optional ${label} enhancement skipped:`,error);return null}
@@ -20,11 +45,7 @@ try{
   window.__KATOS_V4_DEPS={store,mochini,life,lore,ai,gig};
 
  stage='core runtime chunks';
- const chunks=await Promise.all(urls.map(async url=>{
-  const r=await fetch(url,{cache:'no-store'});
-  if(!r.ok)throw new Error(`Failed to load ${url} (${r.status})`);
-  return r.text();
- }));
+ const chunks=await Promise.all(urls.map(fetchRuntimeChunk));
  const blob=new Blob([chunks.join('')],{type:'text/javascript'});
  const url=URL.createObjectURL(blob);
  await import(url);
@@ -55,5 +76,5 @@ try{
 }catch(error){
  console.error(`KatOS V4 failed during ${stage}:`,error);
  const app=document.getElementById('app');
- if(app)app.innerHTML=`<main style="padding:28px;font-family:-apple-system,sans-serif;color:#6f4153"><h2>🎀 V4 tripped over her skirt.</h2><p><b>Stage:</b> ${stage}</p><p>${String(error.message||error)}</p><p>Your V4 data is still safe.</p></main>`;
+ if(app)app.innerHTML=`<main style="padding:28px;font-family:-apple-system,sans-serif;color:#6f4153"><h2>🎀 V4 tripped over her skirt.</h2><p><b>Stage:</b> ${stage}</p><p>${String(error.message||error)}</p><p>Your V4 data is still safe.</p><button type="button" onclick="location.reload()" style="margin-top:8px;padding:10px 14px;border:1px solid #e8bfd0;border-radius:999px;background:#fff7fb;color:#7b4258;font:inherit;font-weight:700">Try again</button></main>`;
 }
