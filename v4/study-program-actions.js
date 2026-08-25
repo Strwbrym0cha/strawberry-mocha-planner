@@ -16,6 +16,7 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
   const rt=await waitRuntime();
   const store=window.__KATOS_V4_DEPS?.store;
   const clone=v=>structuredClone(v);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function injectStyles(){
     if(document.getElementById('study-program-actions-style'))return;
@@ -44,10 +45,11 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
     if(!programId)return;
     const host=card.querySelector('.degree-card-main');
     if(!host)return;
+    const id=esc(programId);
     const row=document.createElement('div');
     row.className='degree-quick-actions';
     row.dataset.studyProgramQuickActions='1';
-    row.innerHTML=`<button type="button" class="btn tiny" data-study-program-quick-action="edit" data-program-id="${String(programId).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}">✏️ Edit</button><button type="button" class="btn tiny" data-study-program-quick-action="archive" data-program-id="${String(programId).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}">📦 Archive</button><button type="button" class="btn tiny danger" data-study-program-quick-action="delete" data-program-id="${String(programId).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}">🗑 Delete</button>`;
+    row.innerHTML=`<button type="button" class="btn tiny" data-study-program-quick-action="edit" data-program-id="${id}">✏️ Edit</button><button type="button" class="btn tiny" data-study-program-quick-action="archive" data-program-id="${id}">📦 Archive</button><button type="button" class="btn tiny danger" data-study-program-quick-action="delete" data-program-id="${id}">🗑 Delete</button>`;
     host.appendChild(row);
   }
 
