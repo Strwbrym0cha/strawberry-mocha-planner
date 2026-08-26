@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery21';
+const RECOVERY='4.0.0-recovery22';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -63,6 +63,7 @@ try{
  await optionalImport(`./motion-week.js?v=${RECOVERY}`,'weekly motion');
  await optionalImport(`./time-calendar.js?v=${RECOVERY}`,'month calendar');
  await optionalImport(`./money-cafe-gig-tab.js?v=${RECOVERY}`,'Money Café gigs tab');
+ await optionalImport(`./money-savings-piles.js?v=${RECOVERY}`,'editable savings piles');
  await optionalImport(`./money-accounts.js?v=${RECOVERY}`,'account balances');
  await optionalImport(`./money-forecast.js?v=${RECOVERY}`,'expected cash forecast');
  await optionalImport(`./money-due-dates.js?v=${RECOVERY}`,'money due date labels');
