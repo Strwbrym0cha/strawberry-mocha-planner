@@ -1,3 +1,5 @@
+import{preferLocalLore}from'./mochini-lore-routing.js';
+
 const deps=()=>window.__KATOS_V4_DEPS||{};
 const runtime=()=>window.__KATOS_V4_RUNTIME||null;
 let requestId=0;
@@ -9,13 +11,17 @@ function markChatInteraction(state){
 }
 
 async function handleMochiniSubmit(form){
-  const rt=runtime(),mochini=deps().mochini,ai=deps().ai;
+  const rt=runtime(),mochini=deps().mochini,ai=deps().ai,lore=deps().lore;
   if(!rt||!mochini?.processMochini)return;
   const field=form.querySelector('[name="message"]'),message=String(field?.value||'').trim();
   if(!message)return;
   const id=++requestId;
   let current=rt.getState();
-  const result=mochini.processMochini(current,message);
+  let result=mochini.processMochini(current,message);
+  // Fresh-loader lore gets a second chance before an AI/auth request. This keeps
+  // simple Mochini-world questions local even if an older nested module import
+  // is still sitting in a browser cache.
+  result=preferLocalLore(result,current,message,lore,mochini);
   current=markChatInteraction(result.state);
   if(!result.requiresAI||result.route!=='ai'){
     rt.setState(current,'Mochini replied');
