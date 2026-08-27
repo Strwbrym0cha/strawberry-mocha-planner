@@ -33,7 +33,7 @@ autoRollover();
 
 const NAV=[
  ['🏡 HOME',[['home','🏡','Home Sweet Home'],['time','📅','Berry Busy'],['tasks','📝','Sweet To-Dos'],['mochini','🍡','Mochini'],['pings','🔔','Little Pings'],['review','🌙','Day in Review']]],
- ['🍓 LIFE',[['routines','🔁','Routines'],['noms','🍱','Noms Nook'],['journey','🍓','Food + Journey'],['sips','💧','Sip Station'],['motion','🌿','Motion Meadow'],['people','💕','People & Plans'],['hobbies','🎨','Hobby Shelf']]],
+ ['🍓 LIFE',[['routines','🔁','Routines'],['noms','🍱','Noms Nook'],['sips','💧','Sip Station'],['motion','🌿','Motion Meadow'],['people','💕','People & Plans'],['hobbies','🎨','Hobby Shelf']]],
  ['💼 WORK + MONEY',[['boss','💼','Boss Bitch'],['money','☕','Money Café'],['study','🎓','Study Nook'],['threads','🧵','Threads']]],
  ['✨ GROW + SYSTEM',[['growth','🌱','Growth Room'],['dump','🧠','Get It Outta My Head'],['admin','🗃️','Unfortunately, I’m an Adult'],['reset','🌸','Reset Lab'],['patterns','🔬','Pattern Lab'],['archive','📦','Memory Box'],['settings','🎀','V4 Settings']]]
 ];

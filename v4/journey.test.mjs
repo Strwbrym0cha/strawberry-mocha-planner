@@ -1,4 +1,5 @@
 import assert from'node:assert/strict';
+import{readFileSync}from'node:fs';
 import{createWorkoutScaffold,feedMeRecommendation,goalZone,normalizeJourney,progressionFromFeedback,roadTo10kStatus}from'./journey.js';
 import{processMochini}from'./mochini.js';
 import{normalizeState}from'./store.js';
@@ -21,4 +22,11 @@ assert.deepEqual(normalized.movement.workoutPlan.months,[]);
 const mochiniState={...state,life:{tasks:[],events:[],routines:[],routineInstances:[]},context:{energy:'okay',capacity:'normal'},v4:{archive:[],brainDump:[]},mochini:{conversation:[],life:{},lore:{}}};
 assert.equal(processMochini(mochiniState,'Mochini, feed me').intent,'feed_me');
 assert.match(processMochini(mochiniState,'what can I eat?').reply,/Yogurt/);
+const nav=readFileSync(new URL('./parts/app-01.txt',import.meta.url),'utf8');
+const views=readFileSync(new URL('./parts/app-06.txt',import.meta.url),'utf8');
+const wellness=readFileSync(new URL('./parts/app-03.txt',import.meta.url),'utf8');
+assert.doesNotMatch(nav,/\['journey','🍓','Food \+ Journey'\]/);
+assert.doesNotMatch(views,/journey:foodJourneyView/);
+assert.match(wellness,/nomsJourneyPanel/);
+assert.match(wellness,/movementJourneyPanel/);
 console.log('journey tests passed');
