@@ -2,6 +2,7 @@ const {V4_BUILD,loadState,saveState,resetV4FromV3,makeId,localDateKey,money,isAr
 const {processMochini,resolveClarification,rejectProposal,clearChat}=window.__KATOS_V4_DEPS.mochini;
 const {berry,beginVisit,dialogue,elapsedEnergy,getMochiniLifeDebugState,idle,mood,poke,refresh,react,requiresMochiniAI}=window.__KATOS_V4_DEPS.life;
 const {createGigEarning,gigSummary}=window.__KATOS_V4_DEPS.gig;
+const {feedMeRecommendation,goalZone,roadTo10kStatus,progressionFromFeedback,createWorkoutScaffold}=window.__KATOS_V4_DEPS.journey;
 
 const app=document.getElementById('app');
 let state=loadState();
@@ -32,7 +33,7 @@ autoRollover();
 
 const NAV=[
  ['🏡 HOME',[['home','🏡','Home Sweet Home'],['time','📅','Berry Busy'],['tasks','📝','Sweet To-Dos'],['mochini','🍡','Mochini'],['pings','🔔','Little Pings'],['review','🌙','Day in Review']]],
- ['🍓 LIFE',[['routines','🔁','Routines'],['noms','🍱','Noms Nook'],['sips','💧','Sip Station'],['motion','🌿','Motion Meadow'],['people','💕','People & Plans'],['hobbies','🎨','Hobby Shelf']]],
+ ['🍓 LIFE',[['routines','🔁','Routines'],['noms','🍱','Noms Nook'],['journey','🍓','Food + Journey'],['sips','💧','Sip Station'],['motion','🌿','Motion Meadow'],['people','💕','People & Plans'],['hobbies','🎨','Hobby Shelf']]],
  ['💼 WORK + MONEY',[['boss','💼','Boss Bitch'],['money','☕','Money Café'],['study','🎓','Study Nook'],['threads','🧵','Threads']]],
  ['✨ GROW + SYSTEM',[['growth','🌱','Growth Room'],['dump','🧠','Get It Outta My Head'],['admin','🗃️','Unfortunately, I’m an Adult'],['reset','🌸','Reset Lab'],['patterns','🔬','Pattern Lab'],['archive','📦','Memory Box'],['settings','🎀','V4 Settings']]]
 ];

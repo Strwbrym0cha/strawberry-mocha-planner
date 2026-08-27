@@ -1,4 +1,5 @@
 import{makeId,localDateKey,isArchived}from'./store.js?v=4.0.0-preview.2';import{getLoreResponse}from'./mochini-lore.js';
+import{feedMeRecommendation}from'./journey.js?v=4.0.0-recovery26';
 const text=v=>String(v??'').trim();
 const list=v=>Array.isArray(v)?v:[];
 const clone=v=>structuredClone(v);
@@ -16,6 +17,7 @@ function looksAmbiguousAction(raw){const s=stripLead(raw);return /^(need|need to
 function looksBrainDump(raw){return /\b(brain dump|random thought|idea:|kat ?os idea|hobby idea|language idea)\b/i.test(raw)}
 function chooseBucket(raw){const l=lower(raw);if(/negative|rant|hate|awful|terrible|closed drawer/.test(l))return'closed';if(/language/.test(l))return'language';if(/hobby/.test(l))return'hobby';if(/kat ?os/.test(l))return'katos';if(/idea/.test(l))return'idea';return'inbox'}
 function nextTaskSuggestion(state){const today=localDateKey(),tasks=list(state.life?.tasks).filter(t=>!t.done&&!isArchived(state,'task',t.id)&&(!t.date||t.date<=today));const energy=state.context?.energy||'okay';const score=t=>{let n=0;if(t.protected)n+=100;if(t.date&&t.date<today)n+=50;else if(t.date===today)n+=30;const er={low:0,medium:1,high:2}[t.energy]??1;const ceiling=energy==='energized'?2:energy==='drained'?0:1;if(er<=ceiling)n+=25;else n-=20;if(Number(t.minutes||15)<=15)n+=8;return n};return tasks.sort((a,b)=>score(b)-score(a)||Number(a.minutes||15)-Number(b.minutes||15))[0]||null}
+function feedMeReply(state,raw){if(!/\b(feed me|what (?:can|should) i eat|what(?:'s| is) for (?:food|dinner|lunch|breakfast)|i(?:'m| am) hungry|food idea|something (?:quick|easy) to eat)\b/i.test(raw))return'';const lowEnergy=/\b(quick|easy|low energy|tired|drained|no energy)\b/i.test(raw)||state.context?.energy==='drained'||state.context?.capacity==='soft';const pick=feedMeRecommendation(state,{lowEnergy});if(!pick)return`I don’t have a saved available Nom or ready meal prep to choose from yet. Add one in Food + Journey and I’ll keep it honest instead of inventing dinner. 🍓`;const source=pick.source==='meal-prep'?'ready meal prep':'saved Nom';return`Feed-me verdict: ${pick.name}. It’s a ${source}${Number(pick.prepMinutes||0)?` and takes about ${Number(pick.prepMinutes)} minutes`:''}. ${lowEnergy?'I kept the pick gentle.':''} 🍱`}
 
 function minutesOfTime(value){const m=text(value).match(/^(\d{1,2}):(\d{2})/);if(!m)return null;return Number(m[1])*60+Number(m[2])}
 function nowMinutes(now=new Date()){return now.getHours()*60+now.getMinutes()}
@@ -90,6 +92,7 @@ export function processMochini(state,input){let next=clone(state),raw=normalizeM
   const loreReply=getLoreResponse(next?.mochini?.lore,next?.mochini?.life,raw);if(loreReply){next=addTurn(next,'assistant',loreReply,{conversation:true,self:true,lore:true,local:true});return{state:next,reply:loreReply,route:'local',requiresAI:false,intent:'mochini_lore'}}
   if(isMochiniActivityQuestion(raw)){const line='I am currently '+(next.mochini?.life?.currentActivity||'doing important bean business')+'. It is very serious work, obviously.';next=addTurn(next,'assistant',line,{conversation:true,self:true,local:true});return{state:next,reply:line,route:'local',requiresAI:false,intent:'mochini_self'}}
   const selfReply=mochiniSelfReply(next,raw);if(selfReply){next=addTurn(next,'assistant',selfReply,{conversation:true,self:true,local:true});return{state:next,reply:selfReply,route:'local',requiresAI:false,intent:'mochini_self'}}
+  const foodReply=feedMeReply(next,raw);if(foodReply){next=addTurn(next,'assistant',foodReply,{conversation:true,food:true,local:true});return{state:next,reply:foodReply,route:'local',requiresAI:false,intent:'feed_me'}}
   if(/^(what should i do( now)?|what do i do( now)?|pick for me)$/i.test(raw)){reply=whatNowReply(next);next=addTurn(next,'assistant',reply);return{state:next,reply,route:'local',requiresAI:false,intent:'what_now'}}
   const conversationalFollowup=casualFollowupReply(next,raw);if(conversationalFollowup){reply=conversationalFollowup;next=addTurn(next,'assistant',reply,{conversation:true,followup:true});return{state:next,reply}}
   const hangoutChoice=hangoutChoiceReply(next,raw);if(hangoutChoice&&!explicitTask(raw)&&!explicitReminder(raw)){reply=hangoutChoice;next=addTurn(next,'assistant',reply,{conversation:true,topic:'hangout'});return{state:next,reply}}

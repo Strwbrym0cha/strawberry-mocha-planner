@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery25';
+const RECOVERY='4.0.0-recovery26';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -34,15 +34,16 @@ async function optionalImport(path,label){
 let stage='starting';
 try{
  stage='Store + Mochini';
-  const [store,mochini,life,lore,ai,gig]=await Promise.all([
+  const [store,mochini,life,lore,ai,gig,journey]=await Promise.all([
   import(`./store.js?v=${RECOVERY}`),
   import(`./mochini.js?v=${RECOVERY}`),
   import(`./mochini-life.js?v=${RECOVERY}`),
   import(`./mochini-lore.js?v=${RECOVERY}`),
   import(`./mochini-ai.js?v=${RECOVERY}`),
-  import(`./money-cafe-gig.js?v=${RECOVERY}`)
+  import(`./money-cafe-gig.js?v=${RECOVERY}`),
+  import(`./journey.js?v=${RECOVERY}`)
   ]);
-  window.__KATOS_V4_DEPS={store,mochini,life,lore,ai,gig};
+  window.__KATOS_V4_DEPS={store,mochini,life,lore,ai,gig,journey};
 
  stage='core runtime chunks';
  const chunks=await Promise.all(urls.map(fetchRuntimeChunk));
@@ -75,6 +76,7 @@ try{
  await optionalImport(`./hobby-advisor.js?v=${RECOVERY}`,'Mochini hobby advisor');
  await optionalImport(`./hobby-shelf.js?v=${RECOVERY}`,'interactive hobby shelf');
  await optionalImport(`./hobby-lanes-view.js?v=${RECOVERY}`,'hobby category view');
+ await optionalImport(`./food-journey-ui.js?v=${RECOVERY}`,'Food + Journey controls');
 }catch(error){
  console.error(`KatOS V4 failed during ${stage}:`,error);
  const app=document.getElementById('app');

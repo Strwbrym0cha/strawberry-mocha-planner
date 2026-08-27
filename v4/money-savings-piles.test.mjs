@@ -54,6 +54,6 @@ assert.equal(rows.length,STARTER_SAVINGS_PILES.length);
 
 const loader=readFileSync(new URL('./loader.js',import.meta.url),'utf8');
 assert.match(loader,/money-savings-piles\.js/);
-assert.match(loader,/recovery22/);
+assert.match(loader,/RECOVERY='4\.0\.0-recovery\d+'/);
 
 console.log('money-savings-piles.test.mjs PASS');
