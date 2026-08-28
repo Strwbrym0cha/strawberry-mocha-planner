@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery28';
+const RECOVERY='4.0.0-recovery29';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -72,7 +72,9 @@ try{
  await optionalImport(`./money-subscriptions.js?v=${RECOVERY}`,'subscriptions manager');
  await optionalImport(`./money-paycheck-calc.js?v=${RECOVERY}`,'paycheck gross calculator');
  await optionalImport(`./money-paychecks.js?v=${RECOVERY}`,'paycheck ledger');
+ await optionalImport(`./money-source-buckets.js?v=${RECOVERY}`,'editable money source buckets');
  await optionalImport(`./work-schedule.js?v=${RECOVERY}`,'work schedule');
+ await optionalImport(`./gig-shifts.js?v=${RECOVERY}`,'gig shift planner');
  await optionalImport(`./routine-timing.js?v=${RECOVERY}`,'routine timing');
  await optionalImport(`./hobby-advisor.js?v=${RECOVERY}`,'Mochini hobby advisor');
  await optionalImport(`./hobby-shelf.js?v=${RECOVERY}`,'interactive hobby shelf');
