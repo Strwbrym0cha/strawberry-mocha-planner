@@ -40,6 +40,13 @@ export function deriveWorkDefaults({mainMinutes=0,gigMinutes=0,gigTotal=0}={}){
   };
 }
 
+export function displayWorkHours(savedWorkHours,defaultWorkHours=''){
+  const hasSaved=savedWorkHours!==undefined&&savedWorkHours!==null&&text(savedWorkHours)!=='';
+  if(hasSaved)return Math.max(0,money(savedWorkHours));
+  if(defaultWorkHours===undefined||defaultWorkHours===null||text(defaultWorkHours)==='')return'';
+  return Math.max(0,money(defaultWorkHours));
+}
+
 export function upsertWorkRecap(state,date,values={},snapshot={},makeId=()=>`review-${Date.now()}`){
   const next=clone(state||{});
   next.insights={...(next.insights||{})};
@@ -144,11 +151,12 @@ async function boot(){
     const defaults=deriveWorkDefaults(snap);
     const worked=['yes','no','kinda'].includes(saved.worked)?saved.worked:defaults.worked;
     const workType=['regular','gig','both','other','off'].includes(saved.workType)?saved.workType:defaults.workType;
-    const workHours=saved.workHours!==undefined&&saved.workHours!==null&&saved.workHours!==''?saved.workHours:defaults.workHours;
+    const workHours=displayWorkHours(saved.workHours,defaults.workHours);
     const workVibe=text(saved.workVibe);
     const autoWorked=defaults.worked==='yes';
     const mainHours=Math.round((snap.mainMinutes/60)*100)/100;
-    const gigHours=Math.round((snap.gigMinutes/60)*100)/100;
+    const autoGigHours=Math.round((snap.gigMinutes/60)*100)/100;
+    const summaryHours=workHours!==''?workHours:(mainHours+autoGigHours||'');
     const currency=rt.currency?rt.currency(snap.gigTotal):`$${snap.gigTotal.toFixed(2)}`;
 
     const card=document.createElement('section');
@@ -162,10 +170,10 @@ async function boot(){
       <div class="daily-work-stats">
         <div class="daily-work-stat"><small>AUTO GUESS</small><b>${autoWorked?'Worked':'Off'}</b></div>
         <div class="daily-work-stat"><small>MAIN JOB SCHEDULED</small><b>${mainHours?`${mainHours}h`:'0h'}</b></div>
-        <div class="daily-work-stat"><small>GIG HOURS LOGGED</small><b>${gigHours?`${gigHours}h`:'0h'}</b></div>
+        <div class="daily-work-stat"><small>HOURS WORKED</small><b>${summaryHours!==''?`${summaryHours}h`:'0h'}</b></div>
         <div class="daily-work-stat"><small>GIG MONEY</small><b>${currency}</b></div>
       </div>
-      <p class="daily-work-auto">${snap.sources.length?`Gig receipts: ${esc(snap.sources.join(' · '))}. `:''}Main-job time comes from today’s Shift HQ schedule. Gig hours only count shifts with an actual amount logged. Your saved answer wins if reality was different.</p>
+      <p class="daily-work-auto">${snap.sources.length?`Gig receipts: ${esc(snap.sources.join(' · '))}. `:''}Main-job time comes from today’s Shift HQ schedule. Hours worked uses your saved recap first, then falls back to timed Shift HQ/Gig shifts. Your saved answer wins if reality was different.</p>
       <form data-daily-work-recap>
         <div class="daily-work-fields">
           <label class="daily-work-field"><span>Did I work?</span><select name="worked">${option('yes','Yep, I worked',worked)}${option('no','Nope, off day',worked)}${option('kinda','Kinda / work-ish stuff',worked)}</select></label>
