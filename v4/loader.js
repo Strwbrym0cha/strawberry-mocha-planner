@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.1.14-inspector-loop-fix';
+const RECOVERY='4.1.15-raw-browser-export';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -60,6 +60,7 @@ try{
  await optionalImport(`./recovery-modal-safe-v2.js?v=${RECOVERY}`,'iPad-safe background recovery modal');
  await optionalImport(`./v17-local-recovery.js?v=${RECOVERY}`,'V17 browser recovery bridge');
  await optionalImport(`./recovery-inspector.js?v=${RECOVERY}`,'browser recovery inspector');
+ await optionalImport(`./recovery-raw-export.js?v=${RECOVERY}`,'raw browser recovery export');
  await optionalImport(`./cloud-recovery.js?v=${RECOVERY}`,'cloud backup recovery');
  await optionalImport(`./preserve.js?v=${RECOVERY}`,'parity');
  await optionalImport(`./study-program-progress.js?v=${RECOVERY}`,'study program progress');
