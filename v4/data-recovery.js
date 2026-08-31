@@ -3,6 +3,9 @@ const V4_KEY=store?.V4_KEY||'sm_v4_beta';
 const V3_KEY=store?.V3_KEY||'sm_v3_beta';
 const BACKUP_PREFIX='sm_v4_beta_before_restore_';
 const CLOUD_BACKUP_PREFIX='sm_v4_beta_before_cloud_restore_';
+const V16_KEY=store?.V16_KEY||'sm_v16';
+const V16_BACKUP_KEY='sm_v16_backup';
+const V16_HISTORY_KEY='sm_v16_backups';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const list=v=>Array.isArray(v)?v:[];
 const obj=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
@@ -13,12 +16,12 @@ export function unwrapKatOSRecord(raw){
   try{const parsed=typeof raw==='string'?JSON.parse(raw):raw;return obj(parsed?.data||parsed)}catch{return null}
 }
 export function countKatOSItems(state){
-  const s=obj(state),life=obj(s.life),money=obj(s.money),work=obj(s.work),edu=obj(s.education),insights=obj(s.insights),movement=obj(s.movement),v4=obj(s.v4),nourish=obj(s.nourish),noms=obj(nourish.noms);
-  return [life.tasks,life.routines,life.routineInstances,life.events,life.reminders,life.threads,money.earnings,money.accounts,money.bills,money.spending,money.savingsGoals,money.debts,work.items,work.shifts,work.training,work.career,edu.programs,edu.courses,edu.items,edu.sessions,edu.reviews,insights.dayReviews,insights.activityLog,movement.sessions,v4.people,v4.hobbies,v4.admin,v4.shopping,v4.brainDump,v4.openDayPlans,noms.foods,noms.recipes,noms.history,noms.groceries].reduce((sum,rows)=>sum+list(rows).length,0);
+  const s=obj(state),life=obj(s.life),money=obj(s.money),work=obj(s.work),edu=obj(s.education),insights=obj(s.insights),movement=obj(s.movement),v4=obj(s.v4),nourish=obj(s.nourish),noms=obj(nourish.noms),rootMoney=obj(s.money);
+  return [life.tasks,life.routines,life.routineInstances,life.events,life.reminders,life.threads,money.earnings,money.accounts,money.bills,money.spending,money.ledger,money.transactions,money.savingsGoals,money.debts,work.items,work.shifts,work.training,work.career,edu.programs,edu.courses,edu.items,edu.sessions,edu.reviews,insights.dayReviews,insights.activityLog,insights.observations,insights.experiments,movement.sessions,v4.people,v4.hobbies,v4.admin,v4.shopping,v4.brainDump,v4.openDayPlans,noms.foods,noms.recipes,noms.history,noms.groceries,s.tasks,s.routines,s.events,s.reminders,s.habits,s.projects,s.goals,s.wins,s.courses,s.schoolTasks,s.workItems,s.brainNotes,s.priorities,rootMoney.transactions,rootMoney.ledger].reduce((sum,rows)=>sum+list(rows).length,0);
 }
 export function looksLikeKatOSState(state,key=''){
   const s=obj(state),k=String(key).toLowerCase();
-  if(k===V4_KEY||k===V3_KEY||k.startsWith(BACKUP_PREFIX)||k.startsWith(CLOUD_BACKUP_PREFIX))return true;
+  if(k===V4_KEY||k===V3_KEY||k===V16_KEY||k===V16_BACKUP_KEY||k===V16_HISTORY_KEY||k.startsWith(BACKUP_PREFIX)||k.startsWith(CLOUD_BACKUP_PREFIX))return true;
   if(Number(s.schemaVersion)===4||Number(s.schemaVersion)===3)return true;
   return !!(s.life&&s.money&&s.insights);
 }
@@ -28,23 +31,32 @@ function storageSources(){
   try{if(window.parent&&window.parent!==window&&window.parent.localStorage!==window.localStorage)out.push({id:'parent',label:'Parent browser page',storage:window.parent.localStorage})}catch{}
   return out;
 }
+function isV16Key(key){return key===V16_KEY||key===V16_BACKUP_KEY||String(key).startsWith(`${V16_HISTORY_KEY}[`)}
 function candidateKind(key,state){
   if(key===V4_KEY)return'Current V4';
   if(key===V3_KEY||Number(state?.schemaVersion)===3)return'V3 fallback';
+  if(key===V16_KEY)return'Newer KatOS local copy';
+  if(key===V16_BACKUP_KEY)return'Newer KatOS backup';
+  if(String(key).startsWith(`${V16_HISTORY_KEY}[`))return'Newer KatOS backup history';
   if(key.startsWith(CLOUD_BACKUP_PREFIX))return'Before cloud restore backup';
   if(key.startsWith(BACKUP_PREFIX))return'Before-restore backup';
   return'Older KatOS copy';
 }
-function candidateDate(state){return text(state?.meta?.updatedAt||state?.meta?.createdAt)||''}
+function candidateDate(state){return text(state?.meta?.updatedAt||state?.meta?.createdAt||state?.__smUpdatedAt)||''}
+function pushCandidate(found,seen,source,key,raw,state){
+  if(!state||!looksLikeKatOSState(state,key))return;
+  const signature=`${source.id}|${key}|${raw.length}`;if(seen.has(signature))return;seen.add(signature);
+  found.push({id:`${source.id}:${key}`,source,key,raw,state,format:isV16Key(key)?'v16':'native',kind:candidateKind(key,state),items:countKatOSItems(state),updatedAt:candidateDate(state),bytes:raw.length});
+}
+function historyEntries(raw){try{const parsed=JSON.parse(raw);const record=obj(parsed?.data||parsed),entries=list(record.entries||record);return entries.map(entry=>({state:obj(entry?.data),createdAt:text(entry?.createdAt||entry?.data?.__smUpdatedAt)})).filter(entry=>Object.keys(entry.state).length)}catch{return[]}}
 function collectCandidates(){
   const found=[],seen=new Set();
   for(const source of storageSources()){
     let keys=[];try{keys=Array.from({length:source.storage.length},(_,i)=>source.storage.key(i)).filter(Boolean)}catch{}
     for(const key of keys){
       let raw='';try{raw=source.storage.getItem(key)||''}catch{continue}
-      const state=unwrapKatOSRecord(raw);if(!state||!looksLikeKatOSState(state,key))continue;
-      const signature=`${source.id}|${key}|${raw.length}`;if(seen.has(signature))continue;seen.add(signature);
-      found.push({id:`${source.id}:${key}`,source,key,raw,state,kind:candidateKind(key,state),items:countKatOSItems(state),updatedAt:candidateDate(state),bytes:raw.length});
+      if(key===V16_HISTORY_KEY){historyEntries(raw).forEach((entry,index)=>pushCandidate(found,seen,source,`${V16_HISTORY_KEY}[${index+1}]`,JSON.stringify({data:entry.state}),{...entry.state,__smUpdatedAt:entry.createdAt||entry.state.__smUpdatedAt}));continue}
+      pushCandidate(found,seen,source,key,raw,unwrapKatOSRecord(raw));
     }
   }
   return found.sort((a,b)=>{
@@ -77,7 +89,9 @@ function restoreCandidate(id){
   if(!window.confirm(`Restore ${label}?\n\nKatOS will back up the current V4 data first, then reload.`))return;
   try{
     const target=window.localStorage,current=target.getItem(V4_KEY);if(current)target.setItem(`${BACKUP_PREFIX}${new Date().toISOString().replace(/[:.]/g,'-')}`,current);
-    if(candidate.key===V3_KEY||Number(candidate.state?.schemaVersion)===3){target.setItem(V3_KEY,candidate.raw);store?.resetV4FromV3?.()}else target.setItem(V4_KEY,candidate.raw);
+    if(candidate.format==='v16'){const restored=store?.importV16?.(candidate.state);if(!restored)throw new Error('This newer KatOS copy could not be translated for V4.');store.saveState(restored)}
+    else if(candidate.key===V3_KEY||Number(candidate.state?.schemaVersion)===3){target.setItem(V3_KEY,candidate.raw);store?.resetV4FromV3?.()}
+    else target.setItem(V4_KEY,candidate.raw);
     location.reload();
   }catch(error){openModal(`Restore failed: ${error?.message||error}`)}
 }
