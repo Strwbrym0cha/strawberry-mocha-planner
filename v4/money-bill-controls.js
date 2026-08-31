@@ -1,9 +1,9 @@
-import{REPEAT_OPTIONS,normalizeRepeat,advanceRecurringBill,unpaidBillTotalForMonth}from'./money-bill-cycle.js?v=4.1.18-current-month-bills';
+import{REPEAT_OPTIONS,normalizeRepeat,advanceRecurringBill,unpaidBillsForMonth,unpaidBillTotalForMonth}from'./money-bill-cycle.js?v=4.1.22-current-month-unpaid';
 
 const waitRuntime=()=>new Promise(resolve=>{const tick=()=>window.__KATOS_V4_RUNTIME?resolve(window.__KATOS_V4_RUNTIME):setTimeout(tick,25);tick()});
 const rt=await waitRuntime();
 const clone=v=>structuredClone(v);
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
 const ordinal=n=>{const mod100=n%100;if(mod100>=11&&mod100<=13)return`${n}th`;return`${n}${{1:'st',2:'nd',3:'rd'}[n%10]||'th'}`};
 const currency=v=>rt.currency?rt.currency(v):new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(Number(v)||0);
 const monthKey=()=>String(rt.today?rt.today():new Date().toISOString().slice(0,10)).slice(0,7);
@@ -13,6 +13,7 @@ function injectStyle(){
  const s=document.createElement('style');s.id='money-bill-controls-style';s.textContent=`
  .record-tools-field select{width:100%;padding:10px 11px;border:1px solid #e6cdd6;border-radius:13px;background:#fff;font:inherit;color:inherit}
  .bill-cycle-hint{grid-column:1/-1;padding:10px 12px;border-radius:13px;background:#fff4f8;color:#795c64;font-size:12px;line-height:1.4}
+ .bill-month-breakdown{margin-top:7px;font-size:9px;line-height:1.45;color:#866975}.bill-month-close{margin-top:7px;padding:5px 8px;border:1px solid #e4c8d3;border-radius:999px;background:#fff7fb;color:#7b4c5e;font:inherit;font-size:9px;font-weight:850;cursor:pointer}.bill-month-close:hover{background:#ffedf5}
  `;document.head.appendChild(s)
 }
 
@@ -75,26 +76,51 @@ function decorateAddForm(){
  fields.append(repeat,recurring)
 }
 
+function billNames(rows){return rows.map(b=>`${String(b?.name||'Bill').trim()||'Bill'} ${currency(b?.amount)}`)}
 function patchCurrentMonthOverview(){
  if(!document.querySelector('.nav-btn.active[data-view="money"]')||!document.querySelector('[data-money-tab="overview"].active'))return;
- const state=rt.getState(),due=unpaidBillTotalForMonth(state?.money?.bills,monthKey());
+ const state=rt.getState(),month=monthKey(),dueBills=unpaidBillsForMonth(state?.money?.bills,month),due=unpaidBillTotalForMonth(state?.money?.bills,month);
  let available=NaN;
  try{available=Number(window.__KATOS_V4_MONEY_LEDGER?.summary?.(state)?.available)}catch{}
  if(!Number.isFinite(available))available=(Array.isArray(state?.money?.accounts)?state.money.accounts:[]).reduce((sum,a)=>sum+(Number(a?.balance)||0),0);
- const safe=available-due;
+ const safe=available-due,names=billNames(dueBills),detail=names.join(' · ');
  document.querySelectorAll('.money-ledger-stat').forEach(stat=>{
   const label=stat.querySelector('small')?.textContent?.trim();
   if(label!=='SAFE AFTER BILLS')return;
   const value=stat.querySelector('b'),meta=stat.querySelector('span');
   if(value)value.textContent=currency(safe);
   if(meta)meta.textContent=`${currency(due)} unpaid this month`;
-  stat.title='Only unpaid bills due in the current calendar month are counted.';
+  let breakdown=stat.querySelector('.bill-month-breakdown');
+  if(dueBills.length){
+   if(!breakdown){breakdown=document.createElement('div');breakdown.className='bill-month-breakdown';stat.appendChild(breakdown)}
+   breakdown.textContent=detail;
+   let close=stat.querySelector('[data-close-current-bills]');
+   if(!close){close=document.createElement('button');close.type='button';close.className='bill-month-close';close.dataset.closeCurrentBills='1';close.textContent='✓ Month is paid';stat.appendChild(close)}
+  }else{
+   breakdown?.remove();stat.querySelector('[data-close-current-bills]')?.remove();
+  }
+  stat.title=dueBills.length?`Counted this month: ${detail}`:'No unpaid bills due in the current calendar month.';
  });
  document.querySelectorAll('.summary-grid .mini-stat').forEach(stat=>{
   const label=stat.querySelector('small')?.textContent?.trim()||'',value=stat.querySelector('b');if(!value)return;
-  if(label.includes("SHIT I DON'T WANNA PAY")){value.textContent=currency(due);stat.title='Unpaid bills due this calendar month only.'}
+  if(label.includes("SHIT I DON'T WANNA PAY")){value.textContent=currency(due);stat.title=dueBills.length?`Counted this month: ${detail}`:'No unpaid bills due this month.'}
   else if(label.includes('CAN I AFFORD TO BE SILLY?')){value.textContent=currency(safe);stat.title='Available money minus unpaid bills due this calendar month.'}
  });
+}
+
+function closeCurrentMonthBills(){
+ const state=clone(rt.getState()),month=monthKey(),bills=Array.isArray(state.money?.bills)?state.money.bills:[],dueBills=unpaidBillsForMonth(bills,month);
+ if(!dueBills.length)return;
+ const names=billNames(dueBills);
+ if(!confirm(`Mark the current month settled?\n\nThis will close:\n• ${names.join('\n• ')}\n\nRecurring bills roll forward. One-time bills are marked paid.`))return;
+ const dueIds=new Set(dueBills.map(b=>String(b.id)));
+ const stamp=new Date().toISOString();
+ state.money.bills=bills.map(b=>{
+  if(!dueIds.has(String(b.id)))return b;
+  if(b.recurring===true)return advanceRecurringBill(b,new Date());
+  return{...b,paid:true,lastPaidAt:stamp,updatedAt:stamp};
+ });
+ rt.setState(state,'Current month bills closed ✓');
 }
 
 function decorate(){injectStyle();decorateEditor();decorateAddForm();patchCurrentMonthOverview()}
@@ -116,6 +142,8 @@ document.addEventListener('submit',event=>{
 },true);
 
 document.addEventListener('click',event=>{
+ const close=event.target.closest('[data-close-current-bills]');
+ if(close){event.preventDefault();event.stopPropagation();closeCurrentMonthBills();return}
  const button=event.target.closest('[data-action="bill-paid"]');if(!button)return;
  event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
  const id=button.dataset.id,state=clone(rt.getState()),bills=Array.isArray(state.money?.bills)?state.money.bills:[],index=bills.findIndex(b=>String(b.id)===String(id));if(index<0)return;
