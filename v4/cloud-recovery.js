@@ -18,7 +18,7 @@ function installStyles(){if(document.getElementById('cloud-recovery-style'))retu
 function renderControl(note=''){
  installStyles();const foot=document.querySelector('.sidebar-foot');if(!foot)return;
  let box=document.getElementById('cloud-recovery-control');if(!box){box=document.createElement('div');box.id='cloud-recovery-control';foot.appendChild(box)}
- const signed=!!activeSession();box.innerHTML=`<button type="button" data-cloud-recovery-open><span>☁️ Restore cloud backup</span><span>→</span></button><small>${note||signed?'Your saved Supabase copy is ready to restore.':'Sign in to your KatOS account first, then restore your cloud copy.'}</small>`;
+ const signed=!!activeSession();box.innerHTML=`<button type="button" data-cloud-recovery-open><span>☁️ Restore cloud backup</span><span>→</span></button><small>${note||(signed?'Your saved Supabase copy is ready to restore.':'Sign in to your KatOS account first, then restore your cloud copy.')}</small>`;
 }
 async function readCloud(){
  const current=activeSession();if(!current){window.dispatchEvent(new CustomEvent('katos-auth-required',{detail:{message:'Sign in to your KatOS account first, then restore the cloud backup.'}}));throw new Error('Sign in is needed to read your cloud backup.')}
