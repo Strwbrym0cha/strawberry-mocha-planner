@@ -74,6 +74,7 @@ function importV16(v16){
   work:{...work,items:rows(source.workItems||work.items),shifts:rows(source.shifts||work.shifts),training:rows(source.training||work.training),career:rows(source.career||work.career)},
   growth:{...growth,goals:rows(source.goals||growth.goals),wins:rows(source.wins||growth.wins)},
   money:{...sourceMoney,ledger:txns},
+  nourish:{...obj(source.nourish),noms:{...obj(source.noms)}},
   v4:v4Defaults(),
   meta:{...obj(source.meta),build:V4_BUILD,createdAt:text(source.meta?.createdAt)||now,updatedAt:now,importedFromV16At:now,importSource:'sm_v16'}
  });
