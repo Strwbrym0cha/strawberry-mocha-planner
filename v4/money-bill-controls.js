@@ -1,10 +1,12 @@
-import{REPEAT_OPTIONS,normalizeRepeat,advanceRecurringBill}from'./money-bill-cycle.js';
+import{REPEAT_OPTIONS,normalizeRepeat,advanceRecurringBill,unpaidBillTotalForMonth}from'./money-bill-cycle.js?v=4.1.18-current-month-bills';
 
 const waitRuntime=()=>new Promise(resolve=>{const tick=()=>window.__KATOS_V4_RUNTIME?resolve(window.__KATOS_V4_RUNTIME):setTimeout(tick,25);tick()});
 const rt=await waitRuntime();
 const clone=v=>structuredClone(v);
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ordinal=n=>{const mod100=n%100;if(mod100>=11&&mod100<=13)return`${n}th`;return`${n}${{1:'st',2:'nd',3:'rd'}[n%10]||'th'}`};
+const currency=v=>rt.currency?rt.currency(v):new Intl.NumberFormat(undefined,{style:'currency',currency:'USD'}).format(Number(v)||0);
+const monthKey=()=>String(rt.today?rt.today():new Date().toISOString().slice(0,10)).slice(0,7);
 
 function injectStyle(){
  if(document.getElementById('money-bill-controls-style'))return;
@@ -73,7 +75,29 @@ function decorateAddForm(){
  fields.append(repeat,recurring)
 }
 
-function decorate(){injectStyle();decorateEditor();decorateAddForm()}
+function patchCurrentMonthOverview(){
+ if(!document.querySelector('.nav-btn.active[data-view="money"]')||!document.querySelector('[data-money-tab="overview"].active'))return;
+ const state=rt.getState(),due=unpaidBillTotalForMonth(state?.money?.bills,monthKey());
+ let available=NaN;
+ try{available=Number(window.__KATOS_V4_MONEY_LEDGER?.summary?.(state)?.available)}catch{}
+ if(!Number.isFinite(available))available=(Array.isArray(state?.money?.accounts)?state.money.accounts:[]).reduce((sum,a)=>sum+(Number(a?.balance)||0),0);
+ const safe=available-due;
+ document.querySelectorAll('.money-ledger-stat').forEach(stat=>{
+  const label=stat.querySelector('small')?.textContent?.trim();
+  if(label!=='SAFE AFTER BILLS')return;
+  const value=stat.querySelector('b'),meta=stat.querySelector('span');
+  if(value)value.textContent=currency(safe);
+  if(meta)meta.textContent=`${currency(due)} unpaid this month`;
+  stat.title='Only unpaid bills due in the current calendar month are counted.';
+ });
+ document.querySelectorAll('.summary-grid .mini-stat').forEach(stat=>{
+  const label=stat.querySelector('small')?.textContent?.trim()||'',value=stat.querySelector('b');if(!value)return;
+  if(label.includes("SHIT I DON'T WANNA PAY")){value.textContent=currency(due);stat.title='Unpaid bills due this calendar month only.'}
+  else if(label.includes('CAN I AFFORD TO BE SILLY?')){value.textContent=currency(safe);stat.title='Available money minus unpaid bills due this calendar month.'}
+ });
+}
+
+function decorate(){injectStyle();decorateEditor();decorateAddForm();patchCurrentMonthOverview()}
 let scheduled=false;function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;decorate()})}
 new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
 schedule();
