@@ -63,24 +63,36 @@ export function inspectRecoveryState(state={}){
 }
 
 function money(value){return`$${num(value).toFixed(2)}`}
+let annotateQueued=false;
 function annotate(){
   const overlay=document.querySelector('.katos-recovery-overlay');
   const candidates=list(overlay?.__katosRecoveryCandidates);
   if(!overlay||!candidates.length)return;
   const rows=[...overlay.querySelectorAll('.katos-recovery-row')];
   rows.forEach((row,index)=>{
+    if(row.dataset.recoveryInspected==='1')return;
     const candidate=candidates[index];if(!candidate)return;
+    row.dataset.recoveryInspected='1';
     const d=inspectRecoveryState(candidate.state);
     const meta=row.querySelector('.katos-recovery-meta');if(!meta)return;
-    let detail=row.querySelector('.katos-recovery-inspector');if(!detail){detail=document.createElement('div');detail.className='katos-recovery-inspector';detail.style.cssText='margin-top:7px;padding:7px 8px;border-radius:11px;background:#fff3f8;color:#76515f;font-size:10px;line-height:1.55';meta.after(detail)}
-    detail.innerHTML=`${d.reachesAug28?'<b>🔥 AUG 28+ COPY FOUND</b><br>':''}<b>Gig receipts:</b> ${d.gigCount} · ${money(d.gigTotal)}${d.latestGig?` · latest ${d.latestGig}`:''}<br><b>Bills:</b> ${d.billCount} · <b>Subscriptions:</b> ${d.subscriptionCount}<br><b>Work shifts/schedules:</b> ${d.shiftCount} · <b>Daily notes/reviews:</b> ${d.dailyNoteCount}${d.snapshotSaved?`<br><b>Snapshot saved:</b> ${d.snapshotSaved}`:''}${d.latestActivity&&d.latestActivity!==d.snapshotSaved?`<br><b>Newest dated activity:</b> ${d.latestActivity}`:''}`;
-    row.dataset.recoveryInspected='1';
+    let detail=row.querySelector('.katos-recovery-inspector');
+    if(!detail){detail=document.createElement('div');detail.className='katos-recovery-inspector';detail.style.cssText='margin-top:7px;padding:7px 8px;border-radius:11px;background:#fff3f8;color:#76515f;font-size:10px;line-height:1.55';meta.after(detail)}
+    const html=`${d.reachesAug28?'<b>🔥 AUG 28+ COPY FOUND</b><br>':''}<b>Gig receipts:</b> ${d.gigCount} · ${money(d.gigTotal)}${d.latestGig?` · latest ${d.latestGig}`:''}<br><b>Bills:</b> ${d.billCount} · <b>Subscriptions:</b> ${d.subscriptionCount}<br><b>Work shifts/schedules:</b> ${d.shiftCount} · <b>Daily notes/reviews:</b> ${d.dailyNoteCount}${d.snapshotSaved?`<br><b>Snapshot saved:</b> ${d.snapshotSaved}`:''}${d.latestActivity&&d.latestActivity!==d.snapshotSaved?`<br><b>Newest dated activity:</b> ${d.latestActivity}`:''}`;
+    if(detail.innerHTML!==html)detail.innerHTML=html;
   });
+}
+function queueAnnotate(){
+  if(annotateQueued)return;
+  annotateQueued=true;
+  setTimeout(()=>{annotateQueued=false;annotate()},0);
 }
 
 if(typeof document!=='undefined'&&typeof MutationObserver!=='undefined'){
   document.addEventListener('click',event=>{
-    if(event.target?.closest?.('[data-katos-recovery-open]'))setTimeout(annotate,0);
+    if(event.target?.closest?.('[data-katos-recovery-open]'))queueAnnotate();
   });
-  const observer=new MutationObserver(()=>annotate());observer.observe(document.body,{childList:true,subtree:true});
+  const observer=new MutationObserver(()=>{
+    if(document.querySelector('.katos-recovery-row:not([data-recovery-inspected="1"])'))queueAnnotate();
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
 }
