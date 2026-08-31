@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.0.0-recovery33';
+const RECOVERY='4.0.0-recovery34';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -55,6 +55,7 @@ try{
  stage='optional parity tools';
  await optionalImport(`./mochini-runtime.js?v=${RECOVERY}`,'Mochini conversation routing');
  await optionalImport(`./auth-ui.js?v=${RECOVERY}`,'account controls');
+ await optionalImport(`./data-recovery.js?v=${RECOVERY}`,'V4 data recovery');
  await optionalImport(`./preserve.js?v=${RECOVERY}`,'parity');
  await optionalImport(`./study-program-progress.js?v=${RECOVERY}`,'study program progress');
  await optionalImport(`./study-program-actions.js?v=${RECOVERY}`,'study program actions');
