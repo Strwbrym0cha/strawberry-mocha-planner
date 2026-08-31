@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.1.19-paycheck-ledger-sync';
+const RECOVERY='4.1.20-paycheck-account-link';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -74,6 +74,7 @@ try{
  await optionalImport(`./time-calendar.js?v=${RECOVERY}`,'month calendar');
  await optionalImport(`./money-cafe-gig-tab.js?v=${RECOVERY}`,'Money Café gigs tab');
  await optionalImport(`./money-savings-piles.js?v=${RECOVERY}`,'editable savings piles');
+ await optionalImport(`./money-ledger-account-mode.js?v=${RECOVERY}`,'current account balance mode');
  await optionalImport(`./money-ledger.js?v=${RECOVERY}`,'Money Café live ledger');
  await optionalImport(`./money-accounts.js?v=${RECOVERY}`,'account balances');
  await optionalImport(`./money-due-dates.js?v=${RECOVERY}`,'money due date labels');
