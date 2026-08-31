@@ -88,7 +88,7 @@ export function importV16(v16){
  const threads=mergeRows([...rows(source.threads||life.threads),...rows(source.projects).map(mapProject)]);
  const legacyNotes=[...rows(source.brainNotes).map(mapBrainNote),...objectValues(source.dayNotes).map((note,i)=>({id:`day-note-v5-${i}`,text:text(note?.text)||text(note?.note)||text(note)||'Day note',createdAt:text(note?.createdAt)||now}))];
  const sourceNoms=obj(source.noms),savedFoods=rows(sourceNoms.foods),pantryFoods=rows(sourceNoms.pantry).filter(item=>item?.archived!==true).map((item,i)=>mapPantryFood(item,i,savedFoods));
- const foods=mergeRows([...savedFoods,...pantryFoods]);
+ const foods=mergeRows([...pantryFoods,...savedFoods]);
  const moneyBills=rows(sourceMoney.bills).map(mapCloudBill),moneyEarnings=rows(sourceMoney.earnings).length?rows(sourceMoney.earnings):rows(sourceMoney.income).map(mapCloudIncome),moneyAccounts=rows(sourceMoney.accounts).length?rows(sourceMoney.accounts):mapCashAccount(sourceMoney.cash);
  const historyMovement=Object.entries(obj(source.history)).map(([date,row],i)=>mapMovementHistory(row,date,i)).filter(Boolean);
  const sips=obj(source.sips);
