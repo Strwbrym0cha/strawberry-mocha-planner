@@ -34,12 +34,14 @@ function isGigLabel(value){
 }
 
 function cleanMainJobCard(card){
+  const kicker=card.querySelector('.work-schedule-head .ey');
+  if(kicker)kicker.textContent='🗓 RBT SCHEDULE';
   const heading=card.querySelector('.work-schedule-head h2');
-  if(heading)heading.textContent='Main job schedule';
+  if(heading)heading.textContent='Client-work schedule';
   const note=card.querySelector('.work-schedule-note');
-  if(note)note.textContent='RBT/client work and other non-gig shifts live here. Gig shifts have their own tab.';
+  if(note)note.textContent='Your recurring RBT schedule and one-off client-work shifts live here. Gig work stays in its own lane.';
   const labelInput=card.querySelector('[data-work-schedule-form] [name="label"]');
-  if(labelInput&&text(labelInput.value)==='Work shift')labelInput.value='Main job shift';
+  if(labelInput&&(text(labelInput.value)==='Work shift'||text(labelInput.value)==='Main job shift'))labelInput.value='RBT shift';
 
   let hiddenCount=0;
   card.querySelectorAll('.work-schedule-row').forEach(row=>{
@@ -88,14 +90,14 @@ function buildHub(workCard,gigCard){
   const hub=document.createElement('section');
   hub.className='card full boss-schedule-hub';
   hub.dataset.bossScheduleHub='1';
-  hub.innerHTML=`<div class="boss-hub-head"><div><div class="boss-hub-kicker">🗓 SHIFT HQ</div><h2>One home for all your shifts</h2><p>Main job and gig work are different lanes, but they do not need two giant schedule cards fighting for screen space.</p></div><div class="boss-hub-tabs" role="tablist" aria-label="Shift type"><button type="button" class="boss-hub-tab" data-boss-hub-tab="main" role="tab">💼 Main job</button><button type="button" class="boss-hub-tab" data-boss-hub-tab="gig" role="tab">⚡ Gig work</button></div></div><div class="boss-hub-panel" data-boss-hub-panel="main"></div><div class="boss-hub-panel" data-boss-hub-panel="gig"></div>`;
+  hub.innerHTML=`<div class="boss-hub-head"><div><div class="boss-hub-kicker">🗓 SHIFT HQ</div><h2>RBT career + gig work, one command center</h2><p>Your RBT job gets the client-work tools it deserves, while DoorDash and Shipt stay in a separate lane.</p></div><div class="boss-hub-tabs" role="tablist" aria-label="Work lane"><button type="button" class="boss-hub-tab" data-boss-hub-tab="main" role="tab">🧠 RBT job</button><button type="button" class="boss-hub-tab" data-boss-hub-tab="gig" role="tab">⚡ Gig work</button></div></div><div class="boss-hub-panel" data-boss-hub-panel="main"></div><div class="boss-hub-panel" data-boss-hub-panel="gig"></div>`;
   workCard.insertAdjacentElement('beforebegin',hub);
   hub.querySelector('[data-boss-hub-panel="main"]').appendChild(workCard);
   hub.querySelector('[data-boss-hub-panel="gig"]').appendChild(gigCard);
   cleanMainJobCard(workCard);
   cleanGigCard(gigCard);
-  let initial='gig';
-  try{initial=localStorage.getItem(STORAGE_KEY)||'gig'}catch{}
+  let initial='main';
+  try{initial=localStorage.getItem(STORAGE_KEY)||'main'}catch{}
   setTab(hub,initial);
   return hub;
 }
