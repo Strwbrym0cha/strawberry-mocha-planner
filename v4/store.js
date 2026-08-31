@@ -65,17 +65,27 @@ function hasUserContent(s){
 function mapTask(row,i){row=obj(row);return{...row,id:text(row.id)||`task-v5-${i}`,text:text(row.text)||text(row.title)||text(row.name)||'Task',done:row.done===true||row.completed===true,date:text(row.date)||text(row.dueDate),priority:text(row.priority)||'normal',minutes:Math.max(0,num(row.minutes||row.durationMin||row.duration)),protected:row.protected===true||row.isProtected===true}}
 function mapReminder(row,i){row=obj(row);return{...row,id:text(row.id)||`reminder-v5-${i}`,title:text(row.title)||text(row.text)||text(row.name)||'Reminder',completed:row.completed===true||row.done===true,date:text(row.date)||text(row.dueDate),time:text(row.time)}}
 function mapEvent(row,i){row=obj(row);return{...row,id:text(row.id)||`event-v5-${i}`,title:text(row.title)||text(row.text)||text(row.name)||'Event',date:text(row.date)||text(row.startDate),startTime:text(row.startTime)||text(row.start),endTime:text(row.endTime)||text(row.end)}}
+function mapHabit(row,i){const raw=Array.isArray(row)?{name:row[0]||row[1],days:row.days}:obj(row);return{...raw,id:text(raw.id)||`habit-v5-${i}`,name:text(raw.name)||`Habit ${i+1}`,icon:text(raw.icon)||'🍓',recurrence:'daily',days:list(raw.days),steps:list(raw.steps),createdAt:text(raw.createdAt)||new Date().toISOString()}}
+function mapProject(row,i){row=obj(row);const note=text(row.notes)||text(row.currentObjective)||text(row.nextStep);return{...row,id:`project-v5-${text(row.id)||i}`,title:text(row.name)||text(row.title)||`Project ${i+1}`,status:['done','complete','completed','closed','archived'].includes(text(row.status).toLowerCase())?'archived':'active',notes:note?[{id:`project-note-${i}`,text:note,createdAt:text(row.updatedAt)||new Date().toISOString()}]:[],createdAt:text(row.createdAt)||new Date().toISOString(),updatedAt:text(row.updatedAt)||new Date().toISOString()}}
+function mapBrainNote(row,i){row=obj(row);return{id:text(row.id)||`brain-v5-${i}`,text:text(row.text)||text(row.title)||'Brain note',bucket:['inbox','idea','hobby','language','katos','closed'].includes(text(row.routedTo))?text(row.routedTo):'inbox',createdAt:text(row.createdAt)||new Date().toISOString()}}
+function mapPriority(row,i){const raw=typeof row==='string'?{text:row}:obj(row);return{...raw,id:text(raw.id)||`priority-v5-${i}`,text:text(raw.text)||text(raw.title)||text(raw.name)||`Priority ${i+1}`,createdAt:text(raw.createdAt)||new Date().toISOString()}}
+function mergeRows(rows,key='id'){const seen=new Set();return rows.filter(row=>{const signature=text(row?.[key])||text(row?.name)||text(row?.title);if(!signature||seen.has(signature))return false;seen.add(signature);return true})}
+function objectValues(v){return Object.values(obj(v)).filter(Boolean)}
 export function importV16(v16){
  const source=clone(obj(v16)),life=obj(source.life),education=obj(source.education),work=obj(source.work),growth=obj(source.growth),sourceMoney=obj(source.money),now=new Date().toISOString();
  const txns=rows(sourceMoney.ledger).length?rows(sourceMoney.ledger):rows(sourceMoney.transactions);
+ const routines=mergeRows([...rows(source.routines||life.routines),...rows(source.habits).map(mapHabit)]);
+ const threads=mergeRows([...rows(source.threads||life.threads),...rows(source.projects).map(mapProject)]);
+ const legacyNotes=[...rows(source.brainNotes).map(mapBrainNote),...objectValues(source.dayNotes).map((note,i)=>({id:`day-note-v5-${i}`,text:text(note?.text)||text(note?.note)||text(note)||'Day note',createdAt:text(note?.createdAt)||now}))];
  return normalizeState({...source,schemaVersion:4,
-  life:{...life,inbox:rows(source.inbox||life.inbox),tasks:rows(source.tasks||life.tasks).map(mapTask),reminders:rows(source.reminders||life.reminders).map(mapReminder),routines:rows(source.routines||life.routines),routineInstances:rows(source.routineInstances||life.routineInstances),events:rows(source.events||life.events).map(mapEvent),threads:rows(source.threads||life.threads)},
+  life:{...life,inbox:mergeRows([...rows(source.inbox||life.inbox),...rows(source.priorities).map(mapPriority)]),tasks:rows(source.tasks||life.tasks).map(mapTask),reminders:rows(source.reminders||life.reminders).map(mapReminder),routines,routineInstances:rows(source.routineInstances||life.routineInstances),events:rows(source.events||life.events).map(mapEvent),threads},
   education:{...education,programs:rows(source.programs||education.programs),courses:rows(source.courses||education.courses),items:rows(source.schoolTasks||source.educationItems||education.items),sessions:rows(source.studySessions||education.sessions)},
   work:{...work,items:rows(source.workItems||work.items),shifts:rows(source.shifts||work.shifts),training:rows(source.training||work.training),career:rows(source.career||work.career)},
   growth:{...growth,goals:rows(source.goals||growth.goals),wins:rows(source.wins||growth.wins)},
   money:{...sourceMoney,ledger:txns},
-  nourish:{...obj(source.nourish),noms:{...obj(source.noms)}},
-  v4:v4Defaults(),
+  nourish:{...obj(source.nourish),noms:{...obj(source.noms)},sips:{...obj(source.sips)}},
+  insights:{...obj(source.insights),legacyNotes,observations:[...rows(source.labObservations),...rows(source.labArchivedObservations)],experiments:rows(source.labExperiments)},
+  v4:{...v4Defaults(),...obj(source.v4),brainDump:rows(source.brainNotes).map(mapBrainNote)},
   meta:{...obj(source.meta),build:V4_BUILD,createdAt:text(source.meta?.createdAt)||now,updatedAt:now,importedFromV16At:now,importSource:'sm_v16'}
  });
 }
