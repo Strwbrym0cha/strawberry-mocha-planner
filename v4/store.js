@@ -65,7 +65,7 @@ function hasUserContent(s){
 function mapTask(row,i){row=obj(row);return{...row,id:text(row.id)||`task-v5-${i}`,text:text(row.text)||text(row.title)||text(row.name)||'Task',done:row.done===true||row.completed===true,date:text(row.date)||text(row.dueDate),priority:text(row.priority)||'normal',minutes:Math.max(0,num(row.minutes||row.durationMin||row.duration)),protected:row.protected===true||row.isProtected===true}}
 function mapReminder(row,i){row=obj(row);return{...row,id:text(row.id)||`reminder-v5-${i}`,title:text(row.title)||text(row.text)||text(row.name)||'Reminder',completed:row.completed===true||row.done===true,date:text(row.date)||text(row.dueDate),time:text(row.time)}}
 function mapEvent(row,i){row=obj(row);return{...row,id:text(row.id)||`event-v5-${i}`,title:text(row.title)||text(row.text)||text(row.name)||'Event',date:text(row.date)||text(row.startDate),startTime:text(row.startTime)||text(row.start),endTime:text(row.endTime)||text(row.end)}}
-function importV16(v16){
+export function importV16(v16){
  const source=clone(obj(v16)),life=obj(source.life),education=obj(source.education),work=obj(source.work),growth=obj(source.growth),sourceMoney=obj(source.money),now=new Date().toISOString();
  const txns=rows(sourceMoney.ledger).length?rows(sourceMoney.ledger):rows(sourceMoney.transactions);
  return normalizeState({...source,schemaVersion:4,
