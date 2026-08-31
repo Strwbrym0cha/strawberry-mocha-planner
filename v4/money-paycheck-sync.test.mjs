@@ -1,7 +1,7 @@
 import assert from'node:assert/strict';
 import{receivedAmount,normalizePaycheckCompatibility,repairPaycheckCompatibility,repairPaycheckState,syncPaycheckIntoExistingLedger}from'./money-paycheck-sync.js';
 
-const paycheck={id:'earning-1',kind:'paycheck',label:'Paycheck',status:'received',amount:275,receivedAmount:397.98,receivedDate:'2026-08-28',note:'Training pay'};
+const paycheck={id:'earning-1',kind:'paycheck',label:'Paycheck',status:'received',amount:275,receivedAmount:397.98,receivedDate:'2026-08-28',note:'Training pay',accountId:''};
 assert.equal(receivedAmount(paycheck),397.98);
 
 const normalized=normalizePaycheckCompatibility(paycheck);
@@ -19,6 +19,12 @@ assert.equal(synced.money.ledger.length,1);
 assert.equal(synced.money.ledger[0].amount,397.98);
 assert.equal(synced.money.ledger[0].sourceType,'paycheck');
 assert.equal(synced.money.ledger[0].sourceId,'earning-1');
+assert.equal(synced.money.ledger[0].balanceAccountId,'');
+
+const linked=syncPaycheckIntoExistingLedger(withLedger,{...normalized,accountId:'checking-1'},paycheck);
+assert.equal(linked.money.ledger[0].accountId,'');
+assert.equal(linked.money.ledger[0].balanceAccountId,'checking-1');
+assert.equal(linked.money.ledger[0].accountBalanceApplied,true);
 
 const repairedAll=repairPaycheckState(withLedger);
 assert.equal(repairedAll.changed,true);
