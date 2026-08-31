@@ -33,8 +33,9 @@ async function openSafeRecovery(){
   try{
     await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
     if(!overlay.isConnected)return;
-    const mod=await import('./data-recovery.js');
-    const candidates=typeof mod.collectCandidates==='function'?mod.collectCandidates():[];
+    const recovery=window.__KATOS_V4_RECOVERY;
+    if(typeof recovery?.collectCandidates!=='function')throw new Error('Recovery scanner did not load. Refresh KatOS and try again.');
+    const candidates=recovery.collectCandidates();
     renderResults(overlay,Array.isArray(candidates)?candidates:[]);
   }catch(error){console.error('KatOS safe recovery scan failed:',error);renderFailure(overlay,error)}
 }
