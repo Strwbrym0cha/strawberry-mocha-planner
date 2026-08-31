@@ -1,5 +1,5 @@
 import assert from'node:assert/strict';
-import{advanceRecurringBill,nextBillDueDate,normalizeRepeat}from'./money-bill-cycle.js';
+import{advanceRecurringBill,nextBillDueDate,normalizeRepeat,billDueInMonth,unpaidBillTotalForMonth}from'./money-bill-cycle.js';
 
 const now=new Date('2026-08-31T18:00:00Z');
 
@@ -31,5 +31,17 @@ assert.equal(legacyPaid.dueDate,'2026-08-15');
 const legacyDue=advanceRecurringBill({id:'b5',due:'2026-08-15',repeat:'Monthly',recurring:true,paid:false},now);
 assert.equal(legacyDue.due,'2026-09-15');
 assert.equal(legacyDue.dueDate,'2026-09-15');
+
+assert.equal(billDueInMonth({dueDate:'2026-08-15',paid:false},'2026-08'),true);
+assert.equal(billDueInMonth({dueDate:'2026-09-15',paid:false},'2026-08'),false);
+assert.equal(billDueInMonth({dueDate:'2026-08-15',paid:true},'2026-08'),false);
+assert.equal(billDueInMonth({dueDay:17,paid:false},'2026-08'),true);
+assert.equal(billDueInMonth({paid:false},'2026-08'),false);
+assert.equal(unpaidBillTotalForMonth([
+ {amount:35,dueDate:'2026-08-15',paid:false},
+ {amount:30,dueDay:20,paid:false},
+ {amount:925,dueDate:'2026-09-01',paid:false},
+ {amount:10,dueDate:'2026-08-10',paid:true}
+],'2026-08'),65);
 
 console.log('money-bill-cycle tests passed');
