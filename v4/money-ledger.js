@@ -64,11 +64,14 @@ function transactionMarkup(s){
 function renderMoney(){
  injectStyles();
  if(!document.querySelector('.nav-btn.active[data-view="money"]')||!document.querySelector('[data-money-tab="overview"].active'))return;
+ // The ledger is the only live money summary now. Remove the old duplicate cards if
+ // a previous cached session had already loaded them.
+ document.querySelectorAll('[data-money-forecast],[data-source-buckets-overview]').forEach(card=>card.remove());
  if(document.querySelector('[data-money-ledger]'))return;
- const tab=document.querySelector('[data-money-tab="overview"].active'),host=tab.closest('.tabs')?.parentElement;if(!host)return;
+ const tab=document.querySelector('[data-money-tab="overview"].active'),tabs=tab.closest('.tabs'),host=tabs?.parentElement;if(!host)return;
  const card=document.createElement('section');card.className='money-ledger-card';card.dataset.moneyLedger='1';card.innerHTML=transactionMarkup(rt.getState());
- const forecast=host.querySelector('[data-money-forecast]'),accountsCard=host.querySelector('[data-money-accounts]'),summaryGrid=host.querySelector('.summary-grid');
- if(forecast)forecast.insertAdjacentElement('beforebegin',card);else if(accountsCard)accountsCard.insertAdjacentElement('beforebegin',card);else if(summaryGrid)summaryGrid.insertAdjacentElement('afterend',card);else host.appendChild(card);
+ // Directly after the Money Café tabs means this is the first thing Kat sees.
+ if(tabs)tabs.insertAdjacentElement('afterend',card);else host.prepend(card);
 }
 function renderHome(){
  injectStyles();
