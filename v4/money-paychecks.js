@@ -1,3 +1,5 @@
+import{normalizePaycheckCompatibility,repairPaycheckState,syncPaycheckIntoExistingLedger}from'./money-paycheck-sync.js';
+
 const waitRuntime=()=>new Promise(resolve=>{const tick=()=>window.__KATOS_V4_RUNTIME?resolve(window.__KATOS_V4_RUNTIME):setTimeout(tick,25);tick()});
 const rt=await waitRuntime();
 const store=window.__KATOS_V4_DEPS.store;
@@ -16,7 +18,7 @@ function isArchived(state,p){return store.isArchived(state,'earning',p.id)}
 function amounts(p){
  const gross=num(p.grossAmount??p.actualGross??p.estimatedGross??p.amount);
  const expected=num(p.expectedAmount??p.expectedNet??p.netExpected??(p.status==='received'?p.receivedAmount:p.estimatedGross));
- const received=num(p.receivedAmount??p.actualNet);
+ const received=num(p.receivedAmount??p.actualNet??p.actualAmount);
  return{gross,expected,received};
 }
 function dateValue(v){return /^\d{4}-\d{2}-\d{2}$/.test(text(v))?text(v):''}
@@ -73,15 +75,24 @@ function rerenderManager(){const manager=document.querySelector('[data-paycheck-
 function savePaycheck(form){
  const fd=new FormData(form),state=clone(rt.getState()),id=text(form.dataset.id)||makeId('earning'),rows=list(state.money?.earnings),prior=rows.find(x=>String(x.id)===String(id));
  const gross=num(fd.get('gross')),expected=num(fd.get('expected')),received=num(fd.get('received')),status=text(fd.get('status'))==='received'?'received':'expected';
- const next={...prior,id,kind:'paycheck',label:text(fd.get('label'))||'Paycheck',employer:text(fd.get('label'))||text(prior?.employer),status,grossAmount:gross,estimatedGross:gross,expectedAmount:expected,receivedAmount:received,expectedDate:text(fd.get('expectedDate')),receivedDate:text(fd.get('receivedDate')),note:text(fd.get('note')),createdAt:prior?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
- state.money={...(state.money||{}),earnings:prior?rows.map(x=>String(x.id)===String(id)?next:x):[...rows,next]};editId='';rt.setState(state,prior?'Paycheck updated 💸':'Paycheck added 💸');
+ const next=normalizePaycheckCompatibility({...prior,id,kind:'paycheck',label:text(fd.get('label'))||'Paycheck',employer:text(fd.get('label'))||text(prior?.employer),status,grossAmount:gross,estimatedGross:gross,expectedAmount:expected,receivedAmount:received,expectedDate:text(fd.get('expectedDate')),receivedDate:text(fd.get('receivedDate')),note:text(fd.get('note')),createdAt:prior?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
+ state.money={...(state.money||{}),earnings:prior?rows.map(x=>String(x.id)===String(id)?next:x):[...rows,next]};
+ const synced=syncPaycheckIntoExistingLedger(state,next,prior);editId='';rt.setState(synced,prior?'Paycheck updated 💸':'Paycheck added 💸');
 }
 function mutate(id,action){
  let state=clone(rt.getState()),rows=list(state.money?.earnings),p=rows.find(x=>String(x.id)===String(id));if(!p)return;
  if(action==='archive'){state=store.archiveItem(state,'earning',id);editId='';rt.setState(state,'Paycheck archived');return}
  if(action==='restore'){state=store.restoreItem(state,'earning',id);rt.setState(state,'Paycheck restored');return}
- if(action==='delete'){if(!confirm('Delete this paycheck forever? Archive is safer if you may want the record later.'))return;state.money={...(state.money||{}),earnings:rows.filter(x=>String(x.id)!==String(id))};state.v4={...(state.v4||{}),archive:list(state.v4?.archive).filter(x=>!(x.kind==='earning'&&String(x.id)===String(id)))};editId='';rt.setState(state,'Paycheck deleted')}
+ if(action==='delete'){
+  if(!confirm('Delete this paycheck forever? Archive is safer if you may want the record later.'))return;
+  const ledger=list(state.money?.ledger).filter(row=>!(row?.sourceType==='paycheck'&&String(row?.sourceId)===String(id))&&String(row?.id)!==`paycheck-${id}`);
+  state.money={...(state.money||{}),earnings:rows.filter(x=>String(x.id)!==String(id)),...(list(state.money?.ledger).length?{ledger}:{})};
+  state.v4={...(state.v4||{}),archive:list(state.v4?.archive).filter(x=>!(x.kind==='earning'&&String(x.id)===String(id)))};editId='';rt.setState(state,'Paycheck deleted');
+ }
 }
+
+const repaired=repairPaycheckState(rt.getState());
+if(repaired.changed)rt.setState(repaired.state,'Paycheck + ledger synced 💸');
 
 document.addEventListener('submit',e=>{const form=e.target.closest?.('[data-paycheck-form]');if(!form)return;e.preventDefault();e.stopImmediatePropagation();savePaycheck(form)},true);
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-paycheck-action]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();const action=b.dataset.paycheckAction,id=b.dataset.id;if(action==='edit'){editId=id;rerenderManager()}else if(action==='cancel'){editId='';rerenderManager()}else mutate(id,action)},true);
