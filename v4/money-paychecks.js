@@ -1,4 +1,5 @@
 import{normalizePaycheckCompatibility,repairPaycheckState,syncPaycheckIntoExistingLedger}from'./money-paycheck-sync.js';
+import{syncPaycheckAccountBalance}from'./money-account-balance.js';
 
 const waitRuntime=()=>new Promise(resolve=>{const tick=()=>window.__KATOS_V4_RUNTIME?resolve(window.__KATOS_V4_RUNTIME):setTimeout(tick,25);tick()});
 const rt=await waitRuntime();
@@ -14,6 +15,12 @@ const fmtDate=v=>rt.fmtDate?rt.fmtDate(v):text(v);
 let editId='';
 
 function paycheckRows(state){return list(state?.money?.earnings).filter(x=>(x.kind||'paycheck')==='paycheck')}
+function activeAccounts(state){return list(state?.money?.accounts).filter(a=>!a?.id||!store.isArchived(state,'account',a.id))}
+function accountName(id,state=rt.getState()){return activeAccounts(state).find(a=>String(a.id)===String(id))?.name||''}
+function accountOptions(selected=''){
+ const all=activeAccounts(rt.getState());
+ return `<option value="">Unassigned · do not change an account</option>${all.map(a=>`<option value="${esc(a.id)}" ${String(a.id)===String(selected)?'selected':''}>${esc(a.name||'Account')}</option>`).join('')}`;
+}
 function isArchived(state,p){return store.isArchived(state,'earning',p.id)}
 function amounts(p){
  const gross=num(p.grossAmount??p.actualGross??p.estimatedGross??p.amount);
@@ -38,17 +45,19 @@ function formMarkup(p=null){
  return`<form class="paycheck-form" data-paycheck-form data-id="${esc(p?.id||'')}"><div class="ey">${p?'✏️ EDIT PAYCHECK':'＋ ADD PAYCHECK'}</div><div class="fields">
  ${field('Paycheck / employer',`<input name="label" required value="${esc(p?.label||p?.employer||'')}" placeholder="Butterfly Effects paycheck">`)}
  ${field('Status',`<select name="status"><option value="expected" ${p?.status!=='received'?'selected':''}>Expected</option><option value="received" ${p?.status==='received'?'selected':''}>Received</option></select>`)}
+ ${field('Deposit to account',`<select name="accountId">${accountOptions(p?.accountId||'')}</select>`)}
  ${field('Gross · before deductions',`<input name="gross" type="number" min="0" step=".01" value="${p?a.gross:''}" placeholder="430.00">`)}
  ${field('Expected to hit',`<input name="expected" type="number" min="0" step=".01" value="${p?a.expected:''}" placeholder="370.00">`)}
  ${field('Actually received',`<input name="received" type="number" min="0" step=".01" value="${p?a.received:''}" placeholder="356.42">`)}
  ${field('Expected date',`<input name="expectedDate" type="date" value="${dateValue(p?.expectedDate||p?.date)}">`)}
  ${field('Received date',`<input name="receivedDate" type="date" value="${dateValue(p?.receivedDate)}">`)}
  ${field('Note · optional',`<input name="note" value="${esc(p?.note||'')}" placeholder="training pay, overtime, etc.">`,'full')}
- </div><div class="form-actions"><button class="btn primary">${p?'Save paycheck':'＋ Add paycheck'}</button>${p?'<button type="button" class="btn" data-paycheck-action="cancel">Cancel</button>':''}</div></form>`;
+ </div><div class="form-actions"><button class="btn primary">${p?'Save paycheck':'＋ Add paycheck'}</button>${p?'<button type="button" class="btn" data-paycheck-action="cancel">Cancel</button>':''}<span class="hint">Unassigned keeps this paycheck in the ledger without changing any account balance.</span></div></form>`;
 }
 function cardMarkup(p){
  const a=amounts(p),received=p.status==='received'||a.received>0;
- const dates=[p.expectedDate?`expected ${fmtDate(p.expectedDate)}`:'',p.receivedDate?`received ${fmtDate(p.receivedDate)}`:''].filter(Boolean).join(' · ');
+ const acct=accountName(p.accountId);
+ const dates=[p.expectedDate?`expected ${fmtDate(p.expectedDate)}`:'',p.receivedDate?`received ${fmtDate(p.receivedDate)}`:'',acct?`deposited to ${acct}`:'unassigned'].filter(Boolean).join(' · ');
  return`<article class="paycheck-card"><div class="paycheck-card-head"><div><h3>💸 ${esc(p.label||p.employer||'Paycheck')}</h3>${dates?`<span class="paycheck-meta">${esc(dates)}</span>`:''}</div><span class="paycheck-status">${received?'✓ RECEIVED':'⏳ EXPECTED'}</span></div><div class="paycheck-money"><div><small>GROSS</small><b>${currency(a.gross)}</b></div><div><small>EXPECTED TO HIT</small><b>${currency(a.expected)}</b></div><div><small>ACTUALLY RECEIVED</small><b>${a.received?currency(a.received):'Not yet'}</b></div></div>${p.note?`<span class="paycheck-meta">${esc(p.note)}</span>`:''}<div class="paycheck-actions"><button class="btn tiny" data-paycheck-action="edit" data-id="${esc(p.id)}">✏️ Edit</button><button class="btn tiny" data-paycheck-action="archive" data-id="${esc(p.id)}">📦 Archive</button><button class="btn tiny danger" data-paycheck-action="delete" data-id="${esc(p.id)}">× Delete</button></div></article>`;
 }
 function archivedMarkup(state,items){if(!items.length)return'';return`<details class="paycheck-archived"><summary>📦 Archived paychecks (${items.length})</summary><div class="paycheck-list">${items.map(p=>`<div class="paycheck-card"><div class="paycheck-card-head"><h3>📦 ${esc(p.label||p.employer||'Paycheck')}</h3><span>${currency(amounts(p).received||amounts(p).expected||amounts(p).gross)}</span></div><div class="paycheck-actions"><button class="btn tiny" data-paycheck-action="restore" data-id="${esc(p.id)}">↩ Restore</button><button class="btn tiny danger" data-paycheck-action="delete" data-id="${esc(p.id)}">× Delete</button></div></div>`).join('')}</div></details>`}
@@ -75,9 +84,9 @@ function rerenderManager(){const manager=document.querySelector('[data-paycheck-
 function savePaycheck(form){
  const fd=new FormData(form),state=clone(rt.getState()),id=text(form.dataset.id)||makeId('earning'),rows=list(state.money?.earnings),prior=rows.find(x=>String(x.id)===String(id));
  const gross=num(fd.get('gross')),expected=num(fd.get('expected')),received=num(fd.get('received')),status=text(fd.get('status'))==='received'?'received':'expected';
- const next=normalizePaycheckCompatibility({...prior,id,kind:'paycheck',label:text(fd.get('label'))||'Paycheck',employer:text(fd.get('label'))||text(prior?.employer),status,grossAmount:gross,estimatedGross:gross,expectedAmount:expected,receivedAmount:received,expectedDate:text(fd.get('expectedDate')),receivedDate:text(fd.get('receivedDate')),note:text(fd.get('note')),createdAt:prior?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
+ const next=normalizePaycheckCompatibility({...prior,id,kind:'paycheck',label:text(fd.get('label'))||'Paycheck',employer:text(fd.get('label'))||text(prior?.employer),status,accountId:text(fd.get('accountId')),grossAmount:gross,estimatedGross:gross,expectedAmount:expected,receivedAmount:received,expectedDate:text(fd.get('expectedDate')),receivedDate:text(fd.get('receivedDate')),note:text(fd.get('note')),createdAt:prior?.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()});
  state.money={...(state.money||{}),earnings:prior?rows.map(x=>String(x.id)===String(id)?next:x):[...rows,next]};
- const synced=syncPaycheckIntoExistingLedger(state,next,prior);editId='';rt.setState(synced,prior?'Paycheck updated 💸':'Paycheck added 💸');
+ const balanced=syncPaycheckAccountBalance(state,next,prior);const synced=syncPaycheckIntoExistingLedger(balanced,next,prior);editId='';rt.setState(synced,prior?'Paycheck updated 💸':'Paycheck added 💸');
 }
 function mutate(id,action){
  let state=clone(rt.getState()),rows=list(state.money?.earnings),p=rows.find(x=>String(x.id)===String(id));if(!p)return;
@@ -85,6 +94,7 @@ function mutate(id,action){
  if(action==='restore'){state=store.restoreItem(state,'earning',id);rt.setState(state,'Paycheck restored');return}
  if(action==='delete'){
   if(!confirm('Delete this paycheck forever? Archive is safer if you may want the record later.'))return;
+  state=syncPaycheckAccountBalance(state,{...p,status:'expected',received:false,receivedAmount:0,actualAmount:0,actualNet:0,accountId:''},p);
   const ledger=list(state.money?.ledger).filter(row=>!(row?.sourceType==='paycheck'&&String(row?.sourceId)===String(id))&&String(row?.id)!==`paycheck-${id}`);
   state.money={...(state.money||{}),earnings:rows.filter(x=>String(x.id)!==String(id)),...(list(state.money?.ledger).length?{ledger}:{})};
   state.v4={...(state.v4||{}),archive:list(state.v4?.archive).filter(x=>!(x.kind==='earning'&&String(x.id)===String(id)))};editId='';rt.setState(state,'Paycheck deleted');
