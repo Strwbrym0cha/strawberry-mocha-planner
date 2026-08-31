@@ -82,3 +82,20 @@ export function advanceRecurringBill(bill,now=new Date()){
 }
 
 export function billDateKey(value){const d=parseDate(value);return d?dateKey(d):''}
+
+export function billDueInMonth(bill,month){
+ if(!bill||bill.paid===true)return false;
+ const key=text(month).slice(0,7);
+ if(!/^\d{4}-\d{2}$/.test(key))return false;
+ const explicit=billDateKey(bill.dueDate)||billDateKey(bill.due);
+ if(explicit)return explicit.slice(0,7)===key;
+ return Number(bill.dueDay)>0;
+}
+
+export function unpaidBillsForMonth(bills,month){
+ return(Array.isArray(bills)?bills:[]).filter(b=>billDueInMonth(b,month));
+}
+
+export function unpaidBillTotalForMonth(bills,month){
+ return unpaidBillsForMonth(bills,month).reduce((sum,b)=>sum+(Number(b.amount)||0),0);
+}
