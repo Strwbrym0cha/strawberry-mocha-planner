@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.1.8-local-recovery-inspector';
+const RECOVERY='4.1.9-recover-v17-gigs-bills';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -56,6 +56,7 @@ try{
  await optionalImport(`./mochini-runtime.js?v=${RECOVERY}`,'Mochini conversation routing');
  await optionalImport(`./auth-ui.js?v=${RECOVERY}`,'account controls');
  await optionalImport(`./data-recovery.js?v=${RECOVERY}`,'V4 data recovery');
+ await optionalImport(`./recovery-v16-fix.js?v=${RECOVERY}`,'V17 recovery translator');
  await optionalImport(`./recovery-inspector.js?v=${RECOVERY}`,'browser recovery inspector');
  await optionalImport(`./cloud-recovery.js?v=${RECOVERY}`,'cloud backup recovery');
  await optionalImport(`./preserve.js?v=${RECOVERY}`,'parity');
