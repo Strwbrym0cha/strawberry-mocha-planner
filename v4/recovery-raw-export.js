@@ -1,8 +1,10 @@
 const PREFIXES=['sm_v','katos','strawberry'];
 const EXACT_KEYS=['sm_v4_beta','sm_v3_beta','sm_v16','sm_v16_backup','sm_v16_backups'];
+const SENSITIVE_KEY=/session|auth|token|password|secret|credential/i;
 const isRelevantKey=key=>{
-  const k=String(key||'').toLowerCase();
-  return EXACT_KEYS.includes(String(key||''))||PREFIXES.some(prefix=>k.startsWith(prefix));
+  const raw=String(key||''),k=raw.toLowerCase();
+  if(SENSITIVE_KEY.test(raw))return false;
+  return EXACT_KEYS.includes(raw)||PREFIXES.some(prefix=>k.startsWith(prefix));
 };
 const collectStorage=(storage,label)=>{
   const records=[];
@@ -18,6 +20,13 @@ const collectStorage=(storage,label)=>{
   }
   return records;
 };
+function safeHref(){
+  try{
+    const url=new URL(location.href);url.hash='';
+    for(const name of [...url.searchParams.keys()])if(/token|auth|session|code|password|secret/i.test(name))url.searchParams.set(name,'[redacted]');
+    return url.toString();
+  }catch{return `${location.origin}${location.pathname}`}
+}
 
 export function buildRawRecoveryBundle(){
   const records=[];
@@ -25,10 +34,10 @@ export function buildRawRecoveryBundle(){
   try{records.push(...collectStorage(window.sessionStorage,'sessionStorage'))}catch{}
   return{
     format:'katos-browser-recovery-bundle',
-    version:1,
+    version:2,
     exportedAt:new Date().toISOString(),
     origin:location.origin,
-    href:location.href,
+    href:safeHref(),
     userAgent:navigator.userAgent,
     recordCount:records.length,
     records
@@ -59,7 +68,7 @@ function inject(){
   const info=summary();
   const wrap=document.createElement('div');
   wrap.style.cssText='margin-top:10px;padding:10px 11px;border:1px solid #edc9d8;border-radius:14px;background:#fff8fb;color:#785061;font-size:11px;line-height:1.5';
-  wrap.innerHTML=`<b>🧪 Raw Safari inventory</b><br>${info.count} KatOS-ish storage key${info.count===1?'':'s'} physically present.${info.v16.length?`<br><b>V17 keys found:</b> ${info.v16.join(', ')}`:'<br><b>V17 keys found:</b> none yet'}<br><button type="button" data-katos-raw-export style="margin-top:8px;width:100%;min-height:42px;border:1px solid #e6bfd0;border-radius:12px;background:#fff;color:#7b4258;font:inherit;font-weight:850">📦 Export raw browser recovery bundle</button><small style="display:block;margin-top:6px;color:#9a7483">This only reads browser storage and downloads a JSON copy. It does not restore or change KatOS.</small>`;
+  wrap.innerHTML=`<b>🧪 Raw Safari inventory</b><br>${info.count} KatOS-ish storage key${info.count===1?'':'s'} physically present.${info.v16.length?`<br><b>V17 keys found:</b> ${info.v16.join(', ')}`:'<br><b>V17 keys found:</b> none yet'}<br><button type="button" data-katos-raw-export style="margin-top:8px;width:100%;min-height:42px;border:1px solid #e6bfd0;border-radius:12px;background:#fff;color:#7b4258;font:inherit;font-weight:850">📦 Export raw browser recovery bundle</button><small style="display:block;margin-top:6px;color:#9a7483">This only reads planner storage. Sign-in/session/token records are excluded. It does not restore or change KatOS.</small>`;
   note.after(wrap);
 }
 
