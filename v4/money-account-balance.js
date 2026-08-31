@@ -10,15 +10,32 @@ export function adjustAccountBalance(state,accountId,delta){
  next.money.accounts=accounts;return next;
 }
 
+export function ledgerAccountId(row){return text(row?.balanceAccountId||row?.accountId)}
+export function ledgerToAccountId(row){return text(row?.balanceToAccountId||row?.toAccountId)}
+
 export function applyLedgerEntryToAccounts(state,entry,direction=1){
- const row=entry||{},amount=money(row.amount)*direction;let next=state;
- if(row.kind==='income'&&row.accountId)next=adjustAccountBalance(next,row.accountId,amount);
- if(row.kind==='expense'&&row.accountId)next=adjustAccountBalance(next,row.accountId,-amount);
+ const row=entry||{},amount=money(row.amount)*direction,from=ledgerAccountId(row),to=ledgerToAccountId(row);let next=state;
+ if(row.kind==='income'&&from)next=adjustAccountBalance(next,from,amount);
+ if(row.kind==='expense'&&from)next=adjustAccountBalance(next,from,-amount);
  if(row.kind==='transfer'){
-  if(row.accountId)next=adjustAccountBalance(next,row.accountId,-amount);
-  if(row.toAccountId)next=adjustAccountBalance(next,row.toAccountId,amount);
+  if(from)next=adjustAccountBalance(next,from,-amount);
+  if(to)next=adjustAccountBalance(next,to,amount);
  }
  return next;
+}
+
+export function normalizeLedgerAccountLinks(state){
+ const original=state||{},ledger=list(original?.money?.ledger);let changed=false;
+ const rows=ledger.map(row=>{
+  if(!row||typeof row!=='object')return row;
+  const from=text(row.balanceAccountId||row.accountId),to=text(row.balanceToAccountId||row.toAccountId);
+  if(!row.accountId&&!row.toAccountId)return row;
+  changed=true;
+  return{...row,balanceAccountId:from,balanceToAccountId:to,accountId:'',toAccountId:'',accountBalanceApplied:true};
+ });
+ if(!changed)return{state:original,changed:false};
+ const next=structuredClone(original);next.money={...(next.money||{}),ledger:rows,ledgerAccountMode:'current-balance'};
+ return{state:next,changed:true};
 }
 
 export function syncPaycheckAccountBalance(state,nextPaycheck,priorPaycheck=null){
