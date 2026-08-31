@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.1.16-redact-raw-export';
+const RECOVERY='4.1.17-bill-controls';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -67,6 +67,7 @@ try{
  await optionalImport(`./study-program-actions.js?v=${RECOVERY}`,'study program actions');
  await optionalImport(`./study-course-program-link.js?v=${RECOVERY}`,'study course/program linking');
  await optionalImport(`./record-tools.js?v=${RECOVERY}`,'record tools');
+ await optionalImport(`./money-bill-controls.js?v=${RECOVERY}`,'Money Café bill controls');
  await optionalImport(`./archive-tools.js?v=${RECOVERY}`,'archive tools');
  await optionalImport(`./motion-week.js?v=${RECOVERY}`,'weekly motion');
  await optionalImport(`./movement-recipes-ui.js?v=${RECOVERY}`,'movement recipe manager');
