@@ -48,4 +48,5 @@ function parentNaClick(e){const b=e.target.closest?.('[data-parent-routine-na]')
 
 let refreshQueued=false;
 function scheduleRefresh(){if(refreshQueued)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;reconcileTaskBot();patchRoutineForm();patchRoutineCards();injectTaskBotParents();renderOverlay()})}
+export{startRoutine,stopRoutine,finishToday,toggleSkipToday,setStepStatus};
 export function installRoutineOverlay(){styles();document.addEventListener('pointerup',captureSave,true);document.addEventListener('pointerup',clickActions,true);document.addEventListener('pointerup',parentNaClick,true);document.addEventListener('change',parentStepChange,true);const wait=()=>{if(!store()){setTimeout(wait,100);return}migrateUnifiedRoutines();reconcileTaskBot();store().subscribe?.(scheduleRefresh);new MutationObserver(scheduleRefresh).observe(document.getElementById('tab-root')||document.body,{childList:true,subtree:true});scheduleRefresh()};wait()}
