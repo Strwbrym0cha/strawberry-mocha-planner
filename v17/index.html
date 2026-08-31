@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="./v21-shell.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v21-pages.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v22-design-fixes.css?v=22.1.22-20260817">
-  <link rel="stylesheet" href="./v5-daily-flow.css?v=5.0.0-20260831">\n  <link rel="stylesheet" href="./v5-tasks.css?v=5.0.1-20260831">\n  <link rel="stylesheet" href="./v5-planner.css?v=5.0.2-20260831">
+  <link rel="stylesheet" href="./v5-daily-flow.css?v=5.0.0-20260831">\n  <link rel="stylesheet" href="./v5-tasks.css?v=5.0.1-20260831">\n  <link rel="stylesheet" href="./v5-planner.css?v=5.0.2-20260831">\n  <link rel="stylesheet" href="./v5-rituals.css?v=5.0.3-20260831">
   <link rel="stylesheet" href="./v22-maintenance.css?v=22.1.26-20260818">
   <link rel="stylesheet" href="./v22-popup-polish.css?v=22.3.1-20260819">
   <style id="katos-v225-full-skin">
@@ -74,7 +74,7 @@
     const BUILD='V22.10.0-2026-08-19';
     const moduleSuffix=location.protocol==='file:'?'':'?build='+encodeURIComponent(BUILD);
     const root=document.getElementById('tab-root'),sidebar=document.getElementById('v21-sidebar');
-    const groups=[['CORE',[['home','🏠','Home Sweet Home'],['daily','🪞','Daily Flow'],['planner','📅','Berry Busy'],['tasks','📝','Sweet To-Dos'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Growth Garden'],['school','🎓','Study Nook'],['work','💼','Boss Mode'],['money','👛','Coin Purse'],['reminders','🔔','Little Pings'],['noms','🍱','Noms Nook'],['sips','💧','Sip Station']]],['MIND',[['brain','🧠','Brain Bloom'],['wellness','🌸','Soft Reset'],['goals','🌙','Dream Board'],['projects','🗂','Project Patch'],['labs','🔬','Kat Labs'],['wins','🏆','Win Shelf']]],['SYSTEM',[['settings','🎀','Behind the Bows'],['hub','✨','Berry Base']]]];
+    const groups=[['CORE',[['home','🏠','Home Sweet Home'],['daily','🪞','Daily Flow'],['planner','📅','Berry Busy'],['tasks','📝','Sweet To-Dos'],['rituals','🌷','Routine Garden'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Growth Garden'],['school','🎓','Study Nook'],['work','💼','Boss Mode'],['money','👛','Coin Purse'],['reminders','🔔','Little Pings'],['noms','🍱','Noms Nook'],['sips','💧','Sip Station']]],['MIND',[['brain','🧠','Brain Bloom'],['wellness','🌸','Soft Reset'],['goals','🌙','Dream Board'],['projects','🗂','Project Patch'],['labs','🔬','Kat Labs'],['wins','🏆','Win Shelf']]],['SYSTEM',[['settings','🎀','Behind the Bows'],['hub','✨','Berry Base']]]];
     const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Memory Box',tasktools:'Full Task Tools',plannertools:'Full Planner Tools'});
     const queued=new Set(Object.keys(labels));let modules={},routerRef=null;
     const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
