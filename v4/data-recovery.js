@@ -2,6 +2,7 @@ const store=window.__KATOS_V4_DEPS?.store;
 const V4_KEY=store?.V4_KEY||'sm_v4_beta';
 const V3_KEY=store?.V3_KEY||'sm_v3_beta';
 const BACKUP_PREFIX='sm_v4_beta_before_restore_';
+const CLOUD_BACKUP_PREFIX='sm_v4_beta_before_cloud_restore_';
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const list=v=>Array.isArray(v)?v:[];
 const obj=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};
@@ -17,7 +18,7 @@ export function countKatOSItems(state){
 }
 export function looksLikeKatOSState(state,key=''){
   const s=obj(state),k=String(key).toLowerCase();
-  if(k===V4_KEY||k===V3_KEY||k.startsWith(BACKUP_PREFIX))return true;
+  if(k===V4_KEY||k===V3_KEY||k.startsWith(BACKUP_PREFIX)||k.startsWith(CLOUD_BACKUP_PREFIX))return true;
   if(Number(s.schemaVersion)===4||Number(s.schemaVersion)===3)return true;
   return !!(s.life&&s.money&&s.insights);
 }
@@ -30,6 +31,7 @@ function storageSources(){
 function candidateKind(key,state){
   if(key===V4_KEY)return'Current V4';
   if(key===V3_KEY||Number(state?.schemaVersion)===3)return'V3 fallback';
+  if(key.startsWith(CLOUD_BACKUP_PREFIX))return'Before cloud restore backup';
   if(key.startsWith(BACKUP_PREFIX))return'Before-restore backup';
   return'Older KatOS copy';
 }
