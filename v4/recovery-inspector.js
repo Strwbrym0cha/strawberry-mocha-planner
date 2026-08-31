@@ -68,7 +68,9 @@ function annotate(){
   });
 }
 
-document.addEventListener('click',event=>{
-  if(event.target?.closest?.('[data-katos-recovery-open]'))setTimeout(annotate,0);
-});
-const observer=new MutationObserver(()=>annotate());observer.observe(document.body,{childList:true,subtree:true});
+if(typeof document!=='undefined'&&typeof MutationObserver!=='undefined'){
+  document.addEventListener('click',event=>{
+    if(event.target?.closest?.('[data-katos-recovery-open]'))setTimeout(annotate,0);
+  });
+  const observer=new MutationObserver(()=>annotate());observer.observe(document.body,{childList:true,subtree:true});
+}
