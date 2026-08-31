@@ -38,7 +38,7 @@ function samePaycheckLedgerRow(row,paycheck,prior){
 }
 
 function sameCanonicalEntry(row,entry){
- return ['kind','label','amount','date','category','note','sourceType','sourceId'].every(key=>String(row?.[key]??'')===String(entry?.[key]??''));
+ return ['kind','label','amount','date','category','note','sourceType','sourceId','accountId','toAccountId','balanceAccountId','balanceToAccountId'].every(key=>String(row?.[key]??'')===String(entry?.[key]??''));
 }
 
 export function syncPaycheckIntoExistingLedger(state,paycheck,prior=null){
@@ -66,7 +66,12 @@ export function syncPaycheckIntoExistingLedger(state,paycheck,prior=null){
   category:text(existing?.category)||'Paycheck',
   note:text(normalized.note),
   sourceType:'paycheck',
-  sourceId:String(normalized.id||'')
+  sourceId:String(normalized.id||''),
+  accountId:'',
+  toAccountId:'',
+  balanceAccountId:text(normalized.accountId),
+  balanceToAccountId:'',
+  accountBalanceApplied:Boolean(normalized.accountId)
  };
  if(existing&&sameCanonicalEntry(existing,canonical))return next;
  const entry={...(existing||{}),...canonical,updatedAt:new Date().toISOString()};
