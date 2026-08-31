@@ -81,10 +81,11 @@ function installStyles(){
   .katos-auth-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:4px}.katos-auth-actions button{border:1px solid #e6bfd0;border-radius:14px;padding:11px 14px;background:white;color:#6f4153;font:inherit;font-weight:850;cursor:pointer}.katos-auth-actions .primary{background:linear-gradient(105deg,#e98eb6,#d8a2d9);border-color:transparent;color:white}.katos-auth-actions .danger{color:#a94f75}.katos-auth-note{min-height:18px;margin-top:10px;color:#9a6177;font-size:12px}
   `;document.head.appendChild(style);
 }
+function settingsHost(){if(!document.querySelector('.nav-btn.active[data-view="settings"]'))return null;return document.querySelector('#app .page .grid')||document.querySelector('#app .page')}
 function ensureControl(){
-  const foot=document.querySelector('.sidebar-foot');if(!foot)return;
-  let wrap=document.getElementById('katos-auth-control');if(!wrap){wrap=document.createElement('div');wrap.id='katos-auth-control';foot.appendChild(wrap)}
-  const status=sessionStatus(),signature=`${status.active?'1':'0'}|${status.label}|${lastEmail}`;if(wrap.dataset.authSignature===signature)return;wrap.dataset.authSignature=signature;wrap.innerHTML=`<button type="button" data-katos-auth-open><span>🔐 Account</span><span>${status.active?'✓':'→'}</span></button><small>${esc(status.label)}${status.active&&lastEmail?` · ${esc(lastEmail)}`:''}</small>`;
+  const host=settingsHost();if(!host)return;
+  let wrap=document.getElementById('katos-auth-control');if(!wrap){wrap=document.createElement('section');wrap.id='katos-auth-control';wrap.className='card';host.appendChild(wrap)}
+  const status=sessionStatus(),signature=`${status.active?'1':'0'}|${status.label}|${lastEmail}`;if(wrap.dataset.authSignature===signature)return;wrap.dataset.authSignature=signature;wrap.innerHTML=`<div class="ey">KATOS ACCOUNT</div><h2 style="margin:4px 0 8px">Cloud sign-in</h2><button type="button" data-katos-auth-open><span>🔐 Account</span><span>${status.active?'✓':'→'}</span></button><small>${esc(status.label)}${status.active&&lastEmail?` · ${esc(lastEmail)}`:''}</small>`;
 }
 function closeModal(){document.querySelector('.katos-auth-overlay')?.remove()}
 function openModal(message=''){
