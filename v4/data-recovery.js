@@ -21,7 +21,7 @@ export function countKatOSItems(state){
 }
 export function looksLikeKatOSState(state,key=''){
   const s=obj(state),k=String(key).toLowerCase();
-  if(k===V4_KEY||k===V3_KEY||k===V16_KEY||k===V16_BACKUP_KEY||k===V16_HISTORY_KEY||k.startsWith(BACKUP_PREFIX)||k.startsWith(CLOUD_BACKUP_PREFIX))return true;
+  if(k===V4_KEY||k===V3_KEY||k===V16_KEY||k===V16_BACKUP_KEY||k===V16_HISTORY_KEY||k.startsWith(`${V16_HISTORY_KEY}[`)||k.startsWith(BACKUP_PREFIX)||k.startsWith(CLOUD_BACKUP_PREFIX))return true;
   if(Number(s.schemaVersion)===4||Number(s.schemaVersion)===3)return true;
   return !!(s.life&&s.money&&s.insights);
 }
