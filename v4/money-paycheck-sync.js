@@ -37,6 +37,10 @@ function samePaycheckLedgerRow(row,paycheck,prior){
  return oldAmounts.length?oldAmounts.includes(num(row.amount)):false;
 }
 
+function sameCanonicalEntry(row,entry){
+ return ['kind','label','amount','date','category','note','sourceType','sourceId'].every(key=>String(row?.[key]??'')===String(entry?.[key]??''));
+}
+
 export function syncPaycheckIntoExistingLedger(state,paycheck,prior=null){
  const next=structuredClone(state||{});
  next.money=next.money||{};
@@ -52,19 +56,20 @@ export function syncPaycheckIntoExistingLedger(state,paycheck,prior=null){
   }
   return next;
  }
- const entry={
-  ...(matchIndex>=0?ledger[matchIndex]:{}),
-  id:matchIndex>=0?ledger[matchIndex].id:`paycheck-${normalized.id}`,
+ const existing=matchIndex>=0?ledger[matchIndex]:null;
+ const canonical={
+  id:existing?.id||`paycheck-${normalized.id}`,
   kind:'income',
   label:text(normalized.label||normalized.employer)||'Paycheck',
   amount:received,
   date:text(normalized.receivedDate||normalized.expectedDate)||new Date().toISOString().slice(0,10),
-  category:text(ledger[matchIndex]?.category)||'Paycheck',
+  category:text(existing?.category)||'Paycheck',
   note:text(normalized.note),
   sourceType:'paycheck',
-  sourceId:String(normalized.id||''),
-  updatedAt:new Date().toISOString()
+  sourceId:String(normalized.id||'')
  };
+ if(existing&&sameCanonicalEntry(existing,canonical))return next;
+ const entry={...(existing||{}),...canonical,updatedAt:new Date().toISOString()};
  if(matchIndex>=0)next.money.ledger=ledger.map((row,i)=>i===matchIndex?entry:row);
  else next.money.ledger=[...ledger,entry];
  return next;
@@ -85,4 +90,19 @@ export function repairPaycheckCompatibility(state){
  const next=structuredClone(original);
  next.money={...(next.money||{}),earnings:repaired};
  return{state:next,changed:true};
+}
+
+export function repairPaycheckState(state){
+ const original=state||{};
+ const compat=repairPaycheckCompatibility(original);
+ let next=compat.state,changed=compat.changed;
+ if(list(next?.money?.ledger).length){
+  for(const paycheck of list(next?.money?.earnings).filter(x=>(x?.kind||'paycheck')==='paycheck')){
+   const prior=list(original?.money?.earnings).find(x=>String(x?.id)===String(paycheck?.id))||paycheck;
+   const before=JSON.stringify(next.money.ledger);
+   next=syncPaycheckIntoExistingLedger(next,paycheck,prior);
+   if(JSON.stringify(next.money?.ledger)!==before)changed=true;
+  }
+ }
+ return{state:next,changed};
 }
