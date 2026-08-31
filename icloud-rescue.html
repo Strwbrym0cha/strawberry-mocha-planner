@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff7fb">
+  <title>KatOS · Aug 29 Rescue Vault</title>
+  <style>
+    :root{color-scheme:light;--ink:#694252;--muted:#987582;--line:#efc6d7;--pink:#d9719a;--soft:#fff0f6;--cream:#fffaf7;--green:#4f8b65}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 10% 8%,#ffe8f2 0,transparent 28%),linear-gradient(145deg,#fff8fb,#fffdf9);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink)}
+    main{width:min(900px,calc(100% - 28px));margin:0 auto;padding:max(24px,env(safe-area-inset-top)) 0 max(40px,env(safe-area-inset-bottom))}
+    .card{background:rgba(255,255,255,.94);border:1.5px solid var(--line);border-radius:26px;padding:22px;box-shadow:0 18px 48px rgba(104,65,80,.10);margin-bottom:16px}
+    h1{font-size:clamp(28px,6vw,46px);margin:0 0 8px;font-family:Georgia,serif;line-height:1.05}
+    h2{font-size:20px;margin:0 0 10px}
+    p{line-height:1.5;margin:8px 0;color:var(--muted)}
+    .safe{padding:13px 15px;border-radius:18px;background:#eff8f1;border:1px solid #c9e5d0;color:#417252;font-weight:800}
+    .warn{padding:13px 15px;border-radius:18px;background:var(--soft);border:1px solid #f0c9da;color:#8a5369;font-weight:750}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+    .stat{padding:13px;border-radius:18px;background:#fff7fa;border:1px solid #f0d4df}.stat b{display:block;font-size:21px}.stat span{font-size:12px;color:var(--muted)}
+    .record{padding:14px;border:1px solid #eed0dc;border-radius:18px;margin:10px 0;background:white;overflow-wrap:anywhere}
+    .record strong{display:block;margin-bottom:5px}.tiny{font-size:12px;color:var(--muted)}
+    .signals{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chip{font-size:11px;font-weight:850;padding:5px 8px;border-radius:999px;background:#f8eef3;color:#8d5d70}.chip.hit{background:#e9f6ed;color:#39704e}
+    button{width:100%;border:1.5px solid #e6b4c8;background:#fff;color:#7b4559;border-radius:18px;padding:14px 16px;font:inherit;font-weight:850;margin-top:10px;cursor:pointer}
+    button.primary{background:linear-gradient(110deg,#e986ad,#c9dda9);color:white;border-color:transparent}
+    button.dangerish{background:#fff7fa}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}
+    #status{font-weight:800;color:var(--green)}
+    @media(max-width:620px){.stats{grid-template-columns:1fr}.card{padding:17px;border-radius:22px}}
+  </style>
+</head>
+<body>
+<main>
+  <section class="card">
+    <div class="tiny">🍓 KATOS EMERGENCY RECOVERY · AUG 29 ICLOUD BACKUP</div>
+    <h1>Rescue vault first. Planner second.</h1>
+    <p>This page intentionally does <strong>not</strong> start V4, V17, Supabase sync, migrations, or the normal KatOS runtime.</p>
+    <div class="safe">🛟 Any surviving planner keys were cloned into protected <code>katos_icloud_rescue__…</code> copies before normal KatOS boot.</div>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="card">
+    <h2>🔎 Missing-data fingerprints</h2>
+    <p>These are simple read-only text checks against the rescued browser blobs. A green hit is especially interesting.</p>
+    <div id="fingerprintSummary" class="warn">Checking rescued copies…</div>
+  </section>
+
+  <section class="card">
+    <h2>📦 Protected rescue copies</h2>
+    <div id="records"></div>
+    <button id="download" class="primary" type="button">Download Aug 29 rescue bundle</button>
+    <button id="copySummary" type="button">Copy rescue summary</button>
+    <p id="status" aria-live="polite"></p>
+  </section>
+
+  <section class="card">
+    <h2>Only after the bundle is saved</h2>
+    <div class="warn">Do not continue into normal KatOS until you have downloaded the rescue bundle. Continuing only bypasses this gate for the current tab session. It does not delete the protected copies.</div>
+    <button id="continue" class="dangerish" type="button">I saved the rescue bundle · continue to V4</button>
+  </section>
+</main>
+<script>
+(()=>{
+  'use strict';
+  const PREFIX='katos_icloud_rescue__';
+  const META='katos_icloud_rescue_manifest';
+  const CAPTURED='katos_icloud_rescue_captured_at';
+  const STRONG=['sm_v16','sm_v16_backup','sm_v16_backups'];
+  const plannerish=key=>/^sm_v16(?:$|_)/.test(key)||/^sm_v4_beta(?:$|_)/.test(key);
+  const allKeys=()=>Array.from({length:localStorage.length},(_,i)=>localStorage.key(i)).filter(Boolean);
+
+  function ensureCapture(){
+    const originals=allKeys().filter(plannerish).filter(key=>!key.startsWith(PREFIX));
+    const capturedAt=localStorage.getItem(CAPTURED)||new Date().toISOString();
+    try{if(!localStorage.getItem(CAPTURED))localStorage.setItem(CAPTURED,capturedAt)}catch(_){ }
+    const copied=[]; const errors=[];
+    for(const key of originals){
+      const rescueKey=PREFIX+key;
+      try{
+        if(localStorage.getItem(rescueKey)==null){
+          const value=localStorage.getItem(key);
+          if(value!=null)localStorage.setItem(rescueKey,value);
+        }
+        if(localStorage.getItem(rescueKey)!=null)copied.push(key);
+      }catch(error){errors.push({key,message:String(error&&error.message||error)})}
+    }
+    try{
+      if(!localStorage.getItem(META)){
+        localStorage.setItem(META,JSON.stringify({version:1,capturedAt,source:location.href,standalone:matchMedia('(display-mode: standalone)').matches,originalKeys:originals,copiedKeys:copied,errors}));
+      }
+    }catch(_){ }
+    return {capturedAt,originals,copied,errors};
+  }
+
+  const capture=ensureCapture();
+  const rescueKeys=allKeys().filter(key=>key.startsWith(PREFIX));
+  const records=rescueKeys.map(rescueKey=>{
+    const originalKey=rescueKey.slice(PREFIX.length);
+    const value=localStorage.getItem(rescueKey)||'';
+    return {key:originalKey,rescueKey,value,chars:value.length,bytes:new Blob([value]).size};
+  }).sort((a,b)=>b.bytes-a.bytes);
+
+  const fmtBytes=n=>n<1024?`${n} B`:n<1024*1024?`${(n/1024).toFixed(1)} KB`:`${(n/1024/1024).toFixed(2)} MB`;
+  const totalBytes=records.reduce((sum,r)=>sum+r.bytes,0);
+  const strongPresent=STRONG.filter(k=>localStorage.getItem(k)!=null||localStorage.getItem(PREFIX+k)!=null);
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><b>${records.length}</b><span>protected planner copies</span></div>
+    <div class="stat"><b>${fmtBytes(totalBytes)}</b><span>rescued raw data</span></div>
+    <div class="stat"><b>${strongPresent.length}/3</b><span>core V17 keys found</span></div>`;
+
+  const needles=[['DoorDash','DoorDash'],['Shipt','Shipt'],['gigWork','"gigWork"'],['Aug 28','2026-08-28'],['workHours','"workHours"'],['actualAmount','"actualAmount"']];
+  const hits=Object.fromEntries(needles.map(([label,needle])=>[label,records.some(r=>r.value.includes(needle))]));
+  const positive=Object.entries(hits).filter(([,hit])=>hit).map(([label])=>label);
+  document.getElementById('fingerprintSummary').innerHTML=positive.length
+    ?`🔥 <strong>Interesting hits found:</strong> ${positive.join(', ')}. Download the bundle before opening normal KatOS.`
+    :`No known Aug 28 gig fingerprints were found by the quick text check. Still download the bundle so the full snapshots can be inspected safely.`;
+
+  const recordsHost=document.getElementById('records');
+  if(!records.length){
+    recordsHost.innerHTML='<div class="warn">No protected planner copies were created in this browser vault. Do not erase anything else yet.</div>';
+  }else{
+    recordsHost.innerHTML=records.map(r=>{
+      const chips=needles.map(([label,needle])=>`<span class="chip ${r.value.includes(needle)?'hit':''}">${r.value.includes(needle)?'✅':'·'} ${label}</span>`).join('');
+      return `<div class="record"><strong>${r.key}</strong><div class="tiny">${r.chars.toLocaleString()} characters · ${fmtBytes(r.bytes)}</div><div class="signals">${chips}</div></div>`;
+    }).join('');
+  }
+
+  function bundle(){
+    let manifest=null;
+    try{manifest=JSON.parse(localStorage.getItem(META)||'null')}catch(_){ }
+    return {
+      format:'katos-icloud-aug29-rescue',version:1,exportedAt:new Date().toISOString(),origin:location.origin,
+      standalone:matchMedia('(display-mode: standalone)').matches,capturedAt:localStorage.getItem(CAPTURED)||capture.capturedAt,
+      manifest,records:records.map(r=>({key:r.key,rescueKey:r.rescueKey,bytes:r.bytes,value:r.value}))
+    };
+  }
+
+  document.getElementById('download').addEventListener('click',()=>{
+    const blob=new Blob([JSON.stringify(bundle(),null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=`katos-icloud-aug29-rescue-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+    document.getElementById('status').textContent='✅ Rescue bundle download started. Keep that file somewhere safe.';
+  });
+
+  document.getElementById('copySummary').addEventListener('click',async()=>{
+    const text=[`KatOS Aug 29 rescue`,`Captured: ${localStorage.getItem(CAPTURED)||capture.capturedAt}`,`Core V17: ${strongPresent.join(', ')||'none'}`,`Protected copies: ${records.length}`,`Bytes: ${totalBytes}`,`Hits: ${positive.join(', ')||'none'}`,...records.map(r=>`${r.key}: ${r.chars} chars`)].join('\n');
+    try{await navigator.clipboard.writeText(text);document.getElementById('status').textContent='✅ Rescue summary copied.'}catch(_){document.getElementById('status').textContent=text}
+  });
+
+  document.getElementById('continue').addEventListener('click',()=>{
+    if(!confirm('Only continue if you already downloaded the rescue bundle. Open normal KatOS now?'))return;
+    try{sessionStorage.setItem('katos_icloud_rescue_bypass','1')}catch(_){ }
+    location.replace('./v4/?icloud-rescue-bypass=1');
+  });
+})();
+</script>
+</body>
+</html>
