@@ -48,12 +48,12 @@ function sessionRow(snapshot,row){
 
 function todayPanel(snapshot){
   const rows=snapshot.todaySessions;
-  return `<section class="card boss-compact"><div class="card-head"><div><div class="ey">🌞 TODAY AT WORK</div><h2>What actually needs your brain</h2><p>No productivity theater. Just today.</p></div><span class="count">${rows.length}</span></div><div class="mini-list">${rows.length?rows.map(row=>sessionRow(snapshot,row)).join(''):'<div class="empty">No RBT sessions are logged for today yet.</div>'}</div></section>`;
+  return `<section class="card boss-compact" id="v5-today"><div class="card-head"><div><div class="ey">🌞 TODAY AT WORK</div><h2>What actually needs your brain</h2><p>No productivity theater. Just today.</p></div><span class="count">${rows.length}</span></div><div class="mini-list">${rows.length?rows.map(row=>sessionRow(snapshot,row)).join(''):'<div class="empty">No RBT sessions are logged for today yet.</div>'}</div></section>`;
 }
 
 function notesPanel(snapshot){
   const rows=snapshot.waitingNotes.slice(0,6);
-  return `<section class="card boss-compact"><div class="card-head"><div><div class="ey">📝 NOTES + ADMIN</div><h2>Finish, submit, escape</h2><p>The paperwork goblin gets one small box.</p></div><span class="count">${snapshot.waitingNotes.length}</span></div><div class="mini-list">${rows.length?rows.map(row=>sessionRow(snapshot,row)).join(''):'<div class="empty">No session notes waiting. Suspiciously peaceful. ✨</div>'}</div></section>`;
+  return `<section class="card boss-compact" id="v5-note-queue"><div class="card-head"><div><div class="ey">📝 NOTES + ADMIN</div><h2>Finish, submit, escape</h2><p>The paperwork goblin gets one small box.</p></div><span class="count">${snapshot.waitingNotes.length}</span></div><div class="mini-list">${rows.length?rows.map(row=>sessionRow(snapshot,row)).join(''):'<div class="empty">No session notes waiting. Suspiciously peaceful. ✨</div>'}</div></section>`;
 }
 
 function clientsPanel(snapshot){
@@ -110,7 +110,7 @@ app.addEventListener('click',event=>{
   }
   const focus=event.target.closest?.('[data-focus]');
   if(focus&&app.contains(focus)){
-    const target=focus.dataset.focus==='clients'?app.querySelector('#v5-client-roster'):app.querySelector('.boss-compact:nth-of-type(2)');
+    const target=focus.dataset.focus==='clients'?app.querySelector('#v5-client-roster'):app.querySelector('#v5-note-queue');
     target?.scrollIntoView({behavior:'smooth',block:'start'});
   }
 });
