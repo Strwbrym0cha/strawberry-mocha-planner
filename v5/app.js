@@ -4,7 +4,7 @@ import{renderRoom}from'./rooms.js?v=5.0.0-preview.2';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 const NAV=[
   ['🏡 HOME',[
