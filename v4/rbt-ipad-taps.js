@@ -1,41 +1,48 @@
-const BOSS_BUTTON='[data-boss-schedule-hub] button';
 const recentTrustedSuppression=new WeakMap();
+const INSTALLED='bossTouchScoped';
 
-function buttonFrom(event){
-  const target=event.target;
-  return target?.closest?.(BOSS_BUTTON)||null;
+function install(hub){
+  if(!hub||hub.dataset[INSTALLED]==='1')return;
+  hub.dataset[INSTALLED]='1';
+
+  const buttonFrom=event=>{
+    const target=event.target;
+    const button=target?.closest?.('button');
+    return button&&hub.contains(button)?button:null;
+  };
+
+  hub.addEventListener('click',event=>{
+    if(!event.isTrusted)return;
+    const button=buttonFrom(event);if(!button)return;
+    const stamp=recentTrustedSuppression.get(button)||0;
+    if(performance.now()-stamp>750)return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  },true);
+
+  const activate=event=>{
+    if(event.type==='pointerup'){
+      if(event.pointerType==='mouse')return;
+      if(event.isPrimary===false)return;
+    }
+    const button=buttonFrom(event);if(!button||button.disabled)return;
+    event.preventDefault();
+    event.stopPropagation();
+    recentTrustedSuppression.set(button,performance.now());
+    button.click();
+  };
+
+  if('PointerEvent' in window)hub.addEventListener('pointerup',activate,true);
+  else hub.addEventListener('touchend',activate,{capture:true,passive:false});
 }
 
-function suppressDuplicateTrustedClick(event){
-  if(!event.isTrusted)return;
-  const button=buttonFrom(event);if(!button)return;
-  const stamp=recentTrustedSuppression.get(button)||0;
-  if(performance.now()-stamp>900)return;
-  event.preventDefault();
-  event.stopImmediatePropagation();
+function scan(){
+  document.querySelectorAll('[data-boss-schedule-hub]').forEach(install);
 }
 
-document.addEventListener('click',suppressDuplicateTrustedClick,true);
-
-function activateButton(button,event){
-  if(!button||button.disabled)return;
-  event.preventDefault();
-  event.stopPropagation();
-  button.click();
-  recentTrustedSuppression.set(button,performance.now());
-}
-
-function activateFromPointer(event){
-  if(event.pointerType==='mouse')return;
-  if(event.isPrimary===false)return;
-  activateButton(buttonFrom(event),event);
-}
-
-if('PointerEvent' in window){
-  document.addEventListener('pointerup',activateFromPointer,true);
-}else{
-  document.addEventListener('touchend',event=>activateButton(buttonFrom(event),event),{capture:true,passive:false});
-}
+const app=document.getElementById('app');
+if(app)new MutationObserver(scan).observe(app,{childList:true,subtree:true});
+scan();
 
 const style=document.createElement('style');
 style.id='boss-ipad-tap-style';
