@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.1.26-boss-ipad-taps';
+const RECOVERY='4.1.27-sidebar-scope';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
