@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.1.27-sidebar-scope';
+const RECOVERY='4.1.23-bill-month-close';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -84,8 +84,6 @@ try{
  await optionalImport(`./work-schedule.js?v=${RECOVERY}`,'work schedule');
  await optionalImport(`./gig-shifts.js?v=${RECOVERY}`,'gig shift planner');
  await optionalImport(`./boss-schedule-hub.js?v=${RECOVERY}`,'Boss Bitch schedule hub');
- await optionalImport(`./rbt-ipad-taps.js?v=${RECOVERY}`,'Boss Bitch iPad tap hardening');
- await optionalImport(`./rbt-workspace.js?v=${RECOVERY}`,'RBT client-work workspace');
  await optionalImport(`./daily-note-work.js?v=${RECOVERY}`,'Daily Note work recap');
  await optionalImport(`./routine-timing.js?v=${RECOVERY}`,'routine timing');
  await optionalImport(`./hobby-advisor.js?v=${RECOVERY}`,'Mochini hobby advisor');
