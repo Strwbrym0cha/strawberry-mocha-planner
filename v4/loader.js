@@ -1,5 +1,5 @@
 const PARTS=8;
-const RECOVERY='4.1.24-rbt-clients-phase1';
+const RECOVERY='4.1.25-rbt-session-notes-phase2';
 const urls=Array.from({length:PARTS},(_,i)=>`./parts/app-${String(i+1).padStart(2,'0')}.txt?v=${RECOVERY}`);
 const TRANSIENT_HTTP=new Set([408,425,429,500,502,503,504]);
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
@@ -85,6 +85,7 @@ try{
  await optionalImport(`./gig-shifts.js?v=${RECOVERY}`,'gig shift planner');
  await optionalImport(`./boss-schedule-hub.js?v=${RECOVERY}`,'Boss Bitch schedule hub');
  await optionalImport(`./rbt-clients.js?v=${RECOVERY}`,'RBT client roster');
+ await optionalImport(`./rbt-session-notes.js?v=${RECOVERY}`,'RBT session note scratchpad');
  await optionalImport(`./daily-note-work.js?v=${RECOVERY}`,'Daily Note work recap');
  await optionalImport(`./routine-timing.js?v=${RECOVERY}`,'routine timing');
  await optionalImport(`./hobby-advisor.js?v=${RECOVERY}`,'Mochini hobby advisor');
