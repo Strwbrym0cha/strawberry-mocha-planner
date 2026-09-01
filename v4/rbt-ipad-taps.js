@@ -1,9 +1,9 @@
-const RBT_BUTTON='[data-rbt-workspace] button';
+const BOSS_BUTTON='[data-boss-schedule-hub] button';
 const recentTrustedSuppression=new WeakMap();
 
 function buttonFrom(event){
   const target=event.target;
-  return target?.closest?.(RBT_BUTTON)||null;
+  return target?.closest?.(BOSS_BUTTON)||null;
 }
 
 function suppressDuplicateTrustedClick(event){
@@ -17,29 +17,27 @@ function suppressDuplicateTrustedClick(event){
 
 document.addEventListener('click',suppressDuplicateTrustedClick,true);
 
-function activateFromPointer(event){
-  if(event.pointerType==='mouse')return;
-  if(event.isPrimary===false)return;
-  const button=buttonFrom(event);if(!button||button.disabled)return;
+function activateButton(button,event){
+  if(!button||button.disabled)return;
   event.preventDefault();
   event.stopPropagation();
   button.click();
   recentTrustedSuppression.set(button,performance.now());
 }
 
+function activateFromPointer(event){
+  if(event.pointerType==='mouse')return;
+  if(event.isPrimary===false)return;
+  activateButton(buttonFrom(event),event);
+}
+
 if('PointerEvent' in window){
   document.addEventListener('pointerup',activateFromPointer,true);
 }else{
-  document.addEventListener('touchend',event=>{
-    const button=buttonFrom(event);if(!button||button.disabled)return;
-    event.preventDefault();
-    event.stopPropagation();
-    button.click();
-    recentTrustedSuppression.set(button,performance.now());
-  },{capture:true,passive:false});
+  document.addEventListener('touchend',event=>activateButton(buttonFrom(event),event),{capture:true,passive:false});
 }
 
 const style=document.createElement('style');
-style.id='rbt-ipad-tap-style';
-style.textContent=`[data-rbt-workspace] button{touch-action:manipulation;-webkit-tap-highlight-color:rgba(152,93,119,.12);cursor:pointer}`;
+style.id='boss-ipad-tap-style';
+style.textContent=`[data-boss-schedule-hub] button{touch-action:manipulation;-webkit-tap-highlight-color:rgba(152,93,119,.12);cursor:pointer}`;
 document.head.appendChild(style);
