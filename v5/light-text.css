@@ -1,0 +1,4 @@
+/* Deliberately light V5 type: only enough weight for clarity. */
+body{font-weight:400}
+body :is(h1,h2,h3,b,strong,.nav-btn,.btn,.mode-btn,.build,.ey,.room-tag,.chip,.count,.boss-lane,.source-pill,.pill,.room-source,.room-stat small,.stat small,.room-row-main b,.mini-row b,.quick-action b,.client-tile b,.mochini-min b,.reset-step b,.v5-principle b){font-weight:500!important}
+body :is(p,span,small,.room-row-tail,.room-stat span,.stat span,.mini-row span,.quick-action span,.client-tile span,.mochini-min span){font-weight:400!important}
