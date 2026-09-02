@@ -1,16 +1,17 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,reconcileV5Ledger,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.33-gig-earnings';
-import{renderBoss}from'./boss.js?v=5.0.33-gig-earnings';
-import{renderRoom}from'./rooms.js?v=5.0.33-gig-earnings';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,reconcileV5Ledger,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.34-daily-shit';
+import{renderBoss}from'./boss.js?v=5.0.34-daily-shit';
+import{renderRoom}from'./rooms.js?v=5.0.34-daily-shit';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
 ui.scheduleView=ui.scheduleView||'day';
 if(ui.view==='review')ui.view='time';
+if(['tasks','pings','routines'].includes(ui.view))ui.view='dailyshit';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 const NAV=[['',[
-  ['home','🌸','Home'],['time','🗓️','Schedule'],['boss','💼','Boss Bitch'],['money','☕','Money Café'],['tasks','😩','To-dos'],['mochini','🍡','Mochini'],['pings','🚨','Little Pings'],
-  ['routines','🍓','Routines'],['motion','🌿','Get movin'],['people','💕','My loves'],['hobbies','🎨','Hobby Shelf'],
+  ['home','🌸','Home'],['time','🗓️','Schedule'],['boss','💼','Boss Bitch'],['money','☕','Money Café'],['dailyshit','🍓','Daily Shit'],['mochini','🍡','Mochini'],
+  ['motion','🌿','Get movin'],['people','💕','My loves'],['hobbies','🎨','Hobby Shelf'],
   ['study','🎓','Study Nook'],
   ['growth','🌱','Growth'],['dump','🧠','Brain dump'],['archive','📦','Memory Box'],['settings','⚙️','Settings']
 ]]];
