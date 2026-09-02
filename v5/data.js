@@ -48,7 +48,8 @@ const RECOVERY_COUNT_PATHS=[
 ];
 
 function pathValue(source,path){return path.split('.').reduce((value,key)=>value?.[key],source)}
-function countRows(value){return Array.isArray(value)?value.filter(Boolean).length:0}
+// Match V4 recovery exactly: its inventory includes retained blank slots too.
+function countRows(value){return Array.isArray(value)?value.length:0}
 function stateCounts(state){
   const counts={};
   COLLECTION_PATHS.forEach(path=>{counts[path]=countRows(pathValue(state,path))});
