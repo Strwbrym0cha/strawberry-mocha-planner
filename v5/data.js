@@ -168,9 +168,11 @@ export function readV4State(){
     const migrated=candidateFromKey(V5_DATA_KEY);
     const current=bestLegacyCandidate();
     const v4=current?.state;
-    if(v4&&shouldRefreshFromV4(migrated?.state,v4)){
-      if(migrated?.raw){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,migrated.raw)}catch{}}
-      saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,migrated?.state?'refresh':'repair');
+    if(v4&&hasUserContent(v4)){
+      if(!migrated?.state||shouldRefreshFromV4(migrated.state,v4)){
+        if(migrated?.raw){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,migrated.raw)}catch{}}
+        saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,migrated?.state?'refresh':'repair');
+      }
       return v4;
     }
     if(migrated?.state){
