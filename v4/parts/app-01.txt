@@ -6,7 +6,10 @@ const {feedMeRecommendation,goalZone,roadTo10kStatus,progressionFromFeedback,cre
 
 const app=document.getElementById('app');
 let state=loadState();
-let view=state.v4?.ui?.lastView||'home';
+const launch=new URLSearchParams(location.search),embedded=launch.get('embed')==='1';
+const hiddenEmbedRooms=new Set(['noms','sips','threads','admin','reset','patterns']);
+if(embedded)document.body.classList.add('v5-embed');
+let view=launch.get('view')||state.v4?.ui?.lastView||'home';
 let dialog=null;
 let status='';
 const list=v=>Array.isArray(v)?v:[];const obj=v=>v&&typeof v==='object'&&!Array.isArray(v)?v:{};const text=v=>String(v??'').trim();const clone=v=>structuredClone(v);const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -37,7 +40,7 @@ const NAV=[
  ['💼 WORK + MONEY',[['boss','💼','Boss Bitch'],['money','☕','Money Café'],['study','🎓','Study Nook'],['threads','🧵','Threads']]],
  ['✨ GROW + SYSTEM',[['growth','🌱','Growth Room'],['dump','🧠','Get It Outta My Head'],['admin','🗃️','Unfortunately, I’m an Adult'],['reset','🌸','Reset Lab'],['patterns','🔬','Pattern Lab'],['archive','📦','Memory Box'],['settings','🎀','V4 Settings']]]
 ];
-function navHtml(){return NAV.map(([label,items])=>`<div class="nav-group"><div class="nav-label">${label}</div>${items.map(([id,icon,name])=>`<button class="nav-btn ${view===id?'active':''}" data-view="${id}"><span class="nav-icon">${icon}</span>${esc(name)}</button>`).join('')}</div>`).join('')}
+function navHtml(){return NAV.map(([label,items])=>{const visible=embedded?items.filter(([id])=>!hiddenEmbedRooms.has(id)):items;return visible.length?`<div class="nav-group"><div class="nav-label">${label}</div>${visible.map(([id,icon,name])=>`<button class="nav-btn ${view===id?'active':''}" data-view="${id}"><span class="nav-icon">${icon}</span>${esc(name)}</button>`).join('')}</div>`:''}).join('')}
 function shell(content){const mode=state.v4.mode||'normal';document.body.classList.toggle('mode-tiny',mode==='tiny');document.body.classList.toggle('mode-power',mode==='power');return`<div class="katos"><aside class="sidebar" id="sidebar"><div class="brand"><div class="brand-row"><div class="berry">🍓</div><div><h1>KatOS V4</h1><div class="scribble">pretty, smart, and nosy enough</div></div></div><div class="build">PREVIEW · ${V4_BUILD}</div></div><nav class="nav">${navHtml()}</nav><div class="sidebar-foot">V4 has its own data copy. V3 is untouched. 🔒<br><a href="../v3/" style="color:#b14f78;font-weight:800">Open V3 emergency exit</a></div></aside><header class="topbar"><button class="btn menu" data-action="menu">☰</button><div class="top-title">${esc(NAV.flatMap(x=>x[1]).find(x=>x[0]===view)?.[2]||'KatOS')}</div><div class="top-spacer"></div><div class="mode-switch"><button class="mode-btn ${mode==='normal'?'active':''}" data-mode="normal">🍓 <span>Normal</span></button><button class="mode-btn ${mode==='tiny'?'active':''}" data-mode="tiny">🫧 <span>Tiny</span></button><button class="mode-btn ${mode==='power'?'active':''}" data-mode="power">⚡ <span>Power</span></button></div></header><main class="main">${status?`<div class="note" style="margin-bottom:10px">${esc(status)}</div>`:''}${content}</main>${renderDialog()}</div>`}
 
 function contextBits(){return[['brain','🧠'],['energy','⚡'],['capacity','🎀'],['pressure','⏰']].map(([k,i])=>`<span class="chip">${i} ${esc(state.context?.[k]||'')}</span>`).join('')}
