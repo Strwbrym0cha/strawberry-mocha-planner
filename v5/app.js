@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,snapshotV4}from'./data.js?v=5.2.0-schedule-nav';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,snapshotV4}from'./data.js?v=5.3.0-popup-workspaces';
 import{renderBoss}from'./boss.js?v=5.0.0-preview.2';
-import{renderRoom}from'./rooms.js?v=5.2.0-schedule-nav';
+import{renderRoom}from'./rooms.js?v=5.3.0-popup-workspaces';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
@@ -15,7 +15,7 @@ const NAV=[['',[
 ]]];
 const LABELS=Object.fromEntries(NAV.flatMap(([,items])=>items.map(([id,,label])=>[id,label])));
 
-function sidebar(){const items=NAV.flatMap(([,groupItems])=>groupItems);return`<aside class="sidebar ${ui.sidebarOpen?'open':''}"><div class="brand"><div class="brand-row"><div class="berry">🍓</div><div><h1>KatOS V5</h1><div class="scribble">pretty, smart, and nosy enough</div></div></div><span class="build">PREVIEW · 5.2.0</span></div><nav class="nav">${items.map(([id,icon,label])=>`<button type="button" class="nav-btn ${ui.view===id?'active':''}" data-view="${id}"><span class="nav-icon">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="sidebar-foot"><b>V5 Preview</b><br>Minimal rooms. V4 data is read-only here. 🔒</div></aside>${ui.sidebarOpen?'<button type="button" class="sidebar-backdrop" data-action="close-sidebar" aria-label="Close navigation"></button>':''}`}
+function sidebar(){const items=NAV.flatMap(([,groupItems])=>groupItems);return`<aside class="sidebar ${ui.sidebarOpen?'open':''}"><div class="brand"><div class="brand-row"><div class="berry">🍓</div><div><h1>KatOS V5</h1><div class="scribble">pretty, smart, and nosy enough</div></div></div><span class="build">PREVIEW · 5.3.0</span></div><nav class="nav">${items.map(([id,icon,label])=>`<button type="button" class="nav-btn ${ui.view===id?'active':''}" data-view="${id}"><span class="nav-icon">${icon}</span><span>${label}</span></button>`).join('')}</nav><div class="sidebar-foot"><b>V5 Preview</b><br>Minimal rooms. V4 data is read-only here. 🔒</div></aside>${ui.sidebarOpen?'<button type="button" class="sidebar-backdrop" data-action="close-sidebar" aria-label="Close navigation"></button>':''}`}
 function topbar(){return`<header class="topbar"><button type="button" class="btn menu" data-action="toggle-sidebar">☰</button><div class="top-title">${esc(LABELS[ui.view]||'KatOS V5')}</div><div class="top-spacer"></div><div class="mode-switch" aria-label="Energy mode"><button type="button" class="mode-btn ${ui.mode==='normal'?'active':''}" data-mode="normal">🍓 <span>Normal</span></button><button type="button" class="mode-btn ${ui.mode==='tiny'?'active':''}" data-mode="tiny">🫧 <span>Tiny</span></button><button type="button" class="mode-btn ${ui.mode==='power'?'active':''}" data-mode="power">⚡ <span>Power</span></button></div></header>`}
 function render(){const oldSidebar=app.querySelector('.sidebar'),scrollTop=oldSidebar?.scrollTop||0,scrollLeft=oldSidebar?.scrollLeft||0,snapshot=snapshotV4(),content=ui.view==='boss'?renderBoss(snapshot,ui.bossLane):renderRoom(ui.view,snapshot,{scheduleView:ui.scheduleView});document.body.className=`mode-${ui.mode}`;app.className='katos';app.innerHTML=`${sidebar()}${topbar()}<main class="main">${content}</main>`;const newSidebar=app.querySelector('.sidebar');if(newSidebar){newSidebar.scrollTop=scrollTop;newSidebar.scrollLeft=scrollLeft}}
 function persist(){saveV5Ui(ui)}
@@ -29,7 +29,11 @@ app.addEventListener('click',event=>{
   const action=event.target.closest?.('[data-action]');if(action&&app.contains(action)){if(action.dataset.action==='toggle-sidebar')ui.sidebarOpen=!ui.sidebarOpen;if(action.dataset.action==='close-sidebar')ui.sidebarOpen=false;render();return}
   const remove=event.target.closest?.('[data-ledger-remove]');if(remove&&app.contains(remove)){if(window.confirm('Remove this V5 ledger entry?')){removeV5LedgerEntry(remove.dataset.ledgerRemove);render()}return}
   const focus=event.target.closest?.('[data-focus]');if(focus&&app.contains(focus)){const target=focus.dataset.focus==='clients'?app.querySelector('#v5-client-roster'):app.querySelector('#v5-note-queue');target?.scrollIntoView({behavior:'smooth',block:'start'})}
+  const detailOpen=event.target.closest?.('[data-detail-open]');if(detailOpen&&app.contains(detailOpen)){const modal=app.querySelector(`[data-detail-modal="${CSS.escape(detailOpen.dataset.detailOpen)}"]`);if(modal){modal.hidden=false;modal.querySelector('select,input,textarea')?.focus()}return}
+  const detailClose=event.target.closest?.('[data-detail-close]');if(detailClose&&app.contains(detailClose)){detailClose.closest('[data-detail-modal]')?.setAttribute('hidden','');return}
+  if(event.target.matches?.('[data-detail-modal]')){event.target.setAttribute('hidden','');return}
 });
+app.addEventListener('keydown',event=>{if(event.key==='Escape'){app.querySelectorAll('[data-detail-modal]:not([hidden])').forEach(modal=>modal.setAttribute('hidden',''))}});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-daily-note-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5DailyNote(Object.fromEntries(new FormData(form)));render()});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5RoomDetail(form.dataset.roomDetail,Object.fromEntries(new FormData(form)));render()});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-money-ledger-form]');if(!form||!app.contains(form))return;event.preventDefault();const result=saveV5LedgerEntry(Object.fromEntries(new FormData(form)));if(result.ok)render();else{const error=form.querySelector('.ledger-error');if(error)error.textContent=result.error}});
