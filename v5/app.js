@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.12-current-v4-export';
-import{renderBoss}from'./boss.js?v=5.0.11-full-v4-data';
-import{renderRoom}from'./rooms.js?v=5.0.11-full-v4-data';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,saveV5Workspace,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.13-editable-workspaces';
+import{renderBoss}from'./boss.js?v=5.0.13-editable-workspaces';
+import{renderRoom}from'./rooms.js?v=5.0.13-editable-workspaces';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
@@ -34,8 +34,8 @@ app.addEventListener('click',event=>{
   if(event.target.matches?.('[data-detail-modal]')){event.target.setAttribute('hidden','');return}
 });
 app.addEventListener('keydown',event=>{if(event.key==='Escape'){app.querySelectorAll('[data-detail-modal]:not([hidden])').forEach(modal=>modal.setAttribute('hidden',''))}});
-app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-daily-note-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5DailyNote(Object.fromEntries(new FormData(form)));render()});
-app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5RoomDetail(form.dataset.roomDetail,Object.fromEntries(new FormData(form)));render()});
+app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-daily-note-form]');if(!form||!app.contains(form))return;event.preventDefault();const fields=Object.fromEntries(new FormData(form));saveV5DailyNote(fields);const result=saveV5Workspace('review',fields);if(!result.ok)window.alert(result.error||'Your daily note could not be saved.');render()});
+app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();const fields=Object.fromEntries(new FormData(form));saveV5RoomDetail(form.dataset.roomDetail,fields);const view=form.dataset.roomDetail;const result=view==='money'?saveV5LedgerEntry({label:fields.entry,kind:{Spending:'expense',Income:'income',Transfer:'transfer',Bill:'expense',Savings:'transfer'}[fields.kind]||'expense',amount:fields.amount,date:fields.date,category:fields.category,account:fields.account,toAccount:fields.toAccount,note:fields.moneyNotes}):saveV5Workspace(view,fields);if(!result.ok){window.alert(result.error||'That could not be saved.');return}render()});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-money-ledger-form]');if(!form||!app.contains(form))return;event.preventDefault();const result=saveV5LedgerEntry(Object.fromEntries(new FormData(form)));if(result.ok)render();else{const error=form.querySelector('.ledger-error');if(error)error.textContent=result.error}});
 app.addEventListener('change',event=>{const input=event.target.closest?.('[data-v4-export-file]');const file=input?.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{const result=importV4Export(String(reader.result||''));if(result.ok){window.alert(`Your V4 export is now loaded in V5 (${Number(result.counts?.total)||0} planner records).`);location.reload()}else window.alert(result.error||'That export could not be loaded.');};reader.readAsText(file);input.value=''});
 render();
