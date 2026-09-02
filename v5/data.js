@@ -1,6 +1,7 @@
 const V4_KEY='sm_v4_beta';
 const V5_UI_KEY='sm_v5_preview_ui';
 const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
+const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -57,6 +58,23 @@ export function saveV5DailyNote(fields){
     entries.push(entry);
     localStorage.setItem(V5_DAILY_NOTES_KEY,JSON.stringify(entries.slice(-180)));
   }catch(error){console.warn('KatOS V5 could not save this daily note.',error)}
+  return entry;
+}
+
+export function loadV5RoomDetail(room){
+  try{
+    const details=JSON.parse(localStorage.getItem(V5_ROOM_DETAILS_KEY)||'{}');
+    const entry=details&&typeof details==='object'?details[room]:null;
+    return entry&&typeof entry==='object'?entry:null;
+  }catch{return null}
+}
+
+export function saveV5RoomDetail(room,fields){
+  const entry={...fields,updatedAt:new Date().toISOString()};
+  try{
+    const details=JSON.parse(localStorage.getItem(V5_ROOM_DETAILS_KEY)||'{}');
+    localStorage.setItem(V5_ROOM_DETAILS_KEY,JSON.stringify({...((details&&typeof details==='object')?details:{}),[room]:entry}));
+  }catch(error){console.warn('KatOS V5 could not save this room detail.',error)}
   return entry;
 }
 
