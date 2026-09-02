@@ -146,7 +146,7 @@ function importedLedgerEntries(state){
 function mergeImportedLedger(state){
   const source=importedLedgerEntries(state);
   if(!source.length)return 0;
-  const current=loadV5Ledger(),seen=new Set(current.entries.map(entry=>String(entry?.id))),fresh=source.filter(entry=>!seen.has(String(entry.id)));
+  const current=loadV5Ledger(),seen=new Set(current.entries.map(entry=>String(entry?.id))),sourceSeen=new Set(current.entries.map(entry=>text(entry?.sourceId)).filter(Boolean)),fresh=source.filter(entry=>!seen.has(String(entry.id))&&!sourceSeen.has(text(entry.sourceId)));
   if(!fresh.length)return 0;
   try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:[...current.entries,...fresh].slice(-500)}));return fresh.length}catch{return 0}
 }
@@ -349,7 +349,7 @@ export function saveV5LedgerEntry(fields){
   if(!label||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'Add a name and an amount first.'};
   const kind=['income','expense','transfer'].includes(text(fields?.kind))?text(fields.kind):'expense';
   const date=/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey();
-  const entry={id:`v5-ledger-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,label,amount:cents(amount),date,category:text(fields?.category)||'Other',account:text(fields?.account)||'General',toAccount:text(fields?.toAccount),note:text(fields?.note),createdAt:new Date().toISOString()};
+  const entry={id:`v5-ledger-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,label,amount:cents(amount),date,category:text(fields?.category)||'Other',account:text(fields?.account)||'General',toAccount:text(fields?.toAccount),note:text(fields?.note),sourceId:text(fields?.sourceId),sourceType:text(fields?.sourceType),createdAt:new Date().toISOString()};
   const current=loadV5Ledger();
   try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:[...current.entries,entry].slice(-500)}));return{ok:true,entry}}
   catch(error){console.warn('KatOS V5 could not save this ledger entry.',error);return{ok:false,error:'This entry could not be saved.'}}
@@ -363,10 +363,10 @@ export function removeV5LedgerEntry(id){
 
 function scheduledMoney(state,today){
   const moneyState=obj(state?.money),month=String(today).slice(0,7),onDate=(row,fallbackDay)=>{const dated=text(row?.nextCharge||row?.dueDate||row?.due);if(/^\d{4}-\d{2}-\d{2}$/.test(dated))return dated;const day=Number(row?.dueDay||fallbackDay||0);return day?`${month}-${String(day).padStart(2,'0')}`:month};
-  const bills=list(moneyState.bills).filter(row=>row?.paid!==true).map(row=>({id:text(row.id),sourcePath:'money.bills',label:text(row.name||row.label)||'Bill',amount:cents(row.amount),date:onDate(row),category:'Bill',status:'due'}));
-  const subscriptions=list(moneyState.subscriptions).filter(row=>row?.archived!==true&&row?.active!==false).map(row=>({id:text(row.id),sourcePath:'money.subscriptions',label:text(row.name||row.label)||'Subscription',amount:cents(row.amount),date:onDate(row),category:text(row.category)||'Subscription',status:'recurring'}));
-  const expectedIncome=list(moneyState.earnings).filter(row=>!(row?.status==='received'||row?.received===true||Number(row?.receivedAmount)||Number(row?.actualAmount)||Number(row?.actualNet))).map(row=>({id:text(row.id),sourcePath:'money.earnings',label:text(row.label||row.employer||row.name)||'Expected income',amount:cents(row.expectedAmount??row.estimatedGross??row.amount),date:text(row.expectedDate||row.date)||today,category:'Income',status:'expected'}));
-  const plannedGigs=list(state?.work?.gigShifts).filter(row=>!Number(row?.actualAmount)).map(row=>({id:text(row.id),sourcePath:'work.gigShifts',label:text(row.source||row.platform||row.label)||'Gig shift',amount:cents(row.targetAmount??row.amount),date:text(row.date)||today,category:'Gig work',status:'planned'}));
+  const bills=list(moneyState.bills).filter(row=>row?.paid!==true).map(row=>({id:text(row.id),sourcePath:'money.bills',label:text(row.name||row.label)||'Bill',amount:cents(row.amount),date:onDate(row),category:'Bill',status:'due',record:obj(row)}));
+  const subscriptions=list(moneyState.subscriptions).filter(row=>row?.archived!==true&&row?.active!==false).map(row=>({id:text(row.id),sourcePath:'money.subscriptions',label:text(row.name||row.label)||'Subscription',amount:cents(row.amount),date:onDate(row),category:text(row.category)||'Subscription',status:'recurring',record:obj(row)}));
+  const expectedIncome=list(moneyState.earnings).filter(row=>!(row?.status==='received'||row?.received===true||Number(row?.receivedAmount)||Number(row?.actualAmount)||Number(row?.actualNet))).map(row=>({id:text(row.id),sourcePath:'money.earnings',label:text(row.label||row.employer||row.name)||'Expected income',amount:cents(row.expectedAmount??row.estimatedGross??row.amount),date:text(row.expectedDate||row.date)||today,category:'Income',status:'expected',record:obj(row)}));
+  const plannedGigs=list(state?.work?.gigShifts).filter(row=>!Number(row?.actualAmount)).map(row=>({id:text(row.id),sourcePath:'work.gigShifts',label:text(row.source||row.platform||row.label)||'Gig shift',amount:cents(row.targetAmount??row.amount),date:text(row.date)||today,category:'Gig work',status:'planned',record:obj(row)}));
   return{bills,subscriptions,expectedIncome,plannedGigs};
 }
 
