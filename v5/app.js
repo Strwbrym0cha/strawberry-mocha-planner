@@ -38,3 +38,4 @@ app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-d
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5RoomDetail(form.dataset.roomDetail,Object.fromEntries(new FormData(form)));render()});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-money-ledger-form]');if(!form||!app.contains(form))return;event.preventDefault();const result=saveV5LedgerEntry(Object.fromEntries(new FormData(form)));if(result.ok)render();else{const error=form.querySelector('.ledger-error');if(error)error.textContent=result.error}});
 render();
+if(!snapshotV4().found)restoreCloudV4Data().then(result=>{if(result.ok)render()}).catch(()=>{});
