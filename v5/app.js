@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.23-gig-labels';
-import{renderBoss}from'./boss.js?v=5.0.23-gig-labels';
-import{renderRoom}from'./rooms.js?v=5.0.23-gig-labels';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.24-job-pay';
+import{renderBoss}from'./boss.js?v=5.0.24-job-pay';
+import{renderRoom}from'./rooms.js?v=5.0.24-job-pay';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
