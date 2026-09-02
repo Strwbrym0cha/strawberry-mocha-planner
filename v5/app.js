@@ -1,4 +1,4 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,snapshotV4,migrateV4ToV5}from'./data.js?v=5.0.5-v4-migration';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,snapshotV4,migrateV4ToV5,restoreCloudV4Data}from'./data.js?v=5.0.6-cloud-restore';
 import{renderBoss}from'./boss.js?v=5.0.0-preview.2';
 import{renderRoom}from'./rooms.js?v=5.0.0-official';
 
@@ -26,7 +26,7 @@ app.addEventListener('click',event=>{
   const mode=event.target.closest?.('[data-mode]');if(mode&&app.contains(mode)){ui.mode=mode.dataset.mode;persist();render();return}
   const lane=event.target.closest?.('[data-boss-lane]');if(lane&&app.contains(lane)){ui.bossLane=lane.dataset.bossLane==='gig'?'gig':'rbt';persist();render();return}
   const schedule=event.target.closest?.('[data-schedule-view]');if(schedule&&app.contains(schedule)){ui.scheduleView=['day','week','calendar'].includes(schedule.dataset.scheduleView)?schedule.dataset.scheduleView:'day';persist();render();return}
-  const action=event.target.closest?.('[data-action]');if(action&&app.contains(action)){if(action.dataset.action==='toggle-sidebar')ui.sidebarOpen=!ui.sidebarOpen;if(action.dataset.action==='close-sidebar')ui.sidebarOpen=false;if(action.dataset.action==='reimport-v4'){if(window.confirm('Copy the current V4 snapshot into V5 again? Your current V5 data will be backed up first.'))migrateV4ToV5()}render();return}
+  const action=event.target.closest?.('[data-action]');if(action&&app.contains(action)){if(action.dataset.action==='toggle-sidebar')ui.sidebarOpen=!ui.sidebarOpen;if(action.dataset.action==='close-sidebar')ui.sidebarOpen=false;if(action.dataset.action==='reimport-v4'){if(window.confirm('Copy the current V4 snapshot into V5 again? Your current V5 data will be backed up first.'))migrateV4ToV5();render();return}if(action.dataset.action==='restore-cloud-v4'){action.disabled=true;action.textContent='☁️ Restoring your data…';restoreCloudV4Data().then(result=>{if(result.ok){window.alert('Your cloud planner data is now in V5.');location.reload()}else{window.alert(result.error||'Cloud restore did not finish.');render()}});return}render();return}
   const remove=event.target.closest?.('[data-ledger-remove]');if(remove&&app.contains(remove)){if(window.confirm('Remove this V5 ledger entry?')){removeV5LedgerEntry(remove.dataset.ledgerRemove);render()}return}
   const focus=event.target.closest?.('[data-focus]');if(focus&&app.contains(focus)){const target=focus.dataset.focus==='clients'?app.querySelector('#v5-client-roster'):app.querySelector('#v5-note-queue');target?.scrollIntoView({behavior:'smooth',block:'start'})}
   const detailOpen=event.target.closest?.('[data-detail-open]');if(detailOpen&&app.contains(detailOpen)){const modal=[...app.querySelectorAll('[data-detail-modal]')].find(node=>node.dataset.detailModal===detailOpen.dataset.detailOpen);if(modal){modal.hidden=false;modal.querySelector('select,input,textarea')?.focus()}return}
@@ -38,4 +38,3 @@ app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-d
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5RoomDetail(form.dataset.roomDetail,Object.fromEntries(new FormData(form)));render()});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-money-ledger-form]');if(!form||!app.contains(form))return;event.preventDefault();const result=saveV5LedgerEntry(Object.fromEntries(new FormData(form)));if(result.ok)render();else{const error=form.querySelector('.ledger-error');if(error)error.textContent=result.error}});
 render();
-
