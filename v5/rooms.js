@@ -10,7 +10,8 @@ function get(source,path){return path.split('.').reduce((value,key)=>value?.[key
 function asRows(value){if(Array.isArray(value))return value.filter(Boolean);if(value&&typeof value==='object')return Object.values(value).filter(row=>row&&typeof row==='object');return[]}
 function rows(source,...paths){for(const path of paths){const found=asRows(get(source,path));if(found.length)return found}return[]}
 function isDone(row){return row?.done===true||row?.completed===true||['done','complete','completed','closed','archived'].includes(text(row?.status).toLowerCase())}
-function rowTitle(row,fallback='Untitled'){return text(row?.text)||text(row?.title)||text(row?.name)||text(row?.label)||fallback}
+function gigAppLabel(value){const raw=text(value),compact=raw.toLowerCase().replace(/[^a-z]/g,'');return({doordash:'DoorDash',shipt:'Shipt',ubereats:'Uber Eats',instacart:'Instacart'})[compact]||raw}
+function rowTitle(row,fallback='Untitled'){const named=text(row?.text)||text(row?.title)||text(row?.name)||text(row?.label);if(named)return named;const isGig=text(row?.__v5Path)==='work.gigShifts'||row?.targetAmount!==undefined||row?.actualAmount!==undefined&&text(row?.source);if(isGig){const app=gigAppLabel(row?.source||row?.platform);return app?`${app} shift`:'Gig shift'}return fallback}
 function dateOf(row){return text(row?.date)||text(row?.startDate)||text(row?.dueDate)||text(row?.createdAt).slice(0,10)}
 function dueDateOf(row){const due=text(row?.date)||text(row?.dueDate)||text(row?.due);return /^\d{4}-\d{2}-\d{2}$/.test(due)?due:''}
 function timeOf(row){return text(row?.startTime)||text(row?.time)||text(row?.start)}
