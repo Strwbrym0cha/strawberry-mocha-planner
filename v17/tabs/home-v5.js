@@ -1,5 +1,44 @@
 import{completeTask}from'../app/task-actions.js?v=22.1.27-20260818';
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const today=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-const name=t=>t?.text||t?.title||'Untitled task',open=t=>t&&!t.done&&!t.parked&&!t.archived,seen=new WeakSet();
-function renderHomeV5({root,store,router}){const draw=()=>{const d=store.get()||{},tasks=(d.tasks||[]).filter(t=>open(t)&&(!t.date||t.date===today())),protectedTasks=tasks.filter(t=>t.isProtected),now=protectedTasks[0]||tasks[0],next=tasks.find(t=>String(t.id)!==String(now?.id)),pings=(d.reminders||[]).filter(p=>!p.done&&!p.completed&&(!p.date||p.date===today()));const slot=(label,task,icon)=>task?`<article><small>${label}</small><span>${icon}</span><b>${esc(name(task))}</b><em>${task.isProtected?'Protected time':task.durationMin?`${task.durationMin} min`:'One small step'}</em><button data-done="${esc(task.id)}">✓</button></article>`:`<article><small>${label}</small><span>${icon}</span><b>${label==='NOW'?'Choose gently':'Nothing queued'}</b><em>Open Daily Flow</em><button data-go="daily">→</button></article>`;const protectedRows=protectedTasks.slice(0,3).map(t=>`<button class="v5-protected-row" data-done="${esc(t.id)}"><span>✦</span><b>${esc(name(t))}</b><small>${t.durationMin?`${t.durationMin} min`:'Protected'}</small><i>✓</i></button>`).join('')||'<p class="v5-empty">Nothing protected today.</p>';const pingRows=pings.slice(0,2).map(p=>`<button class="v5-ping-row" data-go="reminders">💌 <b>${esc(p.title||p.text||p.name||'Little ping')}</b></button>`).join('')||'<p class="v5-empty">No pings waiting.</p>';const rooms=[['planner','🗓️','Plannin'],['tasks','📝','Tasks'],['money','☕','Money Café'],['brain','🧠','Brain']];root.innerHTML=`<main class="v5-princess-home"><header class="v5-princess-greeting"><div><p>✦ ♡ ✦</p><h1>Welcome home, Kat</h1></div><button data-tiny>♕ Tiny Mode <i></i></button></header><div class="v5-princess-grid"><section class="v5-now-next"><header><span>◷</span><h2>Now &amp; Next</h2></header><div>${slot('NOW',now,'♡')}${slot('NEXT',next,'★')}</div><button class="v5-flow" data-go="daily">Open Daily Flow</button></section><section class="v5-protected"><header><span>♙</span><h2>Protected Tasks</h2></header>${protectedRows}</section><button class="v5-mini v5-water" data-go="reset"><span>🚨</span><h2>Emergency reset</h2><b>Show me the basics</b><small>No catch-up required.</small></button><section class="v5-pings"><header><span>🎀</span><h2>Little Pings</h2></header>${pingRows}</section></div><section class="v5-rooms"><header><span>♕</span><h2>My Rooms</h2><small>one room at a time</small></header><div>${rooms.map(([page,icon,label])=>`<button data-go="${page}"><span>${icon}</span><b>${label}</b></button>`).join('')}</div></section><button class="v5-mochini-home" data-go="mochini"><span>🍡</span><strong>Mochini</strong><em>What should I do?</em><i>♡</i></button></main>`;root.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>completeTask(store,String(b.dataset.done)));root.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>router.go(b.dataset.go));root.querySelector('[data-tiny]').onclick=e=>{const h=e.currentTarget.closest('.v5-princess-home'),on=h.classList.toggle('tiny');e.currentTarget.setAttribute('aria-pressed',on)}};if(!seen.has(store)){seen.add(store);store.subscribe(draw)}draw()}export{renderHomeV5};
+
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const today=()=>{const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`};
+const label=task=>task?.text||task?.title||'Untitled task';
+const open=task=>task&&!task.done&&!task.parked&&!task.archived;
+const seen=new WeakSet();
+
+function renderHomeV5({root,store,router}){
+ const draw=()=>{
+  const data=store.get()||{};
+  const tasks=(data.tasks||[]).filter(task=>open(task)&&(!task.date||task.date===today()));
+  const habits=(data.routines||[]).slice(0,4);
+  const goals=(data.goals||[]).filter(goal=>!goal.archived);
+  const wins=(data.wins||[]).filter(win=>!win.archived);
+  const now=tasks.find(task=>task.isProtected)||tasks[0];
+  const next=tasks.find(task=>String(task.id)!==String(now?.id));
+  const taskRow=task=>task?`<button class="v5-ref-item" data-done="${esc(task.id)}"><span>○</span><b>${esc(label(task))}</b><small>${task.isProtected?'Protected time':task.durationMin?`${task.durationMin} min`:'Tiny step'}</small></button>`:'';
+  const habitRows=habits.length?habits.map(routine=>`<button class="v5-ref-habit" data-go="rituals"><span>♡</span><b>${esc(routine.name||'Little routine')}</b><small>Open routine</small></button>`).join(''):'<p class="v5-ref-empty">Add a gentle routine when you want one. ♡</p>';
+  root.innerHTML=`<main class="v5-ref-home">
+   <section class="v5-ref-hero">
+    <div><p class="v5-ref-eyebrow">A SOFT PLACE TO LAND</p><h2>Make today a little sweeter.</h2><p>You do not need to do everything. Pick a few things that matter, make one tiny move, and let the rest wait.</p><span>✨ tiny steps</span><span>💕 no perfection</span><span>🍃 gentle pace</span></div>
+    <aside><div class="v5-ref-coffee">☕</div><p class="v5-ref-eyebrow">YOUR NEXT LITTLE MOVE</p><h3>${esc(label(now||next||{text:'Pick one thing.'}))}</h3><p>The planner will keep the rest parked for you.</p><div><button data-go="daily">☀️ Daily Flow</button><button data-go="planner">📅 Plannin</button><button data-go="school">📚 Study</button><button data-go="money">☕ Money</button></div></aside>
+   </section>
+   <section class="v5-ref-stats"><article><small>OPEN TASKS</small><b>${tasks.length}</b></article><article><small>ROUTINES</small><b>${habits.length}</b></article><article><small>GOALS</small><b>${goals.length}</b></article><article><small>LITTLE WINS</small><b>${wins.length}</b></article></section>
+   <section class="v5-ref-grid">
+    <div>
+     <section class="v5-ref-card"><header><h3>✨ Today's Focus</h3><small>${tasks.length?'ONE AT A TIME':'ALL CLEAR'}</small></header><div class="v5-ref-focus"><b>${esc(label(now||{text:'Choose your tiny win.'}))}</b><i><span style="width:${tasks.length?Math.max(15,100/(tasks.length+1)):100}%"></span></i></div>${taskRow(now)}${taskRow(next)}${tasks.length>2?`<button class="v5-ref-more" data-go="tasks">See ${tasks.length-2} more task${tasks.length===3?'':'s'} →</button>`:''}<button class="v5-ref-add" data-go="tasks">＋ Add a tiny task</button></section>
+     <button class="v5-ref-reset" data-go="reset"><span>🚨</span><div><p class="v5-ref-eyebrow">BARE MINIMUM MODE</p><h3>Emergency Reset</h3><p>Water, food, meds, and care. No catch-up required.</p></div><b>→</b></button>
+    </div>
+    <div>
+     <section class="v5-ref-card"><header><h3>💕 Habit Check</h3><small>TODAY</small></header>${habitRows}</section>
+     <section class="v5-ref-card"><header><h3>🌷 Little Wins</h3><small>CELEBRATE IT</small></header>${wins.slice(0,3).map(win=>`<p class="v5-ref-win">✦ ${esc(win.text||win.title||win.name||'A lovely little win')}</p>`).join('')||'<p class="v5-ref-empty">Tiny wins count. Add one whenever it happens. ♡</p>'}<button class="v5-ref-more" data-go="wins">Open Win Shelf →</button></section>
+    </div>
+   </section>
+  </main>`;
+  root.querySelectorAll('[data-done]').forEach(button=>button.addEventListener('click',()=>completeTask(store,String(button.dataset.done))));
+  root.querySelectorAll('[data-go]').forEach(button=>button.addEventListener('click',()=>router.go(button.dataset.go)));
+ };
+ if(!seen.has(store)){seen.add(store);store.subscribe(draw)}
+ draw();
+}
+
+export{renderHomeV5};
