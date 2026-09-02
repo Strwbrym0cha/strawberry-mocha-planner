@@ -4,13 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#fff7fb">
-  <meta name="sm-build" content="5.4.2-all-popups-main">
+  <meta name="sm-build" content="5.4.5-v4-migration">
   <title>KatOS V5</title>
   <link rel="icon" href="./icon.svg">
   <meta http-equiv="refresh" content="0;url=./v5/?v=5.4.5-v4-migration">
   <script>
     const target = new URL('./v5/?v=5.4.5-v4-migration', location.href);
-    if (location.search) target.search = location.search;
+    new URLSearchParams(location.search).forEach((value, key) => {
+      if (key !== 'v') target.searchParams.set(key, value);
+    });
     location.replace(target.href);
   </script>
 </head>
