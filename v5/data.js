@@ -27,7 +27,7 @@ const COLLECTION_PATHS=[
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
-  'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
+  'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.notes','work.rbt.sessionNotes',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
@@ -344,6 +344,24 @@ export function saveV5Workspace(view,fields={}){
           appendAtPath(state,'life.events',{id:itemId('rbt-event'),title:`RBT · ${clientLabel}`,date,startTime:value('startTime'),endTime:value('endTime'),location:value('setting'),area:'Work',category:'Work shift',type:'RBT session',notes:value('note'),rbtSessionId:sessionId,createdAt:now});
         });break;
       }
+      case'rbt-session-plan':{
+        if(!value('clientId')||!validDate(value('date')))return{ok:false,error:'Choose a client code and date for the plan first.'};
+        const repeat=value('repeat')||'Does not repeat',dates=rbtSessionDates(value('date'),repeat,value('repeatThrough'));
+        if(!dates.length)return{ok:false,error:repeat==='Does not repeat'?'Choose a valid date.':'Choose an end date for the repeating plan.'};
+        const client=list(state?.work?.rbt?.clients).find(row=>String(row?.id)===value('clientId')),clientLabel=text(client?.code)||'RBT plan';
+        dates.forEach(date=>{
+          const planId=itemId('rbt-plan');
+          appendAtPath(state,'work.rbt.sessionPlans',{id:planId,clientId:value('clientId'),date,startTime:value('startTime'),endTime:value('endTime'),setting:value('setting'),supervisor:value('supervisor'),appointmentType:value('appointmentType')||'Direct session',repeat,repeatThrough:value('repeatThrough'),goals:value('goals'),materials:value('materials'),planNotes:value('planNotes'),status:value('status')||'planned',createdAt:now});
+          appendAtPath(state,'life.events',{id:itemId('rbt-plan-event'),title:`RBT plan · ${clientLabel}`,date,startTime:value('startTime'),endTime:value('endTime'),location:value('setting'),area:'Work',category:'RBT session plan',type:'RBT plan',notes:value('planNotes'),rbtPlanId:planId,createdAt:now});
+        });break;
+      }
+      case'rbt-career-progress':{
+        const keys=['btRlt','rbtTraining','rbtCompetency','rbtApplication','rbtExam','rbtMaintenance','bachelors','leadRbt','bcabaEligibility','bcabaSupervisor','bcabaFieldwork','bcabaExam','masters','bcbaEligibility','bcbaSupervisor','bcbaFieldwork','bcbaExam'];
+        const progress={...obj(state?.work?.rbt?.careerProgress),stage:value('stage'),targetDate:value('targetDate'),nextStep:value('nextStep'),notes:value('notes'),updatedAt:now};
+        keys.forEach(key=>{progress[key]=fields[key]==='on'});
+        state.work={...obj(state.work),rbt:{...obj(state.work?.rbt),careerProgress:progress}};
+        break;
+      }
       case'time':appendAtPath(state,'life.events',{id:itemId('event'),title:value('anchor')||'Schedule item',date:value('date')||today,startTime:value('startTime'),endTime:value('endTime'),location:value('location'),priority:value('priority'),area:value('area'),category:value('category'),notes:value('scheduleNotes'),createdAt:now});break;
       case'tasks':{if(!value('task'))return{ok:false,error:'Give the to-do a name first.'};const priorityMap={'Need to do today':'today','Should do soon':'soon','Whenever':'whenever','Idea':'idea',Today:'today',High:'high',Soon:'soon',Normal:'normal'};appendAtPath(state,'life.tasks',{id:itemId('task'),text:value('task'),title:value('task'),date:value('due'),dueDate:value('due'),priority:priorityMap[value('priority')]||value('priority').toLowerCase()||'normal',pile:value('priority'),area:value('area'),minutes:minutesFrom(value('timeEstimate')),location:value('location'),protected:value('protected').startsWith('Yes'),firstStep:value('firstStep'),notes:value('taskNotes'),done:false,createdAt:now});break;};
       case'mochini':state.mochini={...obj(state.mochini),life:{...obj(state.mochini?.life),mood:value('mood'),energy:value('energy'),help:value('help'),suggestions:value('suggestions'),topic:value('topic'),context:value('context'),boundary:value('boundary'),updatedAt:now}};break;
@@ -473,11 +491,12 @@ export function snapshotV4(){
   const state=readV4State();
   const today=localDateKey();
   if(!state){
-    return{found:false,today,clients:[],sessions:[],shifts:[],gigs:[],jobPaychecks:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
+    return{found:false,today,clients:[],sessions:[],sessionPlans:[],shifts:[],gigs:[],jobPaychecks:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
   }
 
   const clients=list(state?.work?.rbt?.clients);
   const sessions=list(state?.work?.rbt?.sessions);
+  const sessionPlans=list(state?.work?.rbt?.sessionPlans);
   const gigShifts=list(state?.work?.gigShifts);
   const shifts=[...list(state?.work?.shifts),...gigShifts];
   const isGigEarning=row=>{const kind=text(row?.kind||row?.incomeType||row?.type).toLowerCase(),source=text(row?.source||row?.platform||row?.incomeSource||row?.label||row?.name).toLowerCase().replace(/[^a-z]/g,'');return kind==='gig'||kind==='gigwork'||['doordash','shipt','ubereats','instacart','grubhub','spark'].includes(source)};
@@ -489,7 +508,7 @@ export function snapshotV4(){
   const waitingNotes=sessions.filter(row=>row?.status!=='canceled'&&row?.noteStatus!=='submitted').sort(sessionSort);
   const recentGigs=gigs.slice().sort((a,b)=>String(b?.date||'').localeCompare(String(a?.date||''))).slice(0,8);
 
-  return{found:true,today,state,clients,sessions,shifts,gigs,jobPaychecks,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
+  return{found:true,today,state,clients,sessions,sessionPlans,shifts,gigs,jobPaychecks,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }
 
 
@@ -497,7 +516,7 @@ const EDITABLE_RECORD_PATHS=new Set([
   'life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines',
   'v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins',
   'v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions',
-  'money.earnings','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.rbt.supervisors','insights.dayReviews'
+  'money.earnings','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.supervisors','insights.dayReviews'
 ]);
 
 function persistEditedState(state){
