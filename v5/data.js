@@ -27,7 +27,7 @@ const COLLECTION_PATHS=[
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
-  'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.notes','work.rbt.sessionNotes',
+  'work.items','work.shifts','work.gigShifts','work.gigGoals','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.notes','work.rbt.sessionNotes',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
@@ -331,6 +331,18 @@ export function saveV5Workspace(view,fields={}){
     switch(view){
       case'home':state.context={...obj(state.context),focus:value('focus'),capacity:value('capacity'),energy:value('energy'),location:value('location'),protected:value('protected'),nextStep:value('nextStep'),needs:value('needs'),note:value('homeNotes')};break;
       case'boss':if(!value('date'))return{ok:false,error:'Choose the date for the gig shift first.'};appendAtPath(state,'work.gigShifts',{id:itemId('gig'),source:value('source')||'Gig work',date:value('date'),startTime:value('startTime'),endTime:value('endTime'),targetAmount:Number(fields.targetAmount)||0,note:value('note'),status:'planned',createdAt:now});break;
+      case'gig-earning':{
+        if(!value('platform')||!(Number(fields.amount)>0)||!validDate(value('date')))return{ok:false,error:'Choose the app, date, and amount earned first.'};
+        const earningId=itemId('gig-earning'),amount=Number(fields.amount);
+        appendAtPath(state,'money.earnings',{id:earningId,label:value('platform'),platform:value('platform'),source:value('platform'),kind:'gig',amount,actualAmount:amount,receivedAmount:amount,received:true,status:'received',date:value('date'),receivedDate:value('date'),account:value('account')||'DoorDash',notes:value('note'),createdAt:now});
+        saveV5LedgerEntry({label:value('platform'),kind:'income',amount,date:value('date'),category:'Gig work',account:value('account')||'DoorDash',note:value('note'),sourceId:earningId,sourceType:'work.gig'});
+        break;
+      }
+      case'gig-goal':{
+        if(!value('name')||!(Number(fields.amount)>0))return{ok:false,error:'Give the goal a name and dollar amount first.'};
+        appendAtPath(state,'work.gigGoals',{id:itemId('gig-goal'),name:value('name'),amount:Number(fields.amount),period:value('period')||'weekly',platform:value('platform')||'All gig apps',startDate:value('startDate')||today,endDate:value('endDate'),note:value('note'),archived:false,createdAt:now});
+        break;
+      }
       case'rbt-client':{if(!value('code'))return{ok:false,error:'Use a client code or nickname first.'};const serviceDays=list(fields.serviceDays).map(day=>text(day)).filter(Boolean);appendAtPath(state,'work.rbt.clients',{id:itemId('rbt-client'),code:value('code'),setting:value('setting')||'Home',schedule:serviceDays.join(', ')||value('schedule'),serviceDays,supervisor:value('supervisor'),focus:value('focus'),reminders:value('reminders'),status:value('status')||'Active',createdAt:now});break;}
       case'rbt-supervisor':if(!value('name'))return{ok:false,error:'Add a supervisor name or initials first.'};appendAtPath(state,'work.rbt.supervisors',{id:itemId('rbt-supervisor'),name:value('name'),credential:value('credential')||'BCBA',availability:value('availability'),contact:value('contact'),notes:value('notes'),status:value('status')||'Active',createdAt:now});break;
       case'rbt-session':{
@@ -491,13 +503,14 @@ export function snapshotV4(){
   const state=readV4State();
   const today=localDateKey();
   if(!state){
-    return{found:false,today,clients:[],sessions:[],sessionPlans:[],shifts:[],gigs:[],jobPaychecks:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
+    return{found:false,today,clients:[],sessions:[],sessionPlans:[],shifts:[],gigs:[],gigGoals:[],jobPaychecks:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
   }
 
   const clients=list(state?.work?.rbt?.clients);
   const sessions=list(state?.work?.rbt?.sessions);
   const sessionPlans=list(state?.work?.rbt?.sessionPlans);
   const gigShifts=list(state?.work?.gigShifts);
+  const gigGoals=list(state?.work?.gigGoals);
   const shifts=[...list(state?.work?.shifts),...gigShifts];
   const isGigEarning=row=>{const kind=text(row?.kind||row?.incomeType||row?.type).toLowerCase(),source=text(row?.source||row?.platform||row?.incomeSource||row?.label||row?.name).toLowerCase().replace(/[^a-z]/g,'');return kind==='gig'||kind==='gigwork'||['doordash','shipt','ubereats','instacart','grubhub','spark'].includes(source)};
   const earnings=list(state?.money?.earnings).map(row=>({...row,_v5Amount:amountOfGig(row)}));
@@ -508,7 +521,7 @@ export function snapshotV4(){
   const waitingNotes=sessions.filter(row=>row?.status!=='canceled'&&row?.noteStatus!=='submitted').sort(sessionSort);
   const recentGigs=gigs.slice().sort((a,b)=>String(b?.date||'').localeCompare(String(a?.date||''))).slice(0,8);
 
-  return{found:true,today,state,clients,sessions,sessionPlans,shifts,gigs,jobPaychecks,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
+  return{found:true,today,state,clients,sessions,sessionPlans,shifts,gigs,gigGoals,jobPaychecks,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }
 
 
@@ -516,7 +529,7 @@ const EDITABLE_RECORD_PATHS=new Set([
   'life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines',
   'v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins',
   'v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions',
-  'money.earnings','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.supervisors','insights.dayReviews'
+  'money.earnings','work.gigShifts','work.gigGoals','work.shifts','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.supervisors','insights.dayReviews'
 ]);
 
 function persistEditedState(state){
