@@ -35,13 +35,14 @@ export function loadV5Ui(){
       view:text(parsed.view)||fallback.view,
       mode:['normal','tiny','power'].includes(parsed.mode)?parsed.mode:fallback.mode,
       sidebarOpen:false,
-      bossLane:parsed.bossLane==='gig'?'gig':'rbt'
+      bossLane:parsed.bossLane==='gig'?'gig':'rbt',
+      scheduleView:['day','week','calendar'].includes(parsed.scheduleView)?parsed.scheduleView:'day'
     };
   }catch{return fallback}
 }
 
 export function saveV5Ui(ui){
-  const safe={view:ui.view,mode:ui.mode,bossLane:ui.bossLane};
+  const safe={view:ui.view,mode:ui.mode,bossLane:ui.bossLane,scheduleView:ui.scheduleView};
   try{localStorage.setItem(V5_UI_KEY,JSON.stringify(safe))}catch{}
 }
 
