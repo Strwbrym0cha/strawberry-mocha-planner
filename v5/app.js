@@ -1,4 +1,4 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,snapshotV4,migrateV4ToV5,restoreCloudV4Data}from'./data.js?v=5.0.6-cloud-restore';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,removeV5LedgerEntry,snapshotV4,migrateV4ToV5,restoreCloudV4Data}from'./data.js?v=5.0.7-refresh-current-v4';
 import{renderBoss}from'./boss.js?v=5.0.0-preview.2';
 import{renderRoom}from'./rooms.js?v=5.0.0-official';
 
