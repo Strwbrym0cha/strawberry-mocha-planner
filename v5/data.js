@@ -2,6 +2,7 @@ const V4_KEY='sm_v4_beta';
 const V5_UI_KEY='sm_v5_preview_ui';
 const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
+const V5_LEDGER_KEY='sm_v5_money_ledger';
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -76,6 +77,42 @@ export function saveV5RoomDetail(room,fields){
     localStorage.setItem(V5_ROOM_DETAILS_KEY,JSON.stringify({...((details&&typeof details==='object')?details:{}),[room]:entry}));
   }catch(error){console.warn('KatOS V5 could not save this room detail.',error)}
   return entry;
+}
+
+function cents(value){return Math.round((Number(value)||0)*100)/100}
+
+export function loadV5Ledger(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem(V5_LEDGER_KEY)||'null');
+    if(Array.isArray(parsed))return{openingBalance:0,entries:parsed};
+    return{openingBalance:cents(parsed?.openingBalance),entries:list(parsed?.entries).filter(entry=>entry&&typeof entry==='object')};
+  }catch{return{openingBalance:0,entries:[]}}
+}
+
+export function saveV5LedgerEntry(fields){
+  const label=text(fields?.label||fields?.name),amount=Math.abs(Number(fields?.amount));
+  if(!label||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'Add a name and an amount first.'};
+  const kind=['income','expense','transfer'].includes(text(fields?.kind))?text(fields.kind):'expense';
+  const date=/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey();
+  const entry={id:`v5-ledger-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,label,amount:cents(amount),date,category:text(fields?.category)||'Other',account:text(fields?.account)||'General',toAccount:text(fields?.toAccount),note:text(fields?.note),createdAt:new Date().toISOString()};
+  const current=loadV5Ledger();
+  try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:[...current.entries,entry].slice(-500)}));return{ok:true,entry}}
+  catch(error){console.warn('KatOS V5 could not save this ledger entry.',error);return{ok:false,error:'This entry could not be saved.'}}
+}
+
+export function removeV5LedgerEntry(id){
+  const current=loadV5Ledger();
+  try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:current.entries.filter(entry=>String(entry?.id)!==String(id))}));return true}
+  catch(error){console.warn('KatOS V5 could not remove this ledger entry.',error);return false}
+}
+
+export function ledgerSummary(baseBalance=0,today=localDateKey()){
+  const entries=loadV5Ledger().entries.slice().sort((a,b)=>String(a?.date||'').localeCompare(String(b?.date||''))||String(a?.createdAt||'').localeCompare(String(b?.createdAt||'')));
+  const month=String(today).slice(0,7),monthEntries=entries.filter(entry=>String(entry?.date||'').startsWith(month));
+  const income=entries.filter(entry=>entry.kind==='income').reduce((sum,entry)=>sum+cents(entry.amount),0),expenses=entries.filter(entry=>entry.kind==='expense').reduce((sum,entry)=>sum+cents(entry.amount),0);
+  const incomeMonth=monthEntries.filter(entry=>entry.kind==='income').reduce((sum,entry)=>sum+cents(entry.amount),0),expenseMonth=monthEntries.filter(entry=>entry.kind==='expense').reduce((sum,entry)=>sum+cents(entry.amount),0);
+  const categories={};monthEntries.filter(entry=>entry.kind==='expense').forEach(entry=>{const key=text(entry.category)||'Other';categories[key]=cents((categories[key]||0)+Number(entry.amount||0))});
+  return{entries,monthEntries,income,expenses,net:cents(income-expenses),incomeMonth,expenseMonth,netMonth:cents(incomeMonth-expenseMonth),categories,available:cents(Number(baseBalance)+income-expenses)};
 }
 
 function amountOfGig(row){
