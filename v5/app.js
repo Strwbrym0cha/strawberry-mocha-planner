@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.15-record-editor-complete';
-import{renderBoss}from'./boss.js?v=5.0.15-record-editor-complete';
-import{renderRoom}from'./rooms.js?v=5.0.15-record-editor-complete';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.16-money-backbone';
+import{renderBoss}from'./boss.js?v=5.0.16-money-backbone';
+import{renderRoom}from'./rooms.js?v=5.0.16-money-backbone';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
