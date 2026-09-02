@@ -405,7 +405,7 @@ export function billPaidForCycle(row,today=localDateKey()){
   return /^\d{4}-\d{2}/.test(dated)?dated.slice(0,7)===cycle:cycle===localMonth(today);
 }
 export function subscriptionPaidForCycle(row,today=localDateKey()){
-  const paidAt=text(row?.lastChargedAt||row?.paidAt||row?.updatedAt);
+  const paidAt=text(row?.lastChargedAt||row?.paidAt);
   return /^\d{4}-\d{2}/.test(paidAt)&&paidAt.slice(0,7)===localMonth(today);
 }
 function scheduledMoney(state,today){
