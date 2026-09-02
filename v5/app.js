@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,reconcileV5Ledger,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.30-rbt-home-base';
-import{renderBoss}from'./boss.js?v=5.0.30-rbt-home-base';
-import{renderRoom}from'./rooms.js?v=5.0.30-rbt-home-base';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,reconcileV5Ledger,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.31-rbt-service-days';
+import{renderBoss}from'./boss.js?v=5.0.31-rbt-service-days';
+import{renderRoom}from'./rooms.js?v=5.0.31-rbt-service-days';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
@@ -69,11 +69,21 @@ function recordField(path,key,value){
   const long=/(notes?|what|helped|hard|win|focus|context|why|proof|boundary|steps|thought|description|plan)/i.test(key)||String(value||'').length>80;
   return long?`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="3">${esc(value??'')}</textarea></label>`:`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="text" value="${esc(value??'')}"></label>`;
 }
+const RBT_SERVICE_DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function inferredRbtServiceDays(record){
+  if(Array.isArray(record?.serviceDays)&&record.serviceDays.length)return record.serviceDays.filter(day=>RBT_SERVICE_DAYS.includes(day));
+  const raw=String(record?.schedule||'').toLowerCase().replace(/[–—]/g,'-');
+  if(/m(on)?\s*-\s*(thur|thu|thursday)/.test(raw))return['Mon','Tue','Wed','Thu'];
+  if(/m(on)?\s*-\s*(fri|friday)/.test(raw)||raw==='m-f')return['Mon','Tue','Wed','Thu','Fri'];
+  const aliases={Mon:['mon','monday'],Tue:['tue','tues','tuesday'],Wed:['wed','wednesday'],Thu:['thu','thur','thurs','thursday'],Fri:['fri','friday'],Sat:['sat','saturday'],Sun:['sun','sunday']};
+  return RBT_SERVICE_DAYS.filter(day=>aliases[day].some(alias=>new RegExp('(^|[^a-z])'+alias+'([^a-z]|$)').test(raw)));
+}
+function rbtServiceDaysField(record){const chosen=inferredRbtServiceDays(record);return`<label class="daily-field daily-field-wide"><span>Service days</span><div class="button-row" style="gap:7px;flex-wrap:wrap">${RBT_SERVICE_DAYS.map(day=>`<label class="btn soft" style="padding:8px 11px"><input type="checkbox" name="serviceDays" value="${day}"${chosen.includes(day)?' checked':''}> ${day}</label>`).join('')}</div></label>`}
 function openRecordEditor(path,record){
   if(!record?.id)return;
   app.querySelector('[data-record-modal]')?.remove();
   const title=record.title||record.text||record.name||record.label||'Saved entry';
-  const fields=Object.keys(record).filter(key=>!(key==='due'&&record.dueDate)).sort((a,b)=>a==='id'?-1:b==='id'?1:a.localeCompare(b)).map(key=>recordField(path,key,record[key])).join('');
+  const clientDays=path==='work.rbt.clients'?rbtServiceDaysField(record):'';const fields=Object.keys(record).filter(key=>!(key==='due'&&record.dueDate)&&!(path==='work.rbt.clients'&&['schedule','serviceDays'].includes(key))).sort((a,b)=>a==='id'?-1:b==='id'?1:a.localeCompare(b)).map(key=>recordField(path,key,record[key])).join('')+clientDays;
   app.insertAdjacentHTML('beforeend',`<div class="detail-modal-backdrop" data-record-modal><section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="record-editor-title"><div class="detail-modal-head"><div><div class="ey">🍓 SAVED ENTRY</div><h2 id="record-editor-title">${esc(title)}</h2><p>Edit every detail that was saved with this entry, or archive it when you are done with it.</p></div><button type="button" class="detail-modal-close" data-record-close aria-label="Close editor">×</button></div><form class="room-detail-form" data-record-edit data-record-path="${esc(path)}" data-record-id="${esc(record.id)}"><div class="room-detail-fields">${fields}</div><div class="button-row daily-actions"><button type="submit" class="btn primary">🍓 Save changes</button><button type="button" class="btn soft" data-record-archive>📦 Archive entry</button><button type="button" class="btn soft" data-record-close>Close</button></div></form></section></div>`);
   app.querySelector('[data-record-modal] input:not([readonly]),[data-record-modal] textarea:not([readonly]),[data-record-modal] select:not([disabled])')?.focus();
 }
@@ -86,6 +96,7 @@ function recordFormValues(form){
     else if(value==='true'||value==='false')fields[key]=value==='true';
     else fields[key]=value;
   });
+  if(form.dataset.recordPath==='work.rbt.clients'){const days=[...form.querySelectorAll('[name="serviceDays"]:checked')].map(input=>input.value);fields.serviceDays=days;fields.schedule=days.join(', ');}
   return fields;
 }
 const DAILY_NOTE_SELECTS={mood:['Great','Good','Okay','Low','Overwhelmed'],sleepHours:['Under 4 hours','4–5 hours','6–7 hours','7–8 hours','8+ hours','Not sure'],sleepQuality:['Restless','Meh','Okay','Good','Really good'],energy:['Very low','Low','Medium','Good','High'],stress:['None','Low','Medium','High','Very high'],meds:['Taken','Need to take later','Skipped','Not applicable'],food:['Ate regularly','Ate something','Need something easy','Not sure yet'],movement:['Rest day','Gentle movement','Workout','Lots of movement'],social:['Needed quiet','A little connection','Social day','Social battery low']};
@@ -124,7 +135,7 @@ app.addEventListener('click',event=>{
 app.addEventListener('keydown',event=>{if(event.key==='Escape'){app.querySelectorAll('[data-detail-modal]:not([hidden])').forEach(modal=>modal.setAttribute('hidden',''))}});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-record-edit]');if(!form||!app.contains(form))return;event.preventDefault();const result=updateV5Record(form.dataset.recordPath,form.dataset.recordId,recordFormValues(form));if(!result.ok){window.alert(result.error||'That entry could not be saved.');return}render()});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-daily-note-form]');if(!form||!app.contains(form))return;event.preventDefault();const fields=Object.fromEntries(new FormData(form));saveV5DailyNote(fields);const result=saveV5Workspace('review',fields);if(!result.ok)window.alert(result.error||'Your daily note could not be saved.');render()});
-app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();const fields=Object.fromEntries(new FormData(form));saveV5RoomDetail(form.dataset.roomDetail,fields);const view=form.dataset.roomDetail;const result=view==='money'?saveV5LedgerEntry({label:fields.entry,kind:{Spending:'expense',Income:'income',Transfer:'transfer',Bill:'expense',Savings:'transfer'}[fields.kind]||'expense',amount:fields.amount,date:fields.date,category:fields.category,account:fields.account,toAccount:fields.toAccount,note:fields.moneyNotes}):saveV5Workspace(view,fields);if(!result.ok){window.alert(result.error||'That could not be saved.');return}render()});
+app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();const formData=new FormData(form),fields=Object.fromEntries(formData);if(form.dataset.roomDetail==='rbt-client')fields.serviceDays=formData.getAll('serviceDays');saveV5RoomDetail(form.dataset.roomDetail,fields);const view=form.dataset.roomDetail;const result=view==='money'?saveV5LedgerEntry({label:fields.entry,kind:{Spending:'expense',Income:'income',Transfer:'transfer',Bill:'expense',Savings:'transfer'}[fields.kind]||'expense',amount:fields.amount,date:fields.date,category:fields.category,account:fields.account,toAccount:fields.toAccount,note:fields.moneyNotes}):saveV5Workspace(view,fields);if(!result.ok){window.alert(result.error||'That could not be saved.');return}render()});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-money-ledger-form]');if(!form||!app.contains(form))return;event.preventDefault();const result=saveV5LedgerEntry(Object.fromEntries(new FormData(form)));if(result.ok)render();else{const error=form.querySelector('.ledger-error');if(error)error.textContent=result.error}});
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-ledger-reconcile-form]');if(!form||!app.contains(form))return;event.preventDefault();const result=reconcileV5Ledger(new FormData(form).get('actualBalance'));if(!result.ok){window.alert(result.error||'Your balance could not be reconciled.');return}render();});
 app.addEventListener('change',event=>{const input=event.target.closest?.('[data-v4-export-file]');const file=input?.files?.[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{const result=importV4Export(String(reader.result||''));if(result.ok){window.alert(`Your V4 export is now loaded in V5 (${Number(result.counts?.total)||0} planner records).`);location.reload()}else window.alert(result.error||'That export could not be loaded.');};reader.readAsText(file);input.value=''});
