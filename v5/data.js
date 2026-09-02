@@ -270,7 +270,8 @@ export function loadV5DailyNote(day=localDateKey()){
 }
 
 export function saveV5DailyNote(fields){
-  const entry={...fields,date:localDateKey(),updatedAt:new Date().toISOString()};
+  const selectedDate=/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey();
+  const entry={...fields,date:selectedDate,updatedAt:new Date().toISOString()};
   try{
     const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==entry.date);
     entries.push(entry);
@@ -331,7 +332,7 @@ export function saveV5Workspace(view,fields={}){
       case'money-gig':if(!value('date'))return{ok:false,error:'Choose a date for the gig shift first.'};appendAtPath(state,'work.gigShifts',{id:itemId('gig'),source:value('source')||'Gig work',date:value('date'),startTime:value('startTime'),endTime:value('endTime'),targetAmount:Number(fields.targetAmount)||0,note:value('note'),status:'planned',createdAt:now});break;
       case'money-income':if(!value('label'))return{ok:false,error:'Name the income first.'};appendAtPath(state,'money.earnings',{id:itemId('income'),label:value('label'),employer:value('employer'),kind:value('kind')||'paycheck',expectedAmount:Number(fields.amount)||0,expectedDate:value('date')||today,frequency:value('frequency'),status:'expected',createdAt:now});break;
       case'settings':state.profile={...obj(state.profile),preferences:{...obj(state.profile?.preferences),v5:{...fields,updatedAt:now}}};break;
-      case'review':{const reviews=list(state.insights?.dayReviews),entry={...fields,id:reviews.find(row=>text(row?.date)===today)?.id||itemId('review'),date:today,happened:value('whatHappened'),helped:value('whatHelped'),hard:value('whatWasHard'),proud:value('win'),tomorrow:value('tomorrowFocus'),updatedAt:now,createdAt:reviews.find(row=>text(row?.date)===today)?.createdAt||now};setAtPath(state,'insights.dayReviews',[...reviews.filter(row=>text(row?.date)!==today),entry]);break}
+      case'review':{const reviewDate=/^\d{4}-\d{2}-\d{2}$/.test(value('date'))?value('date'):today,reviews=list(state.insights?.dayReviews),existingReview=reviews.find(row=>text(row?.date)===reviewDate),entry={...fields,id:existingReview?.id||itemId('review'),date:reviewDate,happened:value('whatHappened'),helped:value('whatHelped'),hard:value('whatWasHard'),proud:value('win'),tomorrow:value('tomorrowFocus'),updatedAt:now,createdAt:existingReview?.createdAt||now};setAtPath(state,'insights.dayReviews',[...reviews.filter(row=>text(row?.date)!==reviewDate),entry]);break}
       default:return{ok:true};
     }
     state.meta={...obj(state.meta),updatedAt:now};
@@ -533,7 +534,6 @@ export function openV5DayReview(date){
     if(existing)return{ok:true,record:existing};
     const now=new Date().toISOString();
     const record={id:itemId('review'),date,mood:'',sleepHours:'',sleepQuality:'',energy:'',stress:'',meds:'',food:'',movement:'',social:'',whatHappened:'',whatHelped:'',whatWasHard:'',win:'',tomorrowFocus:'',notes:'',createdAt:now,updatedAt:now};
-    appendAtPath(state,'insights.dayReviews',record);persistEditedState(state);
-    return{ok:true,record};
+    return{ok:true,record,isNew:true};
   }catch{return{ok:false,error:'That day review could not be opened.'}}
 }
