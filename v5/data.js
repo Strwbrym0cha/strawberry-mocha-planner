@@ -89,7 +89,7 @@ function mergeImportedDailyNotes(state){
     date:text(row.date),mood:text(row.mood),sleepHours:text(row.sleepHours),sleepQuality:text(row.sleepQuality),energy:text(row.energy),stress:text(row.stress),meds:text(row.meds),food:text(row.food),movement:text(row.movement),social:text(row.social),whatHappened:text(row.happened||row.whatHappened),whatHelped:text(row.helped||row.whatHelped),whatWasHard:text(row.hard||row.whatWasHard),win:text(row.proud||row.win),tomorrowFocus:text(row.tomorrow||row.tomorrowFocus),notes:text(row.notes),updatedAt:text(row.updatedAt||row.createdAt)||new Date().toISOString(),source:'v4-migration'
   }));
   if(!source.length)return 0;
-  let existing=[];try{existing=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')}catch{}
+  let existing=[];try{existing=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]'))}catch{}
   const byDate=new Map(existing.map(note=>[text(note?.date),note]));let added=0;
   source.forEach(note=>{if(!byDate.has(note.date)){byDate.set(note.date,note);added++}});
   if(!added)return 0;
