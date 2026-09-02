@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,billCycleDate,billPaidForCycle,subscriptionPaidForCycle}from'./data.js?v=5.0.27-ledger-reconcile';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,billCycleDate,billPaidForCycle,subscriptionPaidForCycle}from'./data.js?v=5.0.28-paid-safe';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
