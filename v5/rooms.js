@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo}from'./data.js?v=5.0.20-section-actions';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,billCycleDate,billPaidForCycle}from'./data.js?v=5.0.22-monthly-bills';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -18,7 +18,7 @@ function dateTimeKey(row){return`${dateOf(row)}T${timeOf(row)||'99:99'}`}
 function formatDate(value){if(!value)return'No date';const d=new Date(`${String(value).slice(0,10)}T12:00:00`);return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})}
 function formatTime(value){if(!value)return'';const [h,m]=String(value).split(':').map(Number);if(!Number.isFinite(h))return String(value);const d=new Date();d.setHours(h,m||0,0,0);return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
 function currentMonth(today){return String(today||'').slice(0,7)}
-function billIsCurrentMonth(bill,today){if(bill?.paid===true)return false;const month=currentMonth(today),due=text(bill?.dueDate)||text(bill?.due);if(/^\d{4}-\d{2}-\d{2}$/.test(due))return due.slice(0,7)===month;return Number(bill?.dueDay)>0}
+function billIsCurrentMonth(bill,today){return!billPaidForCycle(bill,today)&&billCycleDate(bill,today).slice(0,7)===currentMonth(today)}
 function amountOf(row){return Number(row?.balance??row?.currentBalance??row?.amount??row?.value??0)||0}
 function taskPriority(row,today){if(row?.protected)return 100;const date=dueDateOf(row);if(date&&date<today)return 80;if(date===today)return 70;const priority=text(row?.priority).toLowerCase();return{today:60,high:55,soon:40,normal:25,whenever:10,idea:0}[priority]??20}
 function topTasks(state,today,limit=5){return rows(state,'life.tasks').filter(row=>!isDone(row)).sort((a,b)=>taskPriority(b,today)-taskPriority(a,today)).slice(0,limit)}
@@ -57,7 +57,7 @@ const ROOM_DETAILS={
 
 Object.assign(ROOM_DETAILS,{
   'money-account':{title:'Add an account',lede:'Name the account and its current balance so Money Café can include it.',fields:[['name','Account name','text'],['type','Account type','select',['Checking','Savings','Cash','Credit card','Other']],['balance','Current balance','number'],['note','Anything useful to remember?','textarea']]},
-  'money-bill':{title:'Add a bill',lede:'Save the amount, due date, and category so it stays connected to the ledger.',fields:[['name','Bill name','text'],['amount','Amount','number'],['dueDay','Due day of month','number'],['dueDate','Next due date','date'],['category','Category','select',['Rent','Utilities','Phone & internet','Insurance','Debt','Subscription','Other']],['repeat','How often?','select',['Monthly','Weekly','Yearly','One time']]]},
+  'money-bill':{title:'Add a bill',lede:'Set the day it repeats each month. Money Café will make a fresh unpaid bill cycle every new month.',fields:[['name','Bill name','text'],['amount','Amount','number'],['dueDay','Due day each month','select',Array.from({length:31},(_,index)=>String(index+1))],['dueDate','First/next due date (optional)','date'],['category','Category','select',['Rent','Utilities','Phone & internet','Insurance','Debt','Subscription','Other']],['repeat','How often?','select',['Monthly','Weekly','Every two weeks','Yearly','One time']]]},
   'money-subscription':{title:'Add a subscription',lede:'Save the recurring charge where it belongs, then log it to the ledger when it hits.',fields:[['name','Subscription name','text'],['amount','Amount','number'],['cycle','How often?','select',['monthly','weekly','yearly','other']],['dueDay','Charge day of month','number'],['nextCharge','Next charge date','date'],['category','Category','select',['Subscription','Entertainment','Work','Health','Cats','Shopping','Other']],['notes','Notes','textarea']]},
   'money-savings':{title:'Add a savings goal',lede:'Give the goal a number and a reason so it stays visible without taking over.',fields:[['name','Goal name','text'],['target','Goal amount','number'],['amount','Already saved','number'],['category','Goal category','select',['Emergency fund','Move','Car','Travel','Fun','Other']],['targetDate','Target date','date'],['note','Why it matters','textarea']]},
   'money-income':{title:'Add expected income',lede:'Add a paycheck or other expected income. Mark it received when it actually lands.',fields:[['label','Income name','text'],['employer','From who?','text'],['kind','Income type','select',['paycheck','gig','refund','other']],['amount','Expected amount','number'],['date','Expected date','date'],['frequency','How often?','select',['One time','Weekly','Biweekly','Monthly','Other']]]},
