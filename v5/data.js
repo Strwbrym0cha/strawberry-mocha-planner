@@ -25,13 +25,13 @@ const unwrapState=value=>{
 const COLLECTION_PATHS=[
   'life.inbox','life.tasks','life.reminders','life.routines','life.routineInstances','life.events','life.threads',
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
-  'movement.sessions','movement.routines','movement.videos','movement.weighIns',
+  'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
-  'work.items','work.shifts','work.training','work.career',
+  'work.items','work.shifts','work.training','work.career','work.rbt.clients','work.rbt.sessions','work.rbt.notes',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
-  'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans','v4.archive'
+  'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans','v4.archive','v4.patterns'
 ];
 
 function pathValue(source,path){return path.split('.').reduce((value,key)=>value?.[key],source)}
@@ -43,6 +43,11 @@ function stateCounts(state){
   return counts;
 }
 function hasUserContent(state){return stateCounts(state).total>0}
+function shouldRefreshFromV4(migrated,v4){
+  if(!v4)return false;
+  if(!migrated)return true;
+  return stateCounts(v4).total>stateCounts(migrated).total;
+}
 function parseStored(raw){try{return raw?unwrapState(JSON.parse(raw)):null}catch{return null}}
 function readReceipt(){try{const value=JSON.parse(localStorage.getItem(V5_MIGRATION_KEY)||'null');return value&&typeof value==='object'?value:null}catch{return null}}
 function writeReceipt(receipt){try{localStorage.setItem(V5_MIGRATION_KEY,JSON.stringify(receipt))}catch{}}
@@ -160,7 +165,11 @@ export function readV4State(){
     const migrated=candidateFromKey(V5_DATA_KEY);
     const current=bestLegacyCandidate();
     const v4=current?.state;
-    if(v4&&(!migrated?.state||(!hasUserContent(migrated.state)&&hasUserContent(v4)))){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'repair');return v4}
+    if(v4&&shouldRefreshFromV4(migrated?.state,v4)){
+      if(migrated?.raw){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,migrated.raw)}catch{}}
+      saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,migrated?.state?'refresh':'repair');
+      return v4;
+    }
     if(migrated?.state){
       const ledgerImported=mergeImportedLedger(migrated.state),dailyNotesImported=mergeImportedDailyNotes(migrated.state);
       if(!readReceipt())writeReceipt({version:2,sourceKey:V5_DATA_KEY,reason:'repair',importedAt:new Date().toISOString(),sourceUpdatedAt:sourceDate(migrated.state),counts:stateCounts(migrated.state),ledgerImported,dailyNotesImported,backupKey:V4_BACKUP_KEY});
