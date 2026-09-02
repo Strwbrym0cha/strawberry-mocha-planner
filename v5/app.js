@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,snapshotV4}from'./data.js?v=5.0.0-preview.2';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,snapshotV4}from'./data.js?v=5.0.7-detailed-daily-note';
 import{renderBoss}from'./boss.js?v=5.0.0-preview.2';
-import{renderRoom}from'./rooms.js?v=5.0.0-preview.2';
+import{renderRoom}from'./rooms.js?v=5.0.7-detailed-daily-note';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
@@ -27,4 +27,5 @@ app.addEventListener('click',event=>{
   const action=event.target.closest?.('[data-action]');if(action&&app.contains(action)){if(action.dataset.action==='toggle-sidebar')ui.sidebarOpen=!ui.sidebarOpen;if(action.dataset.action==='close-sidebar')ui.sidebarOpen=false;render();return}
   const focus=event.target.closest?.('[data-focus]');if(focus&&app.contains(focus)){const target=focus.dataset.focus==='clients'?app.querySelector('#v5-client-roster'):app.querySelector('#v5-note-queue');target?.scrollIntoView({behavior:'smooth',block:'start'})}
 });
+app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-daily-note-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5DailyNote(Object.fromEntries(new FormData(form)));render()});
 render();
