@@ -27,11 +27,13 @@ const COLLECTION_PATHS=[
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
-  'work.items','work.shifts','work.training','work.career','work.rbt.clients','work.rbt.sessions','work.rbt.notes',
+  'work.items','work.shifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
-  'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans','v4.archive','v4.patterns'
+  'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans','v4.archive','v4.patterns','v4.energyBlocks',
+  'tasks','routines','events','reminders','habits','projects','goals','wins','courses','schoolTasks','workItems','brainNotes','priorities',
+  'money.income','money.expenses','money.subscriptions','money.budgets','noms.foods','noms.pantry','noms.groceries','dayNotes','history'
 ];
 
 function pathValue(source,path){return path.split('.').reduce((value,key)=>value?.[key],source)}
