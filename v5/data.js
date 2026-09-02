@@ -395,3 +395,89 @@ export function snapshotV4(){
 
   return{found:true,today,state,clients,sessions,shifts,gigs,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }
+
+
+const EDITABLE_RECORD_PATHS=new Set([
+  'life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines',
+  'v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins',
+  'v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions',
+  'money.earnings','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','insights.dayReviews'
+]);
+
+function persistEditedState(state){
+  const now=new Date().toISOString();
+  state.meta={...obj(state.meta),updatedAt:now};
+  const existing=localStorage.getItem(V4_KEY)||'';
+  let envelope={data:state};
+  try{const parsed=JSON.parse(existing);if(parsed?.data&&typeof parsed.data==='object')envelope={...parsed,data:state}}catch{}
+  const raw=JSON.stringify(envelope);
+  localStorage.setItem(V4_KEY,raw);
+  saveImportedState(state,raw,V4_KEY,'v5-record-edit');
+  return state;
+}
+
+export function updateV5LedgerEntry(id,fields={}){
+  const current=loadV5Ledger(),index=current.entries.findIndex(entry=>String(entry?.id)===String(id));
+  if(index<0)return{ok:false,error:'That ledger entry could not be found.'};
+  const existing=current.entries[index];
+  const amount=fields.amount===undefined?existing.amount:Math.abs(Number(fields.amount));
+  if(!text(fields.label??existing.label)||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'A ledger entry needs a name and amount.'};
+  const entry={...existing,...fields,id:existing.id,amount:cents(amount),updatedAt:new Date().toISOString()};
+  try{
+    const entries=current.entries.slice();entries[index]=entry;
+    localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries}));
+    return{ok:true,record:entry};
+  }catch{return{ok:false,error:'That ledger entry could not be updated.'}}
+}
+
+export function updateV5Record(path,id,fields={}){
+  if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
+  if(!EDITABLE_RECORD_PATHS.has(path))return{ok:false,error:'That kind of entry cannot be edited here yet.'};
+  try{
+    const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
+    const collection=list(pathValue(state,path)),index=collection.findIndex(row=>String(row?.id)===String(id));
+    if(index<0)return{ok:false,error:'That saved entry could not be found.'};
+    const old=obj(collection[index]);
+    const record={...old,...fields,id:old.id,createdAt:old.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+    const next=collection.slice();next[index]=record;setAtPath(state,path,next);persistEditedState(state);
+    return{ok:true,record};
+  }catch{return{ok:false,error:'That entry could not be updated. Your existing data is still safe.'}}
+}
+
+export function archiveV5Record(path,id){
+  try{
+    if(path==='v5.ledger'){
+      const current=loadV5Ledger(),index=current.entries.findIndex(row=>String(row?.id)===String(id));
+      if(index<0)return{ok:false,error:'That ledger entry could not be found.'};
+      const item=current.entries[index],entries=current.entries.filter((_,rowIndex)=>rowIndex!==index);
+      localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries}));
+      const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
+      appendAtPath(state,'v4.archive',{id:itemId('archive'),kind:'v5.ledger',originalId:item.id,title:item.label||'Ledger entry',data:item,archivedAt:new Date().toISOString()});
+      persistEditedState(state);return{ok:true};
+    }
+    if(!EDITABLE_RECORD_PATHS.has(path)||path==='v4.archive')return{ok:false,error:'This entry cannot be archived here.'};
+    const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
+    const collection=list(pathValue(state,path)),index=collection.findIndex(row=>String(row?.id)===String(id));
+    if(index<0)return{ok:false,error:'That saved entry could not be found.'};
+    const item=collection[index],next=collection.filter((_,rowIndex)=>rowIndex!==index);
+    setAtPath(state,path,next);
+    appendAtPath(state,'v4.archive',{id:itemId('archive'),kind:path,originalId:item.id,title:rowTitleForArchive(item),data:item,archivedAt:new Date().toISOString()});
+    persistEditedState(state);return{ok:true};
+  }catch{return{ok:false,error:'That entry could not be archived. Your existing data is still safe.'}}
+}
+
+function rowTitleForArchive(row){return text(row?.title)||text(row?.text)||text(row?.name)||text(row?.label)||'Archived entry'}
+
+export function openV5DayReview(date){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(text(date)))return{ok:false,error:'Choose a valid calendar date.'};
+  try{
+    const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
+    const reviews=list(pathValue(state,'insights.dayReviews'));
+    const existing=reviews.find(row=>text(row?.date)===date);
+    if(existing)return{ok:true,record:existing};
+    const now=new Date().toISOString();
+    const record={id:itemId('review'),date,mood:'',sleepHours:'',sleepQuality:'',energy:'',stress:'',meds:'',food:'',movement:'',social:'',whatHappened:'',whatHelped:'',whatWasHard:'',win:'',tomorrowFocus:'',notes:'',createdAt:now,updatedAt:now};
+    appendAtPath(state,'insights.dayReviews',record);persistEditedState(state);
+    return{ok:true,record};
+  }catch{return{ok:false,error:'That day review could not be opened.'}}
+}
