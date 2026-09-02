@@ -1,5 +1,6 @@
 const V4_KEY='sm_v4_beta';
 const V5_UI_KEY='sm_v5_preview_ui';
+const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -40,6 +41,23 @@ export function loadV5Ui(){
 export function saveV5Ui(ui){
   const safe={view:ui.view,mode:ui.mode,bossLane:ui.bossLane};
   try{localStorage.setItem(V5_UI_KEY,JSON.stringify(safe))}catch{}
+}
+
+export function loadV5DailyNote(day=localDateKey()){
+  try{
+    const entries=JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]');
+    return list(entries).find(entry=>text(entry?.date)===day)||null;
+  }catch{return null}
+}
+
+export function saveV5DailyNote(fields){
+  const entry={...fields,date:localDateKey(),updatedAt:new Date().toISOString()};
+  try{
+    const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==entry.date);
+    entries.push(entry);
+    localStorage.setItem(V5_DAILY_NOTES_KEY,JSON.stringify(entries.slice(-180)));
+  }catch(error){console.warn('KatOS V5 could not save this daily note.',error)}
+  return entry;
 }
 
 function amountOfGig(row){
