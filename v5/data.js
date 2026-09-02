@@ -46,7 +46,10 @@ function hasUserContent(state){return stateCounts(state).total>0}
 function shouldRefreshFromV4(migrated,v4){
   if(!v4)return false;
   if(!migrated)return true;
-  return stateCounts(v4).total>stateCounts(migrated).total;
+  const incoming=stateCounts(v4),existing=stateCounts(migrated);
+  if(incoming.total>existing.total)return true;
+  const incomingDate=Date.parse(sourceDate(v4)),existingDate=Date.parse(sourceDate(migrated));
+  return Number.isFinite(incomingDate)&&Number.isFinite(existingDate)&&incomingDate>existingDate&&incoming.total>=existing.total;
 }
 function parseStored(raw){try{return raw?unwrapState(JSON.parse(raw)):null}catch{return null}}
 function readReceipt(){try{const value=JSON.parse(localStorage.getItem(V5_MIGRATION_KEY)||'null');return value&&typeof value==='object'?value:null}catch{return null}}
