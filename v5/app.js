@@ -1,14 +1,15 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.24-job-pay';
-import{renderBoss}from'./boss.js?v=5.0.24-job-pay';
-import{renderRoom}from'./rooms.js?v=5.0.24-job-pay';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.25-schedule-notes';
+import{renderBoss}from'./boss.js?v=5.0.25-schedule-notes';
+import{renderRoom}from'./rooms.js?v=5.0.25-schedule-notes';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
 ui.scheduleView=ui.scheduleView||'day';
+if(ui.view==='review')ui.view='time';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 const NAV=[['',[
-  ['home','🌸','Home'],['time','🗓️','Schedule'],['boss','💼','Boss Bitch'],['money','☕','Money Café'],['tasks','😩','To-dos'],['mochini','🍡','Mochini'],['pings','🚨','Little Pings'],['review','🪷','Daily note'],
+  ['home','🌸','Home'],['time','🗓️','Schedule'],['boss','💼','Boss Bitch'],['money','☕','Money Café'],['tasks','😩','To-dos'],['mochini','🍡','Mochini'],['pings','🚨','Little Pings'],
   ['routines','🍓','Routines'],['motion','🌿','Get movin'],['people','💕','My loves'],['hobbies','🎨','Hobby Shelf'],
   ['study','🎓','Study Nook'],
   ['growth','🌱','Growth'],['dump','🧠','Brain dump'],['archive','📦','Memory Box'],['settings','⚙️','Settings']
@@ -26,7 +27,9 @@ function optionsFor(path,key,value){
   const byField={
     'life.tasks.priority':['Today','High','Soon','Normal','Whenever','Idea'],
     'life.tasks.pile':['Need to do today','Should do soon','Whenever','Idea'],
-    'life.tasks.area':LIFE_AREAS,'life.events.area':LIFE_AREAS,'life.events.category':['Appointment','Work shift','School','Errand','Personal','Rest','Social','Other'],
+    'life.tasks.area':LIFE_AREAS,'life.events.area':LIFE_AREAS,'life.events.category':['Appointment','Work shift','School','Errand','Personal','Rest','Social','Other'],'life.events.type':['Birthday','Anniversary','Appointment','Work shift','School','Errand','Personal','Rest','Social','Other'],'life.events.repeat':['Never','Daily','Weekly','Monthly','Yearly'],
+    'work.rbt.clients.schedule':['M–F','Mon/Wed/Fri','Tue/Thu','Weekends','As needed'],'work.rbt.clients.setting':['Home','Clinic','School','Community','Telehealth'],'work.rbt.clients.status':['Active','Paused','Waitlist','Closed'],
+    'v5.ledger.account':['General','Capital One','Chase','Navy Federal','Cash','Savings'],'v5.ledger.toAccount':['General','Capital One','Chase','Navy Federal','Cash','Savings'],'v5.ledger.category':MONEY_CATEGORIES,'v5.ledger.kind':['expense','income','transfer'],'v5.ledger.sourceType':['money.bills','money.subscriptions','money.earnings','work.gigShifts','manual'],
     'life.reminders.category':LIFE_AREAS,'life.reminders.urgency':['Right now','Today','This week','Eventually','Just in case'],'life.reminders.timing':['Morning','Afternoon','Evening','A specific date','No preference'],'life.reminders.repeat':['Once','Daily','Weekly','Monthly','Never'],
     'life.routines.category':['Home','Health & wellness','Cats','Work','Education','Haircare','Other'],'life.routines.daypart':['Morning','Midday','Afternoon','Evening','Whenever'],'life.routines.recurrence':['daily','weekdays','selected','weekly','as-needed'],
     'movement.sessions.category':['Recovery','Mobility','Cardio','Strength','Pilates','Outside','Other'],'movement.sessions.effort':['Very gentle','Gentle','Moderate','Challenging','Not sure'],
@@ -48,7 +51,7 @@ function optionsFor(path,key,value){
   const current=String(value??'');if(choices.length&&current&&!choices.includes(current))choices=[current,...choices];
   return choices;
 }
-const RECORD_META=new Set(['id','createdAt','updatedAt','archivedAt','originalId']);
+const RECORD_META=new Set(['id','createdAt','updatedAt','archivedAt','originalId','sourceId']);
 const DATE_KEY=/^(date|due|dueDate|nextCharge|expectedDate|receivedDate|lastPaidAt|lastPaidDueDate|lastChargedAt|completedAt|targetDate|scheduledFor|startDate|endDate)$/i;
 const NUMBER_KEY=/(amount|balance|target|dueDay|minutes|hours|rate|price|total|saved|income|cost|debt)/i;
 const dateValue=value=>{const match=String(value??'').match(/^\d{4}-\d{2}-\d{2}/);return match?match[0]:''};
@@ -58,9 +61,9 @@ function recordField(path,key,value){
   if(value&&typeof value==='object')return`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="4" data-json>${esc(JSON.stringify(value,null,2))}</textarea></label>`;
   if(typeof value==='boolean')return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}"><option value="true"${value?' selected':''}>Yes</option><option value="false"${!value?' selected':''}>No</option></select></label>`;
   if(DATE_KEY.test(key))return`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="date" value="${esc(dateValue(value))}"></label>`;
-  if(typeof value==='number'||NUMBER_KEY.test(key))return`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="number" step="${/dueDay|minutes|hours/i.test(key)?'1':'0.01'}" value="${esc(value??'')}"></label>`;
   const choices=optionsFor(path,key,value);
   if(choices.length)return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}"><option value="">Choose one</option>${choices.map(choice=>`<option value="${esc(choice)}"${String(value??'')===choice?' selected':''}>${esc(choice)}</option>`).join('')}</select></label>`;
+  if(typeof value==='number'||NUMBER_KEY.test(key))return`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="number" step="${/dueDay|minutes|hours/i.test(key)?'1':'0.01'}" value="${esc(value??'')}"></label>`;
   const long=/(notes?|what|helped|hard|win|focus|context|why|proof|boundary|steps|thought|description|plan)/i.test(key)||String(value||'').length>80;
   return long?`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="3">${esc(value??'')}</textarea></label>`:`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="text" value="${esc(value??'')}"></label>`;
 }
@@ -83,6 +86,12 @@ function recordFormValues(form){
   });
   return fields;
 }
+const DAILY_NOTE_SELECTS={mood:['Great','Good','Okay','Low','Overwhelmed'],sleepHours:['Under 4 hours','4–5 hours','6–7 hours','7–8 hours','8+ hours','Not sure'],sleepQuality:['Restless','Meh','Okay','Good','Really good'],energy:['Very low','Low','Medium','Good','High'],stress:['None','Low','Medium','High','Very high'],meds:['Taken','Need to take later','Skipped','Not applicable'],food:['Ate regularly','Ate something','Need something easy','Not sure yet'],movement:['Rest day','Gentle movement','Workout','Lots of movement'],social:['Needed quiet','A little connection','Social day','Social battery low']};
+const DAILY_NOTE_LABELS={mood:'How do you feel?',sleepHours:'How much sleep?',sleepQuality:'Sleep quality',energy:'Energy level',stress:'Stress level',meds:'Medication check',food:'Food check',movement:'Movement',social:'Social battery'};
+function dayNoteValue(note,key){return String(note?.[key]??'')}
+function dailyNoteSelect(key,note){const value=dayNoteValue(note,key);return`<label class="daily-field"><span>${esc(DAILY_NOTE_LABELS[key])}</span><select name="${key}"><option value="">Choose one</option>${DAILY_NOTE_SELECTS[key].map(option=>`<option value="${esc(option)}"${value===option?' selected':''}>${esc(option)}</option>`).join('')}</select></label>`}
+function dailyNoteText(key,label,note,placeholder){return`<label class="daily-field daily-field-wide"><span>${label}</span><textarea name="${key}" rows="3" placeholder="${placeholder}">${esc(dayNoteValue(note,key))}</textarea></label>`}
+function openDailyNote(date){if(!/^\d{4}-\d{2}-\d{2}$/.test(String(date||'')))return;const snapshot=snapshotV4(),stored=loadV5DailyNote(date),review=(snapshot.state?.insights?.dayReviews||[]).find(item=>String(item?.date||'')===date),note=stored||review||{};app.querySelector('[data-daily-note-modal]')?.remove();const fields=Object.keys(DAILY_NOTE_SELECTS).map(key=>dailyNoteSelect(key,note)).join('');app.insertAdjacentHTML('beforeend',`<div class="detail-modal-backdrop" data-daily-note-modal><section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="daily-note-title"><div class="detail-modal-head"><div><div class="ey">🪷 DAILY NOTE</div><h2 id="daily-note-title">${esc(date)}</h2><p>Choose what fits, write what matters, and leave the rest blank if that is all you have today.</p></div><button type="button" class="detail-modal-close" data-daily-note-close aria-label="Close daily note">×</button></div><form class="daily-note-form" data-daily-note-form><input type="hidden" name="date" value="${esc(date)}"><div class="daily-selects">${fields}</div><div class="daily-writing">${dailyNoteText('whatHappened','What happened today?',note,'The facts, the chaos, or the little stuff.')}${dailyNoteText('whatHelped','What helped?',note,'A person, a snack, a break, a song…')}${dailyNoteText('whatWasHard','What was hard?',note,'Name it without fixing it.')}${dailyNoteText('win','One thing that counted',note,'Tiny wins fully count.')}${dailyNoteText('tomorrowFocus','Tomorrow’s gentle focus',note,'One doable next thing.')}${dailyNoteText('notes','Anything else?',note,'Brain leftovers are welcome here.')}</div><div class="button-row daily-actions"><button type="submit" class="btn primary">🍓 Save daily note</button><button type="button" class="btn soft" data-daily-note-close>Close</button></div></form></section></div>`);app.querySelector('[data-daily-note-modal] select')?.focus()}
 function persist(){saveV5Ui(ui)}
 function chooseView(view){if(!LABELS[view])return;ui.view=view;ui.sidebarOpen=false;persist();render()}
 
@@ -93,7 +102,8 @@ app.addEventListener('click',event=>{
   const schedule=event.target.closest?.('[data-schedule-view]');if(schedule&&app.contains(schedule)){ui.scheduleView=['day','week','calendar'].includes(schedule.dataset.scheduleView)?schedule.dataset.scheduleView:'day';persist();render();return}
   const logLedger=event.target.closest?.('[data-log-ledger]');if(logLedger&&app.contains(logLedger)){const source=unpackRecord(logLedger.dataset.logLedger);if(!source)return;const ledgerSourceId=['money.bills','money.subscriptions'].includes(source.path)?`${source.id}:${source.date}`:source.id;const result=saveV5LedgerEntry({label:source.label,kind:source.kind,amount:source.amount,date:source.date,category:source.category,sourceId:ledgerSourceId,sourceType:source.path});if(!result.ok){window.alert(result.error||'That could not be added to the ledger.');return}const now=new Date().toISOString();if(source.path==='money.bills')updateV5Record(source.path,source.id,{paid:true,paidCycle:source.cycle||source.date.slice(0,7),lastPaidAt:now,lastPaidDueDate:source.date});if(source.path==='money.subscriptions')updateV5Record(source.path,source.id,{lastChargedAt:now,lastChargedAmount:source.amount});if(source.path==='money.earnings')updateV5Record(source.path,source.id,{status:'received',received:true,receivedAmount:source.amount,actualAmount:source.amount,receivedDate:source.date});if(source.path==='work.gigShifts')updateV5Record(source.path,source.id,{status:'completed',actualAmount:source.amount,completedAt:now});render();return}
   const recordNode=event.target.closest?.('[data-v5-record]');if(recordNode&&app.contains(recordNode)){const record=unpackRecord(recordNode.dataset.v5Record);if(record)openRecordEditor(recordNode.dataset.v5RecordPath,record);return}
-  const reviewDay=event.target.closest?.('[data-v5-review-date]');if(reviewDay&&app.contains(reviewDay)){const result=openV5DayReview(reviewDay.dataset.v5ReviewDate);if(result.ok)openRecordEditor('insights.dayReviews',result.record);else window.alert(result.error||'That day review could not be opened.');return}
+  const dailyNote=event.target.closest?.('[data-v5-daily-note-date],[data-v5-review-date]');if(dailyNote&&app.contains(dailyNote)){openDailyNote(dailyNote.dataset.v5DailyNoteDate||dailyNote.dataset.v5ReviewDate);return}
+  const dailyClose=event.target.closest?.('[data-daily-note-close]');if(dailyClose&&app.contains(dailyClose)){dailyClose.closest('[data-daily-note-modal]')?.remove();return}
   const recordClose=event.target.closest?.('[data-record-close]');if(recordClose&&app.contains(recordClose)){recordClose.closest('[data-record-modal]')?.remove();return}
   const archive=event.target.closest?.('[data-record-archive]');if(archive&&app.contains(archive)){const form=archive.closest('[data-record-edit]');if(form&&window.confirm('Archive this entry? It will move to Memory Box, not be deleted.')){const result=archiveV5Record(form.dataset.recordPath,form.dataset.recordId);if(!result.ok)window.alert(result.error||'That entry could not be archived.');render()}return}
   const action=event.target.closest?.('[data-action]');if(action&&app.contains(action)){if(action.dataset.action==='toggle-sidebar')ui.sidebarOpen=!ui.sidebarOpen;if(action.dataset.action==='close-sidebar')ui.sidebarOpen=false;if(action.dataset.action==='reimport-v4'){if(window.confirm('Copy the current V4 snapshot into V5 again? Your current V5 data will be backed up first.'))migrateV4ToV5();render();return}if(action.dataset.action==='pick-v4-export'){app.querySelector('[data-v4-export-file]')?.click();return}if(action.dataset.action==='restore-cloud-v4'){action.disabled=true;action.textContent='☁️ Restoring your data…';restoreCloudV4Data().then(result=>{if(result.ok){window.alert('Your cloud planner data is now in V5.');location.reload()}else{window.alert(result.error||'Cloud restore did not finish.');render()}});return}render();return}
