@@ -124,18 +124,23 @@ function bestLegacyCandidate(){
 }
 
 function ledgerEntryFromV4(row,index,kindHint=''){
-  const item=obj(row),rawKind=text(item.kind||item.type||kindHint).toLowerCase(),kind=['income','expense','transfer'].includes(rawKind)?rawKind:(kindHint==='income'?'income':'expense');
-  const amount=Math.abs(Number(item.amount??item.actualAmount??item.receivedAmount??item.netAmount??item.total??0));
-  const label=text(item.label||item.name||item.description||item.title)||'Transaction';
-  const date=/^\d{4}-\d{2}-\d{2}$/.test(text(item.date||item.receivedDate||item.expectedDate))?text(item.date||item.receivedDate||item.expectedDate):localDateKey();
+  const item=obj(row),rawKind=text(item.kind||item.type||kindHint).toLowerCase();
+  const kind=['income','expense','transfer'].includes(rawKind)?rawKind:(kindHint==='income'||['paycheck','gig','earning','income'].includes(rawKind)?'income':'expense');
+  const amount=Math.abs(Number(item.actualNet??item.receivedAmount??item.actualAmount??item.netAmount??item.amount??item.total??0));
+  const label=text(item.label||item.name||item.description||item.title||item.employer)||'Transaction';
+  const dateValue=text(item.receivedDate||item.date||item.expectedDate);
+  const date=/^\d{4}-\d{2}-\d{2}$/.test(dateValue)?dateValue:localDateKey();
   if(!label||!Number.isFinite(amount)||amount<=0)return null;
-  return{id:`v4-${text(item.id)||index}`,kind,label,amount:cents(amount),date,category:text(item.category)||'Other',account:text(item.accountId||item.account||item.fromAccountId),toAccount:text(item.toAccountId||item.toAccount),note:text(item.note),createdAt:text(item.createdAt)||'',source:'v4-migration'};
+  return{id:`v4-${text(item.id)||index}`,kind,label,amount:cents(amount),date,category:text(item.category)||'Other',account:text(item.accountId||item.account||item.fromAccountId),toAccount:text(item.toAccountId||item.toAccount),note:text(item.note),createdAt:text(item.createdAt)||'',sourceId:text(item.sourceId)||text(item.id),sourceType:text(item.sourceType)||kindHint||rawKind||'v4',source:'v4-migration'};
 }
 
 function importedLedgerEntries(state){
-  const moneyState=obj(state?.money),rawLedger=list(moneyState.ledger).length?moneyState.ledger:list(moneyState.transactions);
-  const source=rawLedger.length?rawLedger:[...list(moneyState.spending).map(row=>({...obj(row),kind:'expense',label:row?.description||row?.label||row?.name})),...list(moneyState.earnings).filter(row=>row?.status==='received'||row?.received===true||row?.actualAmount||row?.amount).map(row=>({...obj(row),kind:'income',label:row?.label||row?.employer||row?.name}))];
-  return source.map((row,index)=>ledgerEntryFromV4(row,index)).filter(Boolean);
+  const moneyState=obj(state?.money);
+  const direct=[...list(moneyState.ledger),...list(moneyState.transactions)].map((row,index)=>ledgerEntryFromV4(row,`ledger-${index}`)).filter(Boolean);
+  const linked=new Set(direct.map(row=>text(row.sourceId)).filter(Boolean));
+  const earnings=list(moneyState.earnings).filter(row=>row?.status==='received'||row?.received===true||Number(row?.receivedAmount)||Number(row?.actualAmount)||Number(row?.actualNet)).filter(row=>!linked.has(text(row?.id))).map((row,index)=>ledgerEntryFromV4({...obj(row),kind:'income',label:row?.label||row?.employer||row?.name},`earning-${index}`,'income')).filter(Boolean);
+  const spending=list(moneyState.spending).map((row,index)=>ledgerEntryFromV4({...obj(row),kind:'expense',label:row?.description||row?.label||row?.name},`spending-${index}`,'expense')).filter(Boolean);
+  return[...direct,...earnings,...spending];
 }
 
 function mergeImportedLedger(state){
