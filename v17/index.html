@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#fff4fa">
-  <meta name="sm-build" content="V5.4.0-2026-08-31">
+  <meta name="sm-build" content="V5.4.1-2026-09-01">
   <title>KatOS V5</title>
   <link rel="stylesheet" href="./styles.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v20-skin.css?v=22.0.1-20260816">
@@ -73,6 +73,7 @@
 <link rel="stylesheet" href="./v5-work.css?v=5"><link rel="stylesheet" href="./v5-motion.css?v=5"><link rel="stylesheet" href="./v5-wins.css?v=5"><link rel="stylesheet" href="./v5-settings.css?v=5">  <link rel="stylesheet" href="./v5-quiet-rooms.css?v=5.1">
   <link rel="stylesheet" href="./v5-study.css?v=5.1">
   <link rel="stylesheet" href="./v5-shell.css?v=5.3">
+  <link rel="stylesheet" href="./v5-reset.css?v=5.4.1-20260901">
 </head>
 <body>
   <div id="app" class="v17-app v21-app">
@@ -83,14 +84,14 @@
   <script src="./v22-popup-polish.js?v=22.10.0-20260819"></script>
   <script src="./v22-ui-polish-2210.js?v=22.10.0-20260819"></script>
   <script type="module">
-    const BUILD='V5.4.0-2026-08-31';
+    const BUILD='V5.4.1-2026-09-01';
     const moduleSuffix=location.protocol==='file:'?'':'?build='+encodeURIComponent(BUILD);
     const root=document.getElementById('tab-root'),sidebar=document.getElementById('v21-sidebar');
-    const groups=[['CORE',[['home','🏠','Home Sweet Home'],['daily','🪞','Daily Flow'],['planner','📅','Berry Busy'],['tasks','📝','Sweet To-Dos'],['rituals','🌷','Routine Garden'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Growth Garden'],['school','🎓','Study Nook'],['work','💼','Boss Mode'],['money','👛','Coin Purse'],['reminders','🔔','Little Pings'],['noms','🍱','Noms Nook'],['sips','💧','Sip Station']]],['MIND',[['brain','🧠','Brain Bloom'],['goals','🌙','Dream Board'],['wins','🏆','Win Shelf']]],['SYSTEM',[['attic','🗝️','Castle Attic'],['settings','🎀','Behind the Bows'],['hub','✨','Berry Base']]]];
-    const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Memory Box',tasktools:'Full Task Tools',plannertools:'Full Planner Tools',schooltools:'Full Study Tools',hometools:'Full Home Tools',remindertools:'Full Ping Tools',mochinitools:'Full Mochini',moneytools:'Full Money Tools',worktools:'Full Work Tools',gardentools:'Full Garden Tools',goaltools:'Full Dream Board Tools',labs:'Pattern Lab',projects:'Threads',wellness:'Reset Lab'});
+    const groups=[['CORE',[['home','🏠','Home Sweet Home'],['daily','🪞','Daily Flow'],['planner','🗓️','Plannin'],['tasks','📝','Sweet To-Dos'],['rituals','🌷','Routine Garden'],['reset','🚨','Emergency Reset'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Growth Garden'],['school','🎓','Study Nook'],['work','💼','Boss Mode'],['money','☕','Money Café'],['reminders','🔔','Little Pings']]],['MIND',[['brain','🧠','Brain Bloom'],['goals','🌙','Dream Board'],['wins','🏆','Win Shelf']]],['SYSTEM',[['attic','🗝️','Castle Attic'],['settings','🎀','Behind the Bows'],['hub','✨','Berry Base']]]];
+    const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Memory Box',tasktools:'Full Task Tools',plannertools:'Full Planner Tools',schooltools:'Full Study Tools',hometools:'Full Home Tools',remindertools:'Full Ping Tools',mochinitools:'Full Mochini',moneytools:'Full Money Tools',worktools:'Full Work Tools',gardentools:'Full Garden Tools',goaltools:'Full Dream Board Tools',projects:'Threads'});
     const queued=new Set(Object.keys(labels));let modules={},routerRef=null;
     const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
-    function navHTML(page){return '<div class="v21-brand"><div class="v21-brand-mark">🍓</div><div><strong>KATOS</strong><span>V2</span><em>V2</em></div></div>'+groups.map(([title,items])=>'<section class="v21-nav-group"><small>✦ '+title+'</small>'+items.map(([key,icon,label])=>'<button type="button" class="v21-nav-item '+(key===page?'active':'')+'" data-nav="'+key+'"><span class="v21-nav-icon">'+icon+'</span><span class="v21-nav-copy"><b>'+label+'</b><em data-nav-meta="'+key+'"></em></span></button>').join('')+'</section>').join('')+'<div class="v21-nav-spacer"></div><button type="button" class="v21-nav-item '+(page==='archive'?'active':'')+'" data-nav="archive"><span class="v21-nav-icon">📦</span><span class="v21-nav-copy"><b>Memory Box</b></span></button><div class="v21-sidebar-footer">🍓 ✦ 🎀 ✦ 🍓</div>'+'<nav class="v5-mobile-dock" aria-label="Quick rooms">'+[['home','🏠','Home'],['planner','📅','Plan'],['tasks','📝','Tasks'],['money','👛','Money'],['brain','🧠','Brain']].map(item=>'<button type="button" class="'+(item[0]===page?'active':'')+'" data-nav="'+item[0]+'"><span>'+item[1]+'</span>'+item[2]+'</button>').join('')+'</nav>'}
+    function navHTML(page){return '<div class="v21-brand"><div class="v21-brand-mark">🍓</div><div><strong>KATOS</strong><span>V5</span><em>V5</em></div></div>'+groups.map(([title,items])=>'<section class="v21-nav-group"><small>✦ '+title+'</small>'+items.map(([key,icon,label])=>'<button type="button" class="v21-nav-item '+(key===page?'active':'')+'" data-nav="'+key+'"><span class="v21-nav-icon">'+icon+'</span><span class="v21-nav-copy"><b>'+label+'</b><em data-nav-meta="'+key+'"></em></span></button>').join('')+'</section>').join('')+'<div class="v21-nav-spacer"></div><button type="button" class="v21-nav-item '+(page==='archive'?'active':'')+'" data-nav="archive"><span class="v21-nav-icon">📦</span><span class="v21-nav-copy"><b>Memory Box</b></span></button><div class="v21-sidebar-footer">🍓 ✦ 🎀 ✦ 🍓</div>'+'<nav class="v5-mobile-dock" aria-label="Quick rooms">'+[['home','🏠','Home'],['planner','🗓️','Plan'],['tasks','📝','Tasks'],['money','☕','Café'],['brain','🧠','Brain']].map(item=>'<button type="button" class="'+(item[0]===page?'active':'')+'" data-nav="'+item[0]+'"><span>'+item[1]+'</span>'+item[2]+'</button>').join('')+'</nav>'}
     function localDateKey(){const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
     function refreshMeta(){const store=window.__smStore;if(!store)return;const data=store.get(),today=localDateKey(),tasks=(data.tasks||[]).filter(task=>(!task.date||task.date===today)&&!task.done).length,events=(data.events||[]).filter(event=>event.date===today).length;sidebar.querySelector('[data-nav-meta="tasks"]')?.replaceChildren(document.createTextNode(tasks?`• ${tasks} remaining`:'• all clear'));sidebar.querySelector('[data-nav-meta="planner"]')?.replaceChildren(document.createTextNode(events?`• ${events} today`:'• no events'))}
     function buildNav(page){sidebar.innerHTML=navHTML(page);sidebar.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>routerRef?.go(button.dataset.nav)));setTimeout(refreshMeta,0)}
