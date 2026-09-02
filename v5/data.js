@@ -287,6 +287,48 @@ export function saveV5RoomDetail(room,fields){
   return entry;
 }
 
+const cloneState=value=>{try{return structuredClone(value)}catch{return JSON.parse(JSON.stringify(value||{}))}};
+const itemId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+const setAtPath=(state,path,value)=>{const keys=path.split('.');let cursor=state;for(let index=0;index<keys.length-1;index++){const key=keys[index];cursor[key]=obj(cursor[key]);cursor=cursor[key]}cursor[keys.at(-1)]=value};
+const appendAtPath=(state,path,row)=>{const current=list(pathValue(state,path));setAtPath(state,path,[...current,row])};
+const minutesFrom=value=>({"5 minutes":5,"15 minutes":15,"30 minutes":30,"45 minutes":45,"1 hour":60,"Longer than an hour":90,"Longer":90}[text(value)]||0);
+
+// V5's pop-ups update the planner data itself, not just a display card.  The
+// original V4 envelope is retained so V4 remains a safe recovery copy.
+export function saveV5Workspace(view,fields={}){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so V5 has a planner to update.'};
+    const state=cloneState(source),today=localDateKey(),now=new Date().toISOString(),value=key=>text(fields[key]);
+    switch(view){
+      case'home':state.context={...obj(state.context),focus:value('focus'),capacity:value('capacity'),energy:value('energy'),location:value('location'),protected:value('protected'),nextStep:value('nextStep'),needs:value('needs'),note:value('homeNotes')};break;
+      case'boss':if(!value('date'))return{ok:false,error:'Choose the date for the gig shift first.'};appendAtPath(state,'work.gigShifts',{id:itemId('gig'),source:value('source')||'Gig work',date:value('date'),startTime:value('startTime'),endTime:value('endTime'),targetAmount:Number(fields.targetAmount)||0,note:value('note'),status:'planned',createdAt:now});break;
+      case'time':appendAtPath(state,'life.events',{id:itemId('event'),title:value('anchor')||'Schedule item',date:value('date')||today,startTime:value('startTime'),endTime:value('endTime'),location:value('location'),priority:value('priority'),notes:value('scheduleNotes'),createdAt:now});break;
+      case'tasks':if(!value('task'))return{ok:false,error:'Give the to-do a name first.'};appendAtPath(state,'life.tasks',{id:itemId('task'),text:value('task'),title:value('task'),date:value('due'),dueDate:value('due'),priority:value('priority').toLowerCase()||'normal',minutes:minutesFrom(value('timeEstimate')),location:value('location'),protected:value('protected').startsWith('Yes'),firstStep:value('firstStep'),notes:value('taskNotes'),done:false,createdAt:now});break;
+      case'mochini':state.mochini={...obj(state.mochini),life:{...obj(state.mochini?.life),mood:value('mood'),energy:value('energy'),help:value('help'),suggestions:value('suggestions'),topic:value('topic'),context:value('context'),boundary:value('boundary'),updatedAt:now}};break;
+      case'pings':if(!value('reminder'))return{ok:false,error:'Write the reminder first.'};appendAtPath(state,'life.reminders',{id:itemId('ping'),title:value('reminder'),date:value('date'),timing:value('when'),urgency:value('urgency'),repeat:value('repeat'),place:value('place'),notes:value('pingNotes'),completed:false,createdAt:now});break;
+      case'routines':if(!value('routine'))return{ok:false,error:'Give the routine a name first.'};appendAtPath(state,'life.routines',{id:itemId('routine'),name:value('routine'),daypart:value('time'),recurrence:{'Every day':'daily',Weekdays:'weekdays','A few times a week':'selected',Weekly:'weekly','As needed':'as-needed'}[value('rhythm')]||'daily',cue:value('cue'),lowEnergy:value('energyVersion'),skipRule:value('skipRule'),steps:value('routineNotes').split('\n').map(label=>text(label)).filter(Boolean).map(label=>({id:itemId('step'),label,minutes:5,optional:false})),archived:false,createdAt:now});break;
+      case'motion':appendAtPath(state,'movement.sessions',{id:itemId('movement'),label:value('type')||'Movement',type:value('type')||'movement',minutes:Number(fields.minutes)||0,effort:value('intensity'),location:value('location'),body:value('body'),after:value('after'),note:value('motionNotes'),date:today,createdAt:now});break;
+      case'people':if(!value('person'))return{ok:false,error:'Add the person’s name first.'};appendAtPath(state,'v4.people',{id:itemId('person'),name:value('person'),relationship:value('relationship'),contactMethod:value('contactMethod'),nextContact:value('nextContact'),plans:value('plan'),boundary:value('boundary'),notes:value('important'),createdAt:now});break;
+      case'hobbies':if(!value('hobby'))return{ok:false,error:'Give the hobby a name first.'};appendAtPath(state,'v4.hobbies',{id:itemId('hobby'),name:value('hobby'),kind:value('category'),status:{'Currently playing':'playing','Trying it':'playing',Curious:'curious',Paused:'shelf',Someday:'shelf'}[value('status')]||'curious',energy:value('energy'),mood:value('mood'),nextStep:value('next'),notes:value('hobbyNotes'),createdAt:now});break;
+      case'study':if(!value('goal'))return{ok:false,error:'Add what you want to finish first.'};appendAtPath(state,'education.items',{id:itemId('study'),title:value('goal'),course:value('course'),type:value('activity')||'study',energy:value('energy'),minutes:minutesFrom(value('sessionLength')),dueDate:value('due'),nextStep:value('next'),notes:value('studyNotes'),done:false,createdAt:now});break;
+      case'growth':if(!value('goal'))return{ok:false,error:'Give the goal a name first.'};appendAtPath(state,'growth.goals',{id:itemId('goal'),title:value('goal'),why:value('why'),area:value('area'),timeframe:value('timeframe'),feeling:value('feeling'),pace:value('pace'),support:value('support'),nextStep:value('next'),proof:value('proof'),status:'moving',createdAt:now});break;
+      case'dump':if(!value('thought'))return{ok:false,error:'Write the thought first.'};appendAtPath(state,'v4.brainDump',{id:itemId('dump'),text:value('thought'),bucket:value('bucket').toLowerCase()||'inbox',urgency:value('urgency'),keep:value('keep'),nextStep:value('next'),notes:value('dumpNotes'),createdAt:now});break;
+      case'archive':if(!value('title'))return{ok:false,error:'Name what you are saving first.'};appendAtPath(state,'v4.archive',{id:itemId('archive'),title:value('title'),kind:value('kind'),room:value('room'),reason:value('reason'),find:value('find'),notes:value('archiveNotes'),archivedAt:now});break;
+      case'settings':state.profile={...obj(state.profile),preferences:{...obj(state.profile?.preferences),v5:{...fields,updatedAt:now}}};break;
+      case'review':{const reviews=list(state.insights?.dayReviews),entry={...fields,id:reviews.find(row=>text(row?.date)===today)?.id||itemId('review'),date:today,happened:value('whatHappened'),helped:value('whatHelped'),hard:value('whatWasHard'),proud:value('win'),tomorrow:value('tomorrowFocus'),updatedAt:now,createdAt:reviews.find(row=>text(row?.date)===today)?.createdAt||now};setAtPath(state,'insights.dayReviews',[...reviews.filter(row=>text(row?.date)!==today),entry]);break}
+      default:return{ok:true};
+    }
+    state.meta={...obj(state.meta),updatedAt:now};
+    const existing=localStorage.getItem(V4_KEY)||'';
+    const envelope=parseStored(existing)&&JSON.parse(existing)?.data?{...JSON.parse(existing),data:state}:{data:state};
+    const raw=JSON.stringify(envelope);
+    localStorage.setItem(V4_KEY,raw);
+    saveImportedState(state,raw,V4_KEY,'v5-edit');
+    return{ok:true};
+  }catch(error){console.warn('KatOS V5 could not save this workspace.',error);return{ok:false,error:'That could not be saved. Your existing planner data is still safe.'}}
+}
+
 function cents(value){return Math.round((Number(value)||0)*100)/100}
 
 export function loadV5Ledger(){
