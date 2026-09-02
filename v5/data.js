@@ -1,4 +1,6 @@
 const V4_KEY='sm_v4_beta';
+const V5_DATA_KEY='sm_v5_data';
+const V4_BACKUP_KEY='sm_v4_beta_backup_before_v5';
 const V5_UI_KEY='sm_v5_preview_ui';
 const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
@@ -16,14 +18,26 @@ export function localDateKey(date=new Date()){
 
 export function readV4State(){
   try{
+    const migrated=localStorage.getItem(V5_DATA_KEY);
+    if(migrated){const parsed=JSON.parse(migrated);return parsed&&typeof parsed==='object'?parsed:null}
     const raw=localStorage.getItem(V4_KEY);
     if(!raw)return null;
     const parsed=JSON.parse(raw);
-    return parsed&&typeof parsed==='object'?parsed:null;
+    if(parsed&&typeof parsed==='object'){
+      if(!localStorage.getItem(V4_BACKUP_KEY))localStorage.setItem(V4_BACKUP_KEY,raw);
+      localStorage.setItem(V5_DATA_KEY,JSON.stringify(parsed));
+      return parsed;
+    }
+    return null;
   }catch(error){
     console.warn('KatOS V5 could not read the local V4 snapshot.',error);
     return null;
   }
+}
+
+export function migrateV4ToV5(){
+  const state=readV4State();
+  return{ok:!!state,source:state?'V4 backup copied into editable V5 data':'No V4 data found'};
 }
 
 export function loadV5Ui(){
