@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.20-section-actions';
-import{renderBoss}from'./boss.js?v=5.0.20-section-actions';
-import{renderRoom}from'./rooms.js?v=5.0.20-section-actions';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.21-smart-fields';
+import{renderBoss}from'./boss.js?v=5.0.21-smart-fields';
+import{renderRoom}from'./rooms.js?v=5.0.21-smart-fields';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
@@ -37,25 +37,38 @@ function optionsFor(path,key,value){
     'work.gigShifts.source':['DoorDash','Shipt','Uber Eats','Other gig work'],'work.gigShifts.status':['planned','completed','canceled'],
     'insights.dayReviews.mood':['Great','Good','Okay','Low','Overwhelmed'],'insights.dayReviews.sleepHours':['Under 4 hours','4–5 hours','6–7 hours','7–8 hours','8+ hours','Not sure'],'insights.dayReviews.sleepQuality':['Restless','Meh','Okay','Good','Really good'],'insights.dayReviews.energy':['Very low','Low','Medium','Good','High'],'insights.dayReviews.stress':['None','Low','Medium','High','Very high'],'insights.dayReviews.meds':['Taken','Need to take later','Skipped','Not applicable'],'insights.dayReviews.food':['Ate regularly','Ate something','Need something easy','Not sure yet'],'insights.dayReviews.movement':['Rest day','Gentle movement','Workout','Lots of movement'],'insights.dayReviews.social':['Needed quiet','A little connection','Social day','Social battery low']
   };
-  let choices=byField[path+'.'+key]||((path.startsWith('money.')&&key==='category')?MONEY_CATEGORIES:[]);
-  const current=String(value??'');if(current&&!choices.includes(current))choices=[current,...choices];
+  const moneyChoices={
+    'money.bills.category':MONEY_CATEGORIES,'money.bills.repeat':['Monthly','Weekly','Every two weeks','Yearly','One time'],'money.bills.status':['Due','Paid','Skipped'],
+    'money.subscriptions.category':MONEY_CATEGORIES,'money.subscriptions.cycle':['Monthly','Weekly','Every two weeks','Yearly','Other'],
+    'money.accounts.type':['Checking','Savings','Cash','Credit card','Other'],'money.savingsGoals.category':['Emergency fund','Move','Car','Travel','Fun','Other'],
+    'money.earnings.kind':['Paycheck','Gig work','Refund','Other'],'money.earnings.frequency':['One time','Weekly','Biweekly','Monthly','Other'],
+    'money.ledger.category':MONEY_CATEGORIES
+  };
+  let choices=byField[path+'.'+key]||moneyChoices[path+'.'+key]||((path.startsWith('money.')&&key==='category')?MONEY_CATEGORIES:[]);
+  const current=String(value??'');if(choices.length&&current&&!choices.includes(current))choices=[current,...choices];
   return choices;
 }
+const RECORD_META=new Set(['id','createdAt','updatedAt','archivedAt','originalId']);
+const DATE_KEY=/^(date|due|dueDate|nextCharge|expectedDate|receivedDate|lastPaidAt|lastPaidDueDate|lastChargedAt|completedAt|targetDate|scheduledFor|startDate|endDate)$/i;
+const NUMBER_KEY=/(amount|balance|target|dueDay|minutes|hours|rate|price|total|saved|income|cost|debt)/i;
+const dateValue=value=>{const match=String(value??'').match(/^\d{4}-\d{2}-\d{2}/);return match?match[0]:''};
 function recordField(path,key,value){
-  const label=titleCase(key),locked=['id','createdAt','updatedAt','archivedAt','originalId'].includes(key);
-  if(value&&typeof value==='object')return`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="4" data-json ${locked?'readonly':''}>${esc(JSON.stringify(value,null,2))}</textarea></label>`;
-  if(typeof value==='boolean')return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}" ${locked?'disabled':''}><option value="true"${value?' selected':''}>Yes</option><option value="false"${!value?' selected':''}>No</option></select></label>`;
-  if(typeof value==='number')return`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="number" step="any" value="${esc(value)}" ${locked?'readonly':''}></label>`;
+  if(RECORD_META.has(key)||key.startsWith('_'))return'';
+  const label=titleCase(key);
+  if(value&&typeof value==='object')return`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="4" data-json>${esc(JSON.stringify(value,null,2))}</textarea></label>`;
+  if(typeof value==='boolean')return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}"><option value="true"${value?' selected':''}>Yes</option><option value="false"${!value?' selected':''}>No</option></select></label>`;
+  if(DATE_KEY.test(key))return`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="date" value="${esc(dateValue(value))}"></label>`;
+  if(typeof value==='number'||NUMBER_KEY.test(key))return`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="number" step="${/dueDay|minutes|hours/i.test(key)?'1':'0.01'}" value="${esc(value??'')}"></label>`;
   const choices=optionsFor(path,key,value);
-  if(choices.length&&!locked)return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}"><option value="">Choose one</option>${choices.map(choice=>`<option value="${esc(choice)}"${String(value??'')===choice?' selected':''}>${esc(choice)}</option>`).join('')}</select></label>`;
+  if(choices.length)return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}"><option value="">Choose one</option>${choices.map(choice=>`<option value="${esc(choice)}"${String(value??'')===choice?' selected':''}>${esc(choice)}</option>`).join('')}</select></label>`;
   const long=/(notes?|what|helped|hard|win|focus|context|why|proof|boundary|steps|thought|description|plan)/i.test(key)||String(value||'').length>80;
-  return long?`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="3" ${locked?'readonly':''}>${esc(value??'')}</textarea></label>`:`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" value="${esc(value??'')}" ${locked?'readonly':''}></label>`;
+  return long?`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="3">${esc(value??'')}</textarea></label>`:`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="text" value="${esc(value??'')}"></label>`;
 }
 function openRecordEditor(path,record){
   if(!record?.id)return;
   app.querySelector('[data-record-modal]')?.remove();
   const title=record.title||record.text||record.name||record.label||'Saved entry';
-  const fields=Object.keys(record).sort((a,b)=>a==='id'?-1:b==='id'?1:a.localeCompare(b)).map(key=>recordField(path,key,record[key])).join('');
+  const fields=Object.keys(record).filter(key=>!(key==='due'&&record.dueDate)).sort((a,b)=>a==='id'?-1:b==='id'?1:a.localeCompare(b)).map(key=>recordField(path,key,record[key])).join('');
   app.insertAdjacentHTML('beforeend',`<div class="detail-modal-backdrop" data-record-modal><section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="record-editor-title"><div class="detail-modal-head"><div><div class="ey">🍓 SAVED ENTRY</div><h2 id="record-editor-title">${esc(title)}</h2><p>Edit every detail that was saved with this entry, or archive it when you are done with it.</p></div><button type="button" class="detail-modal-close" data-record-close aria-label="Close editor">×</button></div><form class="room-detail-form" data-record-edit data-record-path="${esc(path)}" data-record-id="${esc(record.id)}"><div class="room-detail-fields">${fields}</div><div class="button-row daily-actions"><button type="submit" class="btn primary">🍓 Save changes</button><button type="button" class="btn soft" data-record-archive>📦 Archive entry</button><button type="button" class="btn soft" data-record-close>Close</button></div></form></section></div>`);
   app.querySelector('[data-record-modal] input:not([readonly]),[data-record-modal] textarea:not([readonly]),[data-record-modal] select:not([disabled])')?.focus();
 }
