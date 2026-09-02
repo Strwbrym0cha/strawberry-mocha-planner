@@ -353,8 +353,9 @@ export function saveV5LedgerEntry(fields){
   if(!label||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'Add a name and an amount first.'};
   const kind=['income','expense','transfer'].includes(text(fields?.kind))?text(fields.kind):'expense';
   const date=/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey();
-  const entry={id:`v5-ledger-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,label,amount:cents(amount),date,category:text(fields?.category)||'Other',account:text(fields?.account)||'General',toAccount:text(fields?.toAccount),note:text(fields?.note),sourceId:text(fields?.sourceId),sourceType:text(fields?.sourceType),createdAt:new Date().toISOString()};
-  const current=loadV5Ledger();
+  const current=loadV5Ledger(),sourceId=text(fields?.sourceId),alreadyLogged=sourceId&&current.entries.find(item=>text(item?.sourceId)===sourceId);
+  if(alreadyLogged)return{ok:true,entry:alreadyLogged,alreadyLogged:true};
+  const entry={id:`v5-ledger-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,label,amount:cents(amount),date,category:text(fields?.category)||'Other',account:text(fields?.account)||'General',toAccount:text(fields?.toAccount),note:text(fields?.note),sourceId,sourceType:text(fields?.sourceType),createdAt:new Date().toISOString()};
   try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:[...current.entries,entry].slice(-500)}));return{ok:true,entry}}
   catch(error){console.warn('KatOS V5 could not save this ledger entry.',error);return{ok:false,error:'This entry could not be saved.'}}
 }
