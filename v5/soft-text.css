@@ -1,0 +1,8 @@
+/* Softer V5 typography: readable, but not shouty. */
+body{font-weight:400}
+:where(h1,h2,h3){font-weight:600}
+.brand h1,.top-title,.hero h2,.card h2,.gig-total{font-weight:600}
+.nav-btn{font-weight:600}
+.build,.mode-btn,.ey,.room-tag,.chip,.btn,.count,.boss-lane,.source-pill,.pill,.room-source{font-weight:650}
+.room-stat small,.stat small{font-weight:700}
+.room-row-main b,.mini-row b,.quick-action b,.client-tile b,.mochini-min b,.reset-step b,.v5-principle b{font-weight:600}
