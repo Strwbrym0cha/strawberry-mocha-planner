@@ -302,6 +302,24 @@ const itemId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toStr
 const setAtPath=(state,path,value)=>{const keys=path.split('.');let cursor=state;for(let index=0;index<keys.length-1;index++){const key=keys[index];cursor[key]=obj(cursor[key]);cursor=cursor[key]}cursor[keys.at(-1)]=value};
 const appendAtPath=(state,path,row)=>{const current=list(pathValue(state,path));setAtPath(state,path,[...current,row])};
 const minutesFrom=value=>({"5 minutes":5,"15 minutes":15,"30 minutes":30,"45 minutes":45,"1 hour":60,"Longer than an hour":90,"Longer":90}[text(value)]||0);
+function validDate(value){return/^\d{4}-\d{2}-\d{2}$/.test(text(value))}
+function shiftDate(value,days){const date=new Date(`${value}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10)}
+function shiftMonth(value){const date=new Date(`${value}T12:00:00Z`);date.setUTCMonth(date.getUTCMonth()+1);return date.toISOString().slice(0,10)}
+function rbtSessionDates(start,repeat,through){
+  if(!validDate(start))return[];
+  const frequency=text(repeat)||'Does not repeat';
+  if(frequency==='Does not repeat'||frequency==='Never')return[start];
+  if(!validDate(through)||through<start)return[];
+  const dates=[],limit=180;let cursor=start;
+  while(cursor<=through&&dates.length<limit){
+    if(frequency!=='Weekdays'||!['0','6'].includes(String(new Date(`${cursor}T12:00:00Z`).getUTCDay())))dates.push(cursor);
+    if(frequency==='Weekly')cursor=shiftDate(cursor,7);
+    else if(frequency==='Every 2 weeks')cursor=shiftDate(cursor,14);
+    else if(frequency==='Monthly')cursor=shiftMonth(cursor);
+    else cursor=shiftDate(cursor,1);
+  }
+  return dates;
+}
 
 // V5's pop-ups update the planner data itself, not just a display card.  The
 // original V4 envelope is retained so V4 remains a safe recovery copy.
@@ -313,6 +331,19 @@ export function saveV5Workspace(view,fields={}){
     switch(view){
       case'home':state.context={...obj(state.context),focus:value('focus'),capacity:value('capacity'),energy:value('energy'),location:value('location'),protected:value('protected'),nextStep:value('nextStep'),needs:value('needs'),note:value('homeNotes')};break;
       case'boss':if(!value('date'))return{ok:false,error:'Choose the date for the gig shift first.'};appendAtPath(state,'work.gigShifts',{id:itemId('gig'),source:value('source')||'Gig work',date:value('date'),startTime:value('startTime'),endTime:value('endTime'),targetAmount:Number(fields.targetAmount)||0,note:value('note'),status:'planned',createdAt:now});break;
+      case'rbt-client':if(!value('code'))return{ok:false,error:'Use a client code or nickname first.'};appendAtPath(state,'work.rbt.clients',{id:itemId('rbt-client'),code:value('code'),setting:value('setting')||'Home',schedule:value('schedule'),supervisor:value('supervisor'),focus:value('focus'),reminders:value('reminders'),status:value('status')||'Active',createdAt:now});break;
+      case'rbt-supervisor':if(!value('name'))return{ok:false,error:'Add a supervisor name or initials first.'};appendAtPath(state,'work.rbt.supervisors',{id:itemId('rbt-supervisor'),name:value('name'),credential:value('credential')||'BCBA',availability:value('availability'),contact:value('contact'),notes:value('notes'),status:value('status')||'Active',createdAt:now});break;
+      case'rbt-session':{
+        if(!value('clientId')||!validDate(value('date')))return{ok:false,error:'Choose a client and date for the appointment first.'};
+        const repeat=value('repeat')||'Does not repeat',dates=rbtSessionDates(value('date'),repeat,value('repeatThrough'));
+        if(!dates.length)return{ok:false,error:repeat==='Does not repeat'?'Choose a valid date.':'Choose an end date for the repeating appointment.'};
+        const client=list(state?.work?.rbt?.clients).find(row=>String(row?.id)===value('clientId')),clientLabel=text(client?.code)||'RBT session';
+        dates.forEach(date=>{
+          const sessionId=itemId('rbt-session');
+          appendAtPath(state,'work.rbt.sessions',{id:sessionId,clientId:value('clientId'),date,startTime:value('startTime'),endTime:value('endTime'),setting:value('setting'),supervisor:value('supervisor'),appointmentType:value('appointmentType')||'Direct session',repeat,repeatThrough:value('repeatThrough'),note:value('note'),noteStatus:value('noteStatus')||'draft',status:'scheduled',createdAt:now});
+          appendAtPath(state,'life.events',{id:itemId('rbt-event'),title:`RBT · ${clientLabel}`,date,startTime:value('startTime'),endTime:value('endTime'),location:value('setting'),area:'Work',category:'Work shift',type:'RBT session',notes:value('note'),rbtSessionId:sessionId,createdAt:now});
+        });break;
+      }
       case'time':appendAtPath(state,'life.events',{id:itemId('event'),title:value('anchor')||'Schedule item',date:value('date')||today,startTime:value('startTime'),endTime:value('endTime'),location:value('location'),priority:value('priority'),area:value('area'),category:value('category'),notes:value('scheduleNotes'),createdAt:now});break;
       case'tasks':{if(!value('task'))return{ok:false,error:'Give the to-do a name first.'};const priorityMap={'Need to do today':'today','Should do soon':'soon','Whenever':'whenever','Idea':'idea',Today:'today',High:'high',Soon:'soon',Normal:'normal'};appendAtPath(state,'life.tasks',{id:itemId('task'),text:value('task'),title:value('task'),date:value('due'),dueDate:value('due'),priority:priorityMap[value('priority')]||value('priority').toLowerCase()||'normal',pile:value('priority'),area:value('area'),minutes:minutesFrom(value('timeEstimate')),location:value('location'),protected:value('protected').startsWith('Yes'),firstStep:value('firstStep'),notes:value('taskNotes'),done:false,createdAt:now});break;};
       case'mochini':state.mochini={...obj(state.mochini),life:{...obj(state.mochini?.life),mood:value('mood'),energy:value('energy'),help:value('help'),suggestions:value('suggestions'),topic:value('topic'),context:value('context'),boundary:value('boundary'),updatedAt:now}};break;
@@ -466,7 +497,7 @@ const EDITABLE_RECORD_PATHS=new Set([
   'life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines',
   'v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins',
   'v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions',
-  'money.earnings','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','insights.dayReviews'
+  'money.earnings','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.rbt.supervisors','insights.dayReviews'
 ]);
 
 function persistEditedState(state){
