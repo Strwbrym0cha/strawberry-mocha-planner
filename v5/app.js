@@ -1,6 +1,6 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,reconcileV5Ledger,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.29-still-due';
-import{renderBoss}from'./boss.js?v=5.0.29-still-due';
-import{renderRoom}from'./rooms.js?v=5.0.29-still-due';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,reconcileV5Ledger,updateV5Record,archiveV5Record,openV5DayReview,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.0.30-rbt-home-base';
+import{renderBoss}from'./boss.js?v=5.0.30-rbt-home-base';
+import{renderRoom}from'./rooms.js?v=5.0.30-rbt-home-base';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
@@ -29,6 +29,8 @@ function optionsFor(path,key,value){
     'life.tasks.pile':['Need to do today','Should do soon','Whenever','Idea'],
     'life.tasks.area':LIFE_AREAS,'life.events.area':LIFE_AREAS,'life.events.category':['Appointment','Work shift','School','Errand','Personal','Rest','Social','Other'],'life.events.type':['Birthday','Anniversary','Appointment','Work shift','School','Errand','Personal','Rest','Social','Other'],'life.events.repeat':['Never','Daily','Weekly','Monthly','Yearly'],
     'work.rbt.clients.schedule':['M–F','Mon/Wed/Fri','Tue/Thu','Weekends','As needed'],'work.rbt.clients.setting':['Home','Clinic','School','Community','Telehealth'],'work.rbt.clients.status':['Active','Paused','Waitlist','Closed'],
+    'work.rbt.sessions.setting':['Home','Clinic','School','Community','Telehealth'],'work.rbt.sessions.appointmentType':['Direct session','Supervision','Parent training','Team meeting','Other appointment'],'work.rbt.sessions.repeat':['Does not repeat','Weekly','Every 2 weeks','Weekdays','Monthly'],'work.rbt.sessions.noteStatus':['draft','ready','submitted'],'work.rbt.sessions.status':['scheduled','completed','canceled'],
+    'work.rbt.supervisors.credential':['BCBA','BCaBA','RBT lead','Other'],'work.rbt.supervisors.contact':['Work app','Email','Phone','Text','Ask in person'],'work.rbt.supervisors.status':['Active','Inactive'],
     'v5.ledger.account':['General','Capital One','Chase','Navy Federal','Cash','Savings'],'v5.ledger.toAccount':['General','Capital One','Chase','Navy Federal','Cash','Savings'],'v5.ledger.category':MONEY_CATEGORIES,'v5.ledger.kind':['expense','income','transfer'],'v5.ledger.sourceType':['money.bills','money.subscriptions','money.earnings','work.gigShifts','manual'],
     'life.reminders.category':LIFE_AREAS,'life.reminders.urgency':['Right now','Today','This week','Eventually','Just in case'],'life.reminders.timing':['Morning','Afternoon','Evening','A specific date','No preference'],'life.reminders.repeat':['Once','Daily','Weekly','Monthly','Never'],
     'life.routines.category':['Home','Health & wellness','Cats','Work','Education','Haircare','Other'],'life.routines.daypart':['Morning','Midday','Afternoon','Evening','Whenever'],'life.routines.recurrence':['daily','weekdays','selected','weekly','as-needed'],
@@ -52,7 +54,7 @@ function optionsFor(path,key,value){
   return choices;
 }
 const RECORD_META=new Set(['id','createdAt','updatedAt','archivedAt','originalId','sourceId']);
-const DATE_KEY=/^(date|due|dueDate|nextCharge|expectedDate|receivedDate|lastPaidAt|lastPaidDueDate|lastChargedAt|completedAt|targetDate|scheduledFor|startDate|endDate)$/i;
+const DATE_KEY=/^(date|due|dueDate|nextCharge|expectedDate|receivedDate|lastPaidAt|lastPaidDueDate|lastChargedAt|completedAt|targetDate|scheduledFor|startDate|endDate|repeatThrough)$/i;
 const NUMBER_KEY=/(amount|balance|target|dueDay|minutes|hours|rate|price|total|saved|income|cost|debt)/i;
 const dateValue=value=>{const match=String(value??'').match(/^\d{4}-\d{2}-\d{2}/);return match?match[0]:''};
 function recordField(path,key,value){
