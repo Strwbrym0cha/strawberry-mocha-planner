@@ -27,7 +27,7 @@ const COLLECTION_PATHS=[
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
-  'work.items','work.shifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
+  'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
@@ -35,13 +35,24 @@ const COLLECTION_PATHS=[
   'tasks','routines','events','reminders','habits','projects','goals','wins','courses','schoolTasks','workItems','brainNotes','priorities',
   'money.income','money.expenses','money.subscriptions','money.budgets','noms.foods','noms.pantry','noms.groceries','dayNotes','history'
 ];
+const RECOVERY_COUNT_PATHS=[
+  'life.tasks','life.routines','life.routineInstances','life.events','life.reminders','life.threads',
+  'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
+  'work.items','work.shifts','work.training','work.career',
+  'education.programs','education.courses','education.items','education.sessions','education.reviews',
+  'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments','movement.sessions',
+  'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans',
+  'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries',
+  'tasks','routines','events','reminders','habits','projects','goals','wins','courses','schoolTasks','workItems','brainNotes','priorities',
+  'money.transactions','money.ledger'
+];
 
 function pathValue(source,path){return path.split('.').reduce((value,key)=>value?.[key],source)}
 function countRows(value){return Array.isArray(value)?value.filter(Boolean).length:0}
 function stateCounts(state){
   const counts={};
   COLLECTION_PATHS.forEach(path=>{counts[path]=countRows(pathValue(state,path))});
-  counts.total=Object.values(counts).reduce((sum,value)=>sum+value,0);
+  counts.total=RECOVERY_COUNT_PATHS.reduce((sum,path)=>sum+countRows(pathValue(state,path)),0);
   return counts;
 }
 function hasUserContent(state){return stateCounts(state).total>0}
@@ -201,6 +212,21 @@ export function migrateV4ToV5(){
   }catch(error){return{ok:false,source:'V4 data could not be copied'} }
 }
 
+// This runs only in the browser. It does not upload the chosen export anywhere.
+export function importV4Export(raw){
+  try{
+    const state=legacyFlatState(parseStored(raw));
+    if(!state||!hasUserContent(state))return{ok:false,error:'That file did not contain a KatOS V4 planner export.'};
+    const current=localStorage.getItem(V4_KEY);
+    if(current)try{localStorage.setItem(`${V4_BACKUP_KEY}_before_export_${Date.now()}`,current)}catch{}
+    localStorage.setItem(V4_KEY,String(raw));
+    const existing=localStorage.getItem(V5_DATA_KEY);
+    if(existing)try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,existing)}catch{}
+    const receipt=saveImportedState(state,String(raw),'KatOS V4 export','file-import');
+    return{ok:true,counts:receipt?.counts||stateCounts(state)};
+  }catch{return{ok:false,error:'KatOS could not read that export file.'}}
+}
+
 export function migrationInfo(){
   const state=readV4State(),receipt=readReceipt();
   return{found:!!state,counts:state?stateCounts(state):{},receipt,ledgerEntries:loadV5Ledger().entries.length};
@@ -315,7 +341,8 @@ export function snapshotV4(){
 
   const clients=list(state?.work?.rbt?.clients);
   const sessions=list(state?.work?.rbt?.sessions);
-  const shifts=list(state?.work?.shifts);
+  const gigShifts=list(state?.work?.gigShifts);
+  const shifts=[...list(state?.work?.shifts),...gigShifts];
   const gigs=list(state?.money?.earnings).map(row=>({...row,_v5Amount:amountOfGig(row)}));
   const activeClients=clients.filter(row=>row?.status!=='closed');
   const todaySessions=sessions.filter(row=>row?.date===today&&row?.status!=='canceled').sort((a,b)=>String(a?.startTime||'').localeCompare(String(b?.startTime||'')));
@@ -323,5 +350,5 @@ export function snapshotV4(){
   const waitingNotes=sessions.filter(row=>row?.status!=='canceled'&&row?.noteStatus!=='submitted').sort(sessionSort);
   const recentGigs=gigs.slice().sort((a,b)=>String(b?.date||'').localeCompare(String(a?.date||''))).slice(0,8);
 
-  return{found:true,today,state,clients,sessions,shifts,gigs,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
+  return{found:true,today,state,clients,sessions,shifts,gigs,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }
