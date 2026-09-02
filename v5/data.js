@@ -439,7 +439,7 @@ export function updateV5Record(path,id,fields={}){
     if(index<0)return{ok:false,error:'That saved entry could not be found.'};
     const old=obj(collection[index]);
     const record={...old,...fields,id:old.id,createdAt:old.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
-    const next=collection.slice();next[index]=record;setAtPath(state,path,next);persistEditedState(state);
+    const next=collection.slice();next[index]=record;setAtPath(state,path,next);if(path==='insights.dayReviews')syncDetailedDailyNote(record);persistEditedState(state);
     return{ok:true,record};
   }catch{return{ok:false,error:'That entry could not be updated. Your existing data is still safe.'}}
 }
@@ -461,11 +461,18 @@ export function archiveV5Record(path,id){
     if(index<0)return{ok:false,error:'That saved entry could not be found.'};
     const item=collection[index],next=collection.filter((_,rowIndex)=>rowIndex!==index);
     setAtPath(state,path,next);
+    if(path==='insights.dayReviews')removeDetailedDailyNote(item.date);
     appendAtPath(state,'v4.archive',{id:itemId('archive'),kind:path,originalId:item.id,title:rowTitleForArchive(item),data:item,archivedAt:new Date().toISOString()});
     persistEditedState(state);return{ok:true};
   }catch{return{ok:false,error:'That entry could not be archived. Your existing data is still safe.'}}
 }
 
+function syncDetailedDailyNote(row){
+  const date=text(row?.date);if(!date)return;
+  const note={date,mood:text(row.mood),sleepHours:text(row.sleepHours),sleepQuality:text(row.sleepQuality),energy:text(row.energy),stress:text(row.stress),meds:text(row.meds),food:text(row.food),movement:text(row.movement),social:text(row.social),whatHappened:text(row.whatHappened||row.happened),whatHelped:text(row.whatHelped||row.helped),whatWasHard:text(row.whatWasHard||row.hard),win:text(row.win||row.proud),tomorrowFocus:text(row.tomorrowFocus||row.tomorrow),notes:text(row.notes),updatedAt:text(row.updatedAt)||new Date().toISOString(),source:'v5-record-edit'};
+  try{const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==date);entries.push(note);localStorage.setItem(V5_DAILY_NOTES_KEY,JSON.stringify(entries.slice(-180)))}catch{}
+}
+function removeDetailedDailyNote(date){try{const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==text(date));localStorage.setItem(V5_DAILY_NOTES_KEY,JSON.stringify(entries))}catch{}}
 function rowTitleForArchive(row){return text(row?.title)||text(row?.text)||text(row?.name)||text(row?.label)||'Archived entry'}
 
 export function openV5DayReview(date){
