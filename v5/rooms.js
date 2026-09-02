@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo}from'./data.js?v=5.0.9-current-v4-wins';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo}from'./data.js?v=5.0.10-full-inventory';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
