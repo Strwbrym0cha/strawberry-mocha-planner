@@ -128,7 +128,11 @@ export function readV4State(){
     const current=bestLegacyCandidate();
     const v4=current?.state;
     if(v4&&(!migrated?.state||(!hasUserContent(migrated.state)&&hasUserContent(v4)))){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'repair');return v4}
-    if(migrated?.state)return migrated.state;
+    if(migrated?.state){
+      const ledgerImported=mergeImportedLedger(migrated.state),dailyNotesImported=mergeImportedDailyNotes(migrated.state);
+      if(!readReceipt())writeReceipt({version:2,sourceKey:V5_DATA_KEY,reason:'repair',importedAt:new Date().toISOString(),sourceUpdatedAt:sourceDate(migrated.state),counts:stateCounts(migrated.state),ledgerImported,dailyNotesImported,backupKey:V4_BACKUP_KEY});
+      return migrated.state;
+    }
     if(v4){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'initial');return v4}
     return null;
   }catch(error){
