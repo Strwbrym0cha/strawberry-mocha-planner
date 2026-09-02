@@ -372,9 +372,27 @@ export function removeV5LedgerEntry(id){
   catch(error){console.warn('KatOS V5 could not remove this ledger entry.',error);return false}
 }
 
+function isRecurringBill(row){return row?.recurring!==false&&text(row?.repeat).toLowerCase()!=='one time'}
+function validBillDay(row){const dated=text(row?.dueDate||row?.due),fromDate=/^\d{4}-\d{2}-(\d{2})$/.exec(dated);const value=Number(row?.dueDay||fromDate?.[1]||0);return value>=1&&value<=31?value:0}
+function localMonth(value){return String(value||localDateKey()).slice(0,7)}
+function calendarDate(month,day){const [year,monthNumber]=month.split('-').map(Number),last=new Date(year,monthNumber,0).getDate();return `${month}-${String(Math.min(Math.max(day,1),last)).padStart(2,'0')}`}
+export function billCycleDate(row,today=localDateKey()){
+  const due=text(row?.dueDate||row?.due);
+  if(isRecurringBill(row)){const day=validBillDay(row);return day?calendarDate(localMonth(today),day):localMonth(today)}
+  return /^\d{4}-\d{2}-\d{2}$/.test(due)?due:localMonth(today);
+}
+export function billCycleMonth(row,today=localDateKey()){return billCycleDate(row,today).slice(0,7)}
+export function billPaidForCycle(row,today=localDateKey()){
+  const cycle=billCycleMonth(row,today),stored=text(row?.paidCycle||row?.lastPaidCycle);
+  if(stored)return stored===cycle;
+  if(row?.paid!==true)return false;
+  if(!isRecurringBill(row))return true;
+  const dated=text(row?.lastPaidAt||row?.lastPaidDueDate||row?.updatedAt);
+  return /^\d{4}-\d{2}/.test(dated)?dated.slice(0,7)===cycle:cycle===localMonth(today);
+}
 function scheduledMoney(state,today){
   const moneyState=obj(state?.money),month=String(today).slice(0,7),onDate=(row,fallbackDay)=>{const dated=text(row?.nextCharge||row?.dueDate||row?.due);if(/^\d{4}-\d{2}-\d{2}$/.test(dated))return dated;const day=Number(row?.dueDay||fallbackDay||0);return day?`${month}-${String(day).padStart(2,'0')}`:month};
-  const bills=list(moneyState.bills).filter(row=>row?.paid!==true).map(row=>({id:text(row.id),sourcePath:'money.bills',label:text(row.name||row.label)||'Bill',amount:cents(row.amount),date:onDate(row),category:'Bill',status:'due',record:obj(row)}));
+  const bills=list(moneyState.bills).filter(row=>!billPaidForCycle(row,today)).map(row=>({id:text(row.id),sourcePath:'money.bills',label:text(row.name||row.label)||'Bill',amount:cents(row.amount),date:billCycleDate(row,today),cycle:billCycleMonth(row,today),category:'Bill',status:'due',record:obj(row)}));
   const subscriptions=list(moneyState.subscriptions).filter(row=>row?.archived!==true&&row?.active!==false).map(row=>({id:text(row.id),sourcePath:'money.subscriptions',label:text(row.name||row.label)||'Subscription',amount:cents(row.amount),date:onDate(row),category:text(row.category)||'Subscription',status:'recurring',record:obj(row)}));
   const expectedIncome=list(moneyState.earnings).filter(row=>!(row?.status==='received'||row?.received===true||Number(row?.receivedAmount)||Number(row?.actualAmount)||Number(row?.actualNet))).map(row=>({id:text(row.id),sourcePath:'money.earnings',label:text(row.label||row.employer||row.name)||'Expected income',amount:cents(row.expectedAmount??row.estimatedGross??row.amount),date:text(row.expectedDate||row.date)||today,category:'Income',status:'expected',record:obj(row)}));
   const plannedGigs=list(state?.work?.gigShifts).filter(row=>!Number(row?.actualAmount)).map(row=>({id:text(row.id),sourcePath:'work.gigShifts',label:text(row.source||row.platform||row.label)||'Gig shift',amount:cents(row.targetAmount??row.amount),date:text(row.date)||today,category:'Gig work',status:'planned',record:obj(row)}));
@@ -464,7 +482,10 @@ export function updateV5Record(path,id,fields={}){
     const collection=list(pathValue(state,path)),index=collection.findIndex(row=>String(row?.id)===String(id));
     if(index<0)return{ok:false,error:'That saved entry could not be found.'};
     const old=obj(collection[index]);
-    const record={...old,...fields,id:old.id,createdAt:old.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
+    let prepared={...fields};
+    if(path==='money.bills'&&prepared.paid===true&&!text(prepared.paidCycle))prepared.paidCycle=localMonth(localDateKey());
+    if(path==='money.bills'&&prepared.paid===false)prepared.paidCycle='';
+    const record={...old,...prepared,id:old.id,createdAt:old.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
     const next=collection.slice();next[index]=record;setAtPath(state,path,next);if(path==='insights.dayReviews')syncDetailedDailyNote(record);persistEditedState(state);
     return{ok:true,record};
   }catch{return{ok:false,error:'That entry could not be updated. Your existing data is still safe.'}}
