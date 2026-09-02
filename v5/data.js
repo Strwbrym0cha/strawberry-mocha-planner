@@ -7,6 +7,9 @@ const V5_UI_KEY='sm_v5_preview_ui';
 const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
 const V5_LEDGER_KEY='sm_v5_money_ledger';
+const CLOUD_PROJECT_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
+const CLOUD_PUBLISHABLE_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
+const CLOUD_SESSION_KEYS=['sb-sigjwmgekmrwehylvuvu-auth-token','sm_v16_session'];
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -44,6 +47,36 @@ function parseStored(raw){try{return raw?unwrapState(JSON.parse(raw)):null}catch
 function readReceipt(){try{const value=JSON.parse(localStorage.getItem(V5_MIGRATION_KEY)||'null');return value&&typeof value==='object'?value:null}catch{return null}}
 function writeReceipt(receipt){try{localStorage.setItem(V5_MIGRATION_KEY,JSON.stringify(receipt))}catch{}}
 function sourceDate(state){return text(state?.meta?.updatedAt)||text(state?.meta?.createdAt)||text(state?.__smUpdatedAt)}
+
+function cloudSession(){
+  for(const key of CLOUD_SESSION_KEYS){
+    try{
+      const parsed=JSON.parse(localStorage.getItem(key)||'null');
+      const value=parsed?.currentSession||parsed?.session||parsed;
+      if(value?.access_token&&value?.user?.id)return value;
+    }catch{}
+  }
+  return null;
+}
+
+export async function restoreCloudV4Data(){
+  const session=cloudSession();
+  if(!session)return{ok:false,error:'Sign in to your KatOS account in V4 first, then try cloud restore again.'};
+  try{
+    const endpoint=`${CLOUD_PROJECT_URL}/rest/v1/planner_data?user_id=eq.${encodeURIComponent(session.user.id)}&select=data,updated_at`;
+    const response=await fetch(endpoint,{headers:{apikey:CLOUD_PUBLISHABLE_KEY,Authorization:`Bearer ${session.access_token}`} });
+    const payload=await response.json().catch(()=>null);
+    if(!response.ok)throw new Error(text(payload?.message)||text(payload?.hint)||'The cloud backup could not be read.');
+    const row=list(payload)[0];
+    if(!row?.data||typeof row.data!=='object')return{ok:false,error:'No saved planner backup was found for this account.'};
+    const source=unwrapState(row.data);
+    const normalized=Number(source?.schemaVersion)===4?source:legacyFlatState(source);
+    if(!hasUserContent(normalized))return{ok:false,error:'The cloud backup loaded, but it did not contain planner records.'};
+    const raw=JSON.stringify({data:source,updatedAt:row.updated_at||''});
+    const receipt=saveImportedState(normalized,raw,'supabase','cloud');
+    return{ok:!!receipt,counts:receipt?.counts||stateCounts(normalized),sourceUpdatedAt:row.updated_at||''};
+  }catch(error){return{ok:false,error:error?.message||'Cloud restore did not finish.'}}
+}
 
 function legacyFlatState(state){
   const source=obj(state);
@@ -276,4 +309,3 @@ export function snapshotV4(){
 
   return{found:true,today,state,clients,sessions,shifts,gigs,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }
-
