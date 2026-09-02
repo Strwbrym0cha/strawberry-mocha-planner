@@ -20,11 +20,34 @@ function topbar(){return`<header class="topbar"><button type="button" class="btn
 function render(){const oldSidebar=app.querySelector('.sidebar'),scrollTop=oldSidebar?.scrollTop||0,scrollLeft=oldSidebar?.scrollLeft||0,snapshot=snapshotV4(),content=ui.view==='boss'?renderBoss(snapshot,ui.bossLane):renderRoom(ui.view,snapshot,{scheduleView:ui.scheduleView});document.body.className=`mode-${ui.mode}`;app.className='katos';app.innerHTML=`${sidebar()}${topbar()}<main class="main">${content}</main>`;[...app.querySelectorAll('a[href*="../v4"]')].forEach(link=>{const card=link.closest('.card');if(card&&card.querySelectorAll('a[href*="../v4"]').length===1&&card.querySelectorAll('.btn, a.quick-action').length===1)card.remove();else link.remove()});const newSidebar=app.querySelector('.sidebar');if(newSidebar){newSidebar.scrollTop=scrollTop;newSidebar.scrollLeft=scrollLeft}}
 const titleCase=value=>String(value||'').replace(/([A-Z])/g,' $1').replace(/[_-]/g,' ').replace(/^./,letter=>letter.toUpperCase());
 function unpackRecord(value){try{return JSON.parse(decodeURIComponent(escape(atob(value||''))))}catch{return null}}
-function recordField(key,value){
+const LIFE_AREAS=['Home','Work','Education','Money','Travel','Cats','Health & wellness','Relationships','Business','Creative projects','Shopping','Hobbies','Other'];
+const MONEY_CATEGORIES=['Rent','Utilities','Phone & internet','Insurance','Debt','Subscription','Food','Transportation','Work expenses','Paycheck','Gig work','Savings','Shopping','Fun','Health','Cats','Other'];
+function optionsFor(path,key,value){
+  const byField={
+    'life.tasks.priority':['Today','High','Soon','Normal','Whenever','Idea'],
+    'life.tasks.pile':['Need to do today','Should do soon','Whenever','Idea'],
+    'life.tasks.area':LIFE_AREAS,'life.events.area':LIFE_AREAS,'life.events.category':['Appointment','Work shift','School','Errand','Personal','Rest','Social','Other'],
+    'life.reminders.category':LIFE_AREAS,'life.reminders.urgency':['Right now','Today','This week','Eventually','Just in case'],'life.reminders.timing':['Morning','Afternoon','Evening','A specific date','No preference'],'life.reminders.repeat':['Once','Daily','Weekly','Monthly','Never'],
+    'life.routines.category':['Home','Health & wellness','Cats','Work','Education','Haircare','Other'],'life.routines.daypart':['Morning','Midday','Afternoon','Evening','Whenever'],'life.routines.recurrence':['daily','weekdays','selected','weekly','as-needed'],
+    'movement.sessions.category':['Recovery','Mobility','Cardio','Strength','Pilates','Outside','Other'],'movement.sessions.effort':['Very gentle','Gentle','Moderate','Challenging','Not sure'],
+    'v4.people.relationship':['Family','Friend','Romantic','Coworker','Professional'],'v4.people.category':['Family','Friends','Dating','Work people','Professional','Other'],'v4.people.contactMethod':['Text','Call','In person','Video chat','Ask them'],
+    'education.items.category':['Coursework','Exam prep','Reading','Writing','Project','Administrative','Other'],'education.items.type':['Read','Watch','Practice','Write','Review','Study'],
+    'growth.goals.area':['Health','Career','Home','Relationships','Self-trust'],'growth.goals.status':['moving','paused','complete'],
+    'v4.brainDump.bucket':['Do','Decide','Remember','Feel','Let go','Unsorted'],'v4.brainDump.urgency':['Quiet','Low','Medium','Loud','Emergency'],
+    'work.gigShifts.source':['DoorDash','Shipt','Uber Eats','Other gig work'],'work.gigShifts.status':['planned','completed','canceled'],
+    'insights.dayReviews.mood':['Great','Good','Okay','Low','Overwhelmed'],'insights.dayReviews.sleepHours':['Under 4 hours','4–5 hours','6–7 hours','7–8 hours','8+ hours','Not sure'],'insights.dayReviews.sleepQuality':['Restless','Meh','Okay','Good','Really good'],'insights.dayReviews.energy':['Very low','Low','Medium','Good','High'],'insights.dayReviews.stress':['None','Low','Medium','High','Very high'],'insights.dayReviews.meds':['Taken','Need to take later','Skipped','Not applicable'],'insights.dayReviews.food':['Ate regularly','Ate something','Need something easy','Not sure yet'],'insights.dayReviews.movement':['Rest day','Gentle movement','Workout','Lots of movement'],'insights.dayReviews.social':['Needed quiet','A little connection','Social day','Social battery low']
+  };
+  let choices=byField[path+'.'+key]||((path.startsWith('money.')&&key==='category')?MONEY_CATEGORIES:[]);
+  const current=String(value??'');if(current&&!choices.includes(current))choices=[current,...choices];
+  return choices;
+}
+function recordField(path,key,value){
   const label=titleCase(key),locked=['id','createdAt','updatedAt','archivedAt','originalId'].includes(key);
   if(value&&typeof value==='object')return`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="4" data-json ${locked?'readonly':''}>${esc(JSON.stringify(value,null,2))}</textarea></label>`;
   if(typeof value==='boolean')return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}" ${locked?'disabled':''}><option value="true"${value?' selected':''}>Yes</option><option value="false"${!value?' selected':''}>No</option></select></label>`;
   if(typeof value==='number')return`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" type="number" step="any" value="${esc(value)}" ${locked?'readonly':''}></label>`;
+  const choices=optionsFor(path,key,value);
+  if(choices.length&&!locked)return`<label class="daily-field"><span>${esc(label)}</span><select name="${esc(key)}"><option value="">Choose one</option>${choices.map(choice=>`<option value="${esc(choice)}"${String(value??'')===choice?' selected':''}>${esc(choice)}</option>`).join('')}</select></label>`;
   const long=/(notes?|what|helped|hard|win|focus|context|why|proof|boundary|steps|thought|description|plan)/i.test(key)||String(value||'').length>80;
   return long?`<label class="daily-field daily-field-wide"><span>${esc(label)}</span><textarea name="${esc(key)}" rows="3" ${locked?'readonly':''}>${esc(value??'')}</textarea></label>`:`<label class="daily-field"><span>${esc(label)}</span><input name="${esc(key)}" value="${esc(value??'')}" ${locked?'readonly':''}></label>`;
 }
@@ -32,7 +55,7 @@ function openRecordEditor(path,record){
   if(!record?.id)return;
   app.querySelector('[data-record-modal]')?.remove();
   const title=record.title||record.text||record.name||record.label||'Saved entry';
-  const fields=Object.keys(record).sort((a,b)=>a==='id'?-1:b==='id'?1:a.localeCompare(b)).map(key=>recordField(key,record[key])).join('');
+  const fields=Object.keys(record).sort((a,b)=>a==='id'?-1:b==='id'?1:a.localeCompare(b)).map(key=>recordField(path,key,record[key])).join('');
   app.insertAdjacentHTML('beforeend',`<div class="detail-modal-backdrop" data-record-modal><section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="record-editor-title"><div class="detail-modal-head"><div><div class="ey">🍓 SAVED ENTRY</div><h2 id="record-editor-title">${esc(title)}</h2><p>Edit every detail that was saved with this entry, or archive it when you are done with it.</p></div><button type="button" class="detail-modal-close" data-record-close aria-label="Close editor">×</button></div><form class="room-detail-form" data-record-edit data-record-path="${esc(path)}" data-record-id="${esc(record.id)}"><div class="room-detail-fields">${fields}</div><div class="button-row daily-actions"><button type="submit" class="btn primary">🍓 Save changes</button><button type="button" class="btn soft" data-record-archive>📦 Archive entry</button><button type="button" class="btn soft" data-record-close>Close</button></div></form></section></div>`);
   app.querySelector('[data-record-modal] input:not([readonly]),[data-record-modal] textarea:not([readonly]),[data-record-modal] select:not([disabled])')?.focus();
 }
