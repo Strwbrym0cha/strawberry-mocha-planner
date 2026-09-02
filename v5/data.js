@@ -1,6 +1,8 @@
 const V4_KEY='sm_v4_beta';
 const V5_DATA_KEY='sm_v5_data';
 const V4_BACKUP_KEY='sm_v4_beta_backup_before_v5';
+const V5_MIGRATION_KEY='sm_v5_migration_receipt';
+const V5_PREIMPORT_BACKUP_PREFIX='sm_v5_data_backup_before_v4_reimport_';
 const V5_UI_KEY='sm_v5_preview_ui';
 const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
@@ -8,7 +10,103 @@ const V5_LEDGER_KEY='sm_v5_money_ledger';
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
-const unwrapState=value=>value?.data&&typeof value.data==='object'&&!Array.isArray(value.data)?value.data:value;
+const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+const unwrapState=value=>{
+  let current=value;
+  for(let i=0;i<3;i++){
+    if(current?.data&&typeof current.data==='object'&&!Array.isArray(current.data))current=current.data;
+    else break;
+  }
+  return current;
+};
+const COLLECTION_PATHS=[
+  'life.inbox','life.tasks','life.reminders','life.routines','life.routineInstances','life.events','life.threads',
+  'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
+  'movement.sessions','movement.routines','movement.videos','movement.weighIns',
+  'education.programs','education.courses','education.items','education.sessions','education.reviews',
+  'work.items','work.shifts','work.training','work.career',
+  'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
+  'growth.goals','growth.wins','growth.experiments',
+  'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
+  'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans','v4.archive'
+];
+
+function pathValue(source,path){return path.split('.').reduce((value,key)=>value?.[key],source)}
+function countRows(value){return Array.isArray(value)?value.filter(Boolean).length:0}
+function stateCounts(state){
+  const counts={};
+  COLLECTION_PATHS.forEach(path=>{counts[path]=countRows(pathValue(state,path))});
+  counts.total=Object.values(counts).reduce((sum,value)=>sum+value,0);
+  return counts;
+}
+function hasUserContent(state){return stateCounts(state).total>0}
+function parseStored(raw){try{return raw?unwrapState(JSON.parse(raw)):null}catch{return null}}
+function readReceipt(){try{const value=JSON.parse(localStorage.getItem(V5_MIGRATION_KEY)||'null');return value&&typeof value==='object'?value:null}catch{return null}}
+function writeReceipt(receipt){try{localStorage.setItem(V5_MIGRATION_KEY,JSON.stringify(receipt))}catch{}}
+function sourceDate(state){return text(state?.meta?.updatedAt)||text(state?.meta?.createdAt)||text(state?.__smUpdatedAt)}
+
+function legacyFlatState(state){
+  const source=obj(state);
+  if(source.life||source.money||source.nourish||source.work||source.growth)return source;
+  if(!['tasks','events','reminders','routines','habits','goals','wins','courses','archive'].some(key=>Array.isArray(source[key])))return source;
+  const moneySource=obj(source.money);
+  return{...source,schemaVersion:4,life:{inbox:list(source.inbox),tasks:list(source.tasks),reminders:list(source.reminders),routines:list(source.routines),routineInstances:[],events:list(source.events),threads:list(source.threads)},nourish:{noms:{foods:list(source.noms?.foods),recipes:list(source.noms?.recipes),history:list(source.noms?.history),groceries:list(source.noms?.groceries),mealPlan:[]},sips:obj(source.sips)},education:{programs:[],courses:list(source.courses),items:list(source.schoolTasks),sessions:list(source.studySessions)},work:{items:list(source.workItems),shifts:list(source.shifts),training:[],career:[]},money:{...moneySource,ledger:list(moneySource.ledger||moneySource.transactions),earnings:list(moneySource.earnings),accounts:list(moneySource.accounts),bills:list(moneySource.bills),spending:list(moneySource.spending),savingsGoals:list(moneySource.savingsGoals),debts:list(moneySource.debts)},growth:{goals:list(source.goals),wins:list(source.wins),experiments:[]},insights:{dayReviews:[],activityLog:[],observations:[],experiments:[]},v4:{people:list(source.people),hobbies:list(source.hobbies),admin:list(source.admin),shopping:list(source.shopping),brainDump:list(source.brainNotes),openDayPlans:[],archive:list(source.archive)}};
+}
+
+function candidateFromKey(key){
+  try{
+    const raw=localStorage.getItem(key)||'';
+    const parsed=legacyFlatState(parseStored(raw));
+    return parsed&&typeof parsed==='object'?{key,raw,state:parsed}:null;
+  }catch{return null}
+}
+
+function ledgerEntryFromV4(row,index,kindHint=''){
+  const item=obj(row),rawKind=text(item.kind||item.type||kindHint).toLowerCase(),kind=['income','expense','transfer'].includes(rawKind)?rawKind:(kindHint==='income'?'income':'expense');
+  const amount=Math.abs(Number(item.amount??item.actualAmount??item.receivedAmount??item.netAmount??item.total??0));
+  const label=text(item.label||item.name||item.description||item.title)||'Transaction';
+  const date=/^\d{4}-\d{2}-\d{2}$/.test(text(item.date||item.receivedDate||item.expectedDate))?text(item.date||item.receivedDate||item.expectedDate):localDateKey();
+  if(!label||!Number.isFinite(amount)||amount<=0)return null;
+  return{id:`v4-${text(item.id)||index}`,kind,label,amount:cents(amount),date,category:text(item.category)||'Other',account:text(item.accountId||item.account||item.fromAccountId),toAccount:text(item.toAccountId||item.toAccount),note:text(item.note),createdAt:text(item.createdAt)||'',source:'v4-migration'};
+}
+
+function importedLedgerEntries(state){
+  const moneyState=obj(state?.money),rawLedger=list(moneyState.ledger).length?moneyState.ledger:list(moneyState.transactions);
+  const source=rawLedger.length?rawLedger:[...list(moneyState.spending).map(row=>({...obj(row),kind:'expense',label:row?.description||row?.label||row?.name})),...list(moneyState.earnings).filter(row=>row?.status==='received'||row?.received===true||row?.actualAmount||row?.amount).map(row=>({...obj(row),kind:'income',label:row?.label||row?.employer||row?.name}))];
+  return source.map((row,index)=>ledgerEntryFromV4(row,index)).filter(Boolean);
+}
+
+function mergeImportedLedger(state){
+  const source=importedLedgerEntries(state);
+  if(!source.length)return 0;
+  const current=loadV5Ledger(),seen=new Set(current.entries.map(entry=>String(entry?.id))),fresh=source.filter(entry=>!seen.has(String(entry.id)));
+  if(!fresh.length)return 0;
+  try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:[...current.entries,...fresh].slice(-500)}));return fresh.length}catch{return 0}
+}
+
+function mergeImportedDailyNotes(state){
+  const source=list(state?.insights?.dayReviews).filter(row=>/^\d{4}-\d{2}-\d{2}$/.test(text(row?.date))).map(row=>({
+    date:text(row.date),mood:text(row.mood),sleepHours:text(row.sleepHours),sleepQuality:text(row.sleepQuality),energy:text(row.energy),stress:text(row.stress),meds:text(row.meds),food:text(row.food),movement:text(row.movement),social:text(row.social),whatHappened:text(row.happened||row.whatHappened),whatHelped:text(row.helped||row.whatHelped),whatWasHard:text(row.hard||row.whatWasHard),win:text(row.proud||row.win),tomorrowFocus:text(row.tomorrow||row.tomorrowFocus),notes:text(row.notes),updatedAt:text(row.updatedAt||row.createdAt)||new Date().toISOString(),source:'v4-migration'
+  }));
+  if(!source.length)return 0;
+  let existing=[];try{existing=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')}catch{}
+  const byDate=new Map(existing.map(note=>[text(note?.date),note]));let added=0;
+  source.forEach(note=>{if(!byDate.has(note.date)){byDate.set(note.date,note);added++}});
+  if(!added)return 0;
+  try{localStorage.setItem(V5_DAILY_NOTES_KEY,JSON.stringify([...byDate.values()].slice(-180)));return added}catch{return 0}
+}
+
+function saveImportedState(state,raw,key,reason='initial'){
+  if(!state||typeof state!=='object')return null;
+  try{
+    if(raw&&!localStorage.getItem(V4_BACKUP_KEY))localStorage.setItem(V4_BACKUP_KEY,raw);
+    localStorage.setItem(V5_DATA_KEY,JSON.stringify(state));
+    const ledgerImported=mergeImportedLedger(state),dailyNotesImported=mergeImportedDailyNotes(state);
+    const receipt={version:2,sourceKey:key,reason,importedAt:new Date().toISOString(),sourceUpdatedAt:sourceDate(state),counts:stateCounts(state),ledgerImported,dailyNotesImported,backupKey:V4_BACKUP_KEY};
+    writeReceipt(receipt);
+    return receipt;
+  }catch(error){console.warn('KatOS V5 could not save the V4 migration.',error);return null}
+}
 
 export function localDateKey(date=new Date()){
   const year=date.getFullYear();
@@ -19,16 +117,12 @@ export function localDateKey(date=new Date()){
 
 export function readV4State(){
   try{
-    const migrated=localStorage.getItem(V5_DATA_KEY);
-    if(migrated){const parsed=unwrapState(JSON.parse(migrated));return parsed&&typeof parsed==='object'?parsed:null}
-    const raw=localStorage.getItem(V4_KEY);
-    if(!raw)return null;
-    const parsed=unwrapState(JSON.parse(raw));
-    if(parsed&&typeof parsed==='object'){
-      if(!localStorage.getItem(V4_BACKUP_KEY))localStorage.setItem(V4_BACKUP_KEY,raw);
-      localStorage.setItem(V5_DATA_KEY,JSON.stringify(parsed));
-      return parsed;
-    }
+    const migrated=candidateFromKey(V5_DATA_KEY);
+    const current=candidateFromKey(V4_KEY);
+    const v4=current?.state||candidateFromKey('sm_v4_beta_backup_before_v5')?.state||candidateFromKey('sm_v4_beta_backup')?.state;
+    if(v4&&(!migrated?.state||(!hasUserContent(migrated.state)&&hasUserContent(v4)))){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'repair');return v4}
+    if(migrated?.state)return migrated.state;
+    if(v4){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'initial');return v4}
     return null;
   }catch(error){
     console.warn('KatOS V5 could not read the local V4 snapshot.',error);
@@ -37,8 +131,19 @@ export function readV4State(){
 }
 
 export function migrateV4ToV5(){
-  const state=readV4State();
-  return{ok:!!state,source:state?'V4 backup copied into editable V5 data':'No V4 data found'};
+  try{
+    const current=candidateFromKey(V4_KEY)||candidateFromKey('sm_v4_beta_backup_before_v5')||candidateFromKey('sm_v4_beta_backup');
+    if(!current?.state)return{ok:false,source:'No V4 data found'};
+    const existing=localStorage.getItem(V5_DATA_KEY);
+    if(existing){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,existing)}catch{}}
+    const receipt=saveImportedState(current.state,current.raw,current.key,'manual');
+    return{ok:true,source:'V4 data copied into editable V5 data',counts:receipt?.counts||stateCounts(current.state),ledgerImported:receipt?.ledgerImported||0};
+  }catch(error){return{ok:false,source:'V4 data could not be copied'} }
+}
+
+export function migrationInfo(){
+  const state=readV4State(),receipt=readReceipt();
+  return{found:!!state,counts:state?stateCounts(state):{},receipt,ledgerEntries:loadV5Ledger().entries.length};
 }
 
 export function loadV5Ui(){
@@ -160,3 +265,4 @@ export function snapshotV4(){
 
   return{found:true,today,state,clients,sessions,shifts,gigs,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }
+
