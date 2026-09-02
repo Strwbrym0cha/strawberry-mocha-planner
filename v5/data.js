@@ -61,6 +61,13 @@ function candidateFromKey(key){
   }catch{return null}
 }
 
+function bestLegacyCandidate(){
+  const keys=[V4_KEY,'sm_v4_beta_backup_before_v5','sm_v4_beta_backup','sm_v16','sm_v16_backup','sm_v3_beta'];
+  try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&(/^(sm_v4_beta_before_restore_|sm_v4_beta_before_cloud_restore_|sm_v16_backups)/.test(key)))keys.push(key)}}catch{}
+  const candidates=keys.map(candidateFromKey).filter(candidate=>candidate?.state);
+  return candidates.find(candidate=>candidate.key===V4_KEY&&hasUserContent(candidate.state))||candidates.filter(candidate=>hasUserContent(candidate.state)).sort((a,b)=>stateCounts(b.state).total-stateCounts(a.state).total)[0]||candidates[0]||null;
+}
+
 function ledgerEntryFromV4(row,index,kindHint=''){
   const item=obj(row),rawKind=text(item.kind||item.type||kindHint).toLowerCase(),kind=['income','expense','transfer'].includes(rawKind)?rawKind:(kindHint==='income'?'income':'expense');
   const amount=Math.abs(Number(item.amount??item.actualAmount??item.receivedAmount??item.netAmount??item.total??0));
@@ -118,8 +125,8 @@ export function localDateKey(date=new Date()){
 export function readV4State(){
   try{
     const migrated=candidateFromKey(V5_DATA_KEY);
-    const current=candidateFromKey(V4_KEY);
-    const v4=current?.state||candidateFromKey('sm_v4_beta_backup_before_v5')?.state||candidateFromKey('sm_v4_beta_backup')?.state;
+    const current=bestLegacyCandidate();
+    const v4=current?.state;
     if(v4&&(!migrated?.state||(!hasUserContent(migrated.state)&&hasUserContent(v4)))){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'repair');return v4}
     if(migrated?.state)return migrated.state;
     if(v4){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'initial');return v4}
@@ -132,7 +139,7 @@ export function readV4State(){
 
 export function migrateV4ToV5(){
   try{
-    const current=candidateFromKey(V4_KEY)||candidateFromKey('sm_v4_beta_backup_before_v5')||candidateFromKey('sm_v4_beta_backup');
+    const current=bestLegacyCandidate();
     if(!current?.state)return{ok:false,source:'No V4 data found'};
     const existing=localStorage.getItem(V5_DATA_KEY);
     if(existing){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,existing)}catch{}}
