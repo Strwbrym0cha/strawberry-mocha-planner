@@ -8,6 +8,7 @@ const V5_LEDGER_KEY='sm_v5_money_ledger';
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
+const unwrapState=value=>value?.data&&typeof value.data==='object'&&!Array.isArray(value.data)?value.data:value;
 
 export function localDateKey(date=new Date()){
   const year=date.getFullYear();
@@ -19,10 +20,10 @@ export function localDateKey(date=new Date()){
 export function readV4State(){
   try{
     const migrated=localStorage.getItem(V5_DATA_KEY);
-    if(migrated){const parsed=JSON.parse(migrated);return parsed&&typeof parsed==='object'?parsed:null}
+    if(migrated){const parsed=unwrapState(JSON.parse(migrated));return parsed&&typeof parsed==='object'?parsed:null}
     const raw=localStorage.getItem(V4_KEY);
     if(!raw)return null;
-    const parsed=JSON.parse(raw);
+    const parsed=unwrapState(JSON.parse(raw));
     if(parsed&&typeof parsed==='object'){
       if(!localStorage.getItem(V4_BACKUP_KEY))localStorage.setItem(V4_BACKUP_KEY,raw);
       localStorage.setItem(V5_DATA_KEY,JSON.stringify(parsed));
