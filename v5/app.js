@@ -1,4 +1,4 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,snapshotV4}from'./data.js?v=5.0.7-detailed-daily-note';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,snapshotV4}from'./data.js?v=5.0.7-detailed-daily-note';
 import{renderBoss}from'./boss.js?v=5.0.0-preview.2';
 import{renderRoom}from'./rooms.js?v=5.0.7-detailed-daily-note';
 
@@ -28,4 +28,5 @@ app.addEventListener('click',event=>{
   const focus=event.target.closest?.('[data-focus]');if(focus&&app.contains(focus)){const target=focus.dataset.focus==='clients'?app.querySelector('#v5-client-roster'):app.querySelector('#v5-note-queue');target?.scrollIntoView({behavior:'smooth',block:'start'})}
 });
 app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-daily-note-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5DailyNote(Object.fromEntries(new FormData(form)));render()});
+app.addEventListener('submit',event=>{const form=event.target.closest?.('[data-room-detail-form]');if(!form||!app.contains(form))return;event.preventDefault();saveV5RoomDetail(form.dataset.roomDetail,Object.fromEntries(new FormData(form)));render()});
 render();
