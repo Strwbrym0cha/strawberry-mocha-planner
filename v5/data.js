@@ -423,21 +423,23 @@ export function snapshotV4(){
   const state=readV4State();
   const today=localDateKey();
   if(!state){
-    return{found:false,today,clients:[],sessions:[],shifts:[],gigs:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
+    return{found:false,today,clients:[],sessions:[],shifts:[],gigs:[],jobPaychecks:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
   }
 
   const clients=list(state?.work?.rbt?.clients);
   const sessions=list(state?.work?.rbt?.sessions);
   const gigShifts=list(state?.work?.gigShifts);
   const shifts=[...list(state?.work?.shifts),...gigShifts];
-  const gigs=list(state?.money?.earnings).map(row=>({...row,_v5Amount:amountOfGig(row)}));
+  const isGigEarning=row=>{const kind=text(row?.kind||row?.incomeType||row?.type).toLowerCase(),source=text(row?.source||row?.platform||row?.incomeSource||row?.label||row?.name).toLowerCase().replace(/[^a-z]/g,'');return kind==='gig'||kind==='gigwork'||['doordash','shipt','ubereats','instacart','grubhub','spark'].includes(source)};
+  const earnings=list(state?.money?.earnings).map(row=>({...row,_v5Amount:amountOfGig(row)}));
+  const gigs=earnings.filter(isGigEarning),jobPaychecks=earnings.filter(row=>!isGigEarning(row));
   const activeClients=clients.filter(row=>row?.status!=='closed');
   const todaySessions=sessions.filter(row=>row?.date===today&&row?.status!=='canceled').sort((a,b)=>String(a?.startTime||'').localeCompare(String(b?.startTime||'')));
   const todayShifts=shifts.filter(row=>row?.date===today).sort((a,b)=>String(a?.startTime||'').localeCompare(String(b?.startTime||'')));
   const waitingNotes=sessions.filter(row=>row?.status!=='canceled'&&row?.noteStatus!=='submitted').sort(sessionSort);
   const recentGigs=gigs.slice().sort((a,b)=>String(b?.date||'').localeCompare(String(a?.date||''))).slice(0,8);
 
-  return{found:true,today,state,clients,sessions,shifts,gigs,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
+  return{found:true,today,state,clients,sessions,shifts,gigs,jobPaychecks,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }
 
 
