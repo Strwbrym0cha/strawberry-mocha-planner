@@ -191,6 +191,10 @@ export function readV4State(){
       if(!migrated?.state||shouldRefreshFromV4(migrated.state,v4)){
         if(migrated?.raw){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,migrated.raw)}catch{}}
         saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,migrated?.state?'refresh':'repair');
+      }else{
+        // Keep the connected ledger current when older V4 income/spending sources are discovered.
+        mergeImportedLedger(v4);
+        mergeImportedDailyNotes(v4);
       }
       return v4;
     }
