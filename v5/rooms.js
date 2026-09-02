@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary}from'./data.js?v=5.4.2-all-popups';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary}from'./data.js?v=5.0.0-official';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
