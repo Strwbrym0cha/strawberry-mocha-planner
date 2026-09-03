@@ -13,7 +13,7 @@ class MemoryStorage{
 globalThis.localStorage=new MemoryStorage();
 localStorage.setItem('sm_v4_beta',JSON.stringify({data:{schemaVersion:4,life:{tasks:[{id:'task-1',title:'Keep me safe'}]},v4:{archive:[]},money:{accounts:[]}}}));
 
-const {archiveV5Record,loadV5Ledger,readV4State,restoreV5Record,runV5DailyAction,runV5WorkAction,saveV5LedgerEntry,selectV5DailyShit,selectV5WorkHQ}=await import('./data.js');
+const {archiveV5Record,loadV5Ledger,readV4State,restoreV5Record,runV5DailyAction,runV5StudyAction,runV5WorkAction,saveV5LedgerEntry,selectV5DailyShit,selectV5StudyNook,selectV5WorkHQ}=await import('./data.js');
 
 const taskArchive=archiveV5Record('life.tasks','task-1');
 assert.equal(taskArchive.ok,true);
@@ -37,6 +37,19 @@ work=selectV5WorkHQ('2026-09-03');
 assert.equal(work.hq.clients.filter(row=>row.alias==='TEST-01').length,1,'Work HQ saves through the existing planner envelope');
 selectV5WorkHQ('2026-09-03');
 assert.equal(readV4State().work.hq.clients.filter(row=>row.alias==='TEST-01').length,1,'repeated Work HQ initialization stays idempotent');
+
+let study=selectV5StudyNook('2026-09-03');
+assert.equal(study.selectedProgram.level,'bachelors','Study Nook initializes the preserved current bachelor’s program');
+assert.equal(runV5StudyAction({type:'course-save',programId:study.programId,title:'Persistence Test Course',provider:'WGU',status:'in-progress'}).ok,true);
+study=selectV5StudyNook('2026-09-03');
+assert.equal(study.courses.filter(row=>row.title==='Persistence Test Course').length,1,'Study Nook saves through the existing planner envelope');
+selectV5StudyNook('2026-09-03');
+assert.equal(readV4State().education.courses.filter(row=>row.title==='Persistence Test Course').length,1,'repeated Study Nook initialization stays idempotent');
+const academicCourse=readV4State().education.courses.find(row=>row.title==='Persistence Test Course');
+assert.equal(archiveV5Record('education.courses',academicCourse.id).ok,true,'academic archive uses the shared reversible V5 path');
+state=readV4State();archived=state.v4.archive.find(entry=>entry.originalId===academicCourse.id);assert.ok(archived);
+assert.equal(restoreV5Record(archived.id).ok,true,'an archived academic record can be restored from Memory Box');
+assert.equal(readV4State().education.courses.some(row=>row.id===academicCourse.id),true);
 
 const savedLedger=saveV5LedgerEntry({kind:'expense',label:'Safe test entry',amount:12,date:'2026-09-03'});
 assert.equal(savedLedger.ok,true);

@@ -12,6 +12,9 @@ const dailyCss=readFileSync(resolve(folder,'daily-shit.css'),'utf8');
 const boss=readFileSync(resolve(folder,'boss.js'),'utf8');
 const bossCss=readFileSync(resolve(folder,'boss.css'),'utf8');
 const work=readFileSync(resolve(folder,'work-hq.js'),'utf8');
+const study=readFileSync(resolve(folder,'study.js'),'utf8');
+const studyEngine=readFileSync(resolve(folder,'study-nook.js'),'utf8');
+const studyCss=readFileSync(resolve(folder,'study.css'),'utf8');
 const modalCss=readFileSync(resolve(folder,'detailed-rooms.css'),'utf8');
 
 for(const href of [...index.matchAll(/href="\.\/([^"?]+)(?:\?[^\"]*)?"/g)].map(match=>match[1]))assert.equal(existsSync(resolve(folder,href)),true,`${href} should exist`);
@@ -28,5 +31,13 @@ assert.equal(modalCss.includes('max-height')&&modalCss.includes('overflow:auto')
 assert.equal(`${boss}\n${bossCss}\n${work}`.includes('V5 • LIFE OS'),false,'the Codex-built V17 presentation shell is not copied into Work HQ');
 assert.equal(/(?:from|url\(|href=)[^\n]*v17\//.test(`${boss}\n${bossCss}\n${work}`),false,'Work HQ must not import V17 presentation assets');
 for(const label of ['BT / RLT','RBT exam','Use aliases/codes only'])assert.equal(boss.includes(label),true,`${label} should remain explicit in the Work HQ presentation`);
+for(const hook of ['data-study-open','data-study-modal','data-study-form','data-study-close','data-study-program-switch'])assert.equal(`${app}\n${study}`.includes(hook),true,`${hook} should keep academic records in V5 popups`);
+assert.equal(studyCss.includes('.study-open-card'),true,'saved Study Nook cards remain visibly tappable');
+assert.equal(studyCss.includes('@media(max-width:780px)')&&studyCss.includes('font-size:16px'),true,'Study Nook popup controls remain reachable and mobile-safe');
+assert.equal(index.includes('./study.css'),true,'the V5-native Study Nook stylesheet is loaded');
+assert.equal(app.includes("ui.view==='study'?renderStudy"),true,'Study Nook evolves inside the authoritative V5 shell');
+assert.equal(`${study}\n${studyCss}\n${studyEngine}`.includes('V5 • LIFE OS'),false,'the Codex-built V17 presentation shell is not copied into Study Nook');
+assert.equal(/(?:from|url\(|href=)[^\n]*v17\//.test(`${study}\n${studyCss}\n${studyEngine}`),false,'Study Nook must not import V17 presentation assets');
+for(const protectedHook of ['data-daily-open','data-work-open','data-mode="normal"','data-mode="tiny"','data-mode="power"'])assert.equal(app.includes(protectedHook),true,`${protectedHook} must survive Pass 3`);
 
 console.log('V5 shell preservation tests passed');

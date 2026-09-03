@@ -1,4 +1,5 @@
-import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.2.0-work-hq';
+import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.3.0-study-nook';
+import{getDegreeProgressByLevel}from'./study-nook.js?v=5.3.0-study-nook';
 
 export const WORK_DAYS=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
 export const CAREER_ROADMAP=[
@@ -86,7 +87,8 @@ function clientLabel(hq,id){return hq.clients.find(row=>String(row.id)===String(
 export function selectWorkHQ(source={},today=localDate(new Date())){
  const initialized=initializeWorkHQ(source,today),hq=initialized.hq,weekStart=mondayOf(today),weekEnd=plusDays(weekStart,6),rangeEnd=plusDays(today,35),scheduled=workOccurrences(hq,weekStart,rangeEnd);list(hq.sessionPlans).filter(plan=>validDate(plan.date)&&plan.date>=weekStart&&plan.date<=rangeEnd&&!scheduled.some(row=>String(row.clientId)===String(plan.clientId)&&row.date===plan.date)).forEach(plan=>scheduled.push({id:plan.occurrenceId||`plan:${plan.id}`,externalId:`work-hq:session-plan:${plan.id}`,clientId:plan.clientId,date:plan.date,startTime:plan.startTime,endTime:plan.endTime,kind:'planned'}));const occurrences=scheduled.sort((a,b)=>`${a.date}T${a.startTime||'99:99'}`.localeCompare(`${b.date}T${b.startTime||'99:99'}`)).map(row=>{const plan=planForOccurrence(hq,row);return{...row,client:clientLabel(hq,row.clientId),plan,prepStatus:prepStatus(plan,row.date,today)}}),todaySessions=occurrences.filter(row=>row.date===today),weekSessions=occurrences.filter(row=>row.date>=weekStart&&row.date<=weekEnd),upcoming=occurrences.filter(row=>row.date>=today).slice(0,12),plans=list(hq.sessionPlans).slice().sort((a,b)=>`${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`)),packing=upcoming.filter(row=>row.plan&&list(row.plan.materials).length).slice(0,4),daily=selectDailyShit(initialized.state,today),importantActions=daily.open.filter(item=>text(item.source?.externalId).startsWith('work-hq:'));
  const currentMilestone=hq.career.roadmap.find(row=>row.id===hq.career.currentStage),targetMilestone=hq.career.roadmap.find(row=>row.id===hq.career.targetStage),exam=hq.career.rbtJourney.find(row=>row.id==='exam');
- return{...initialized,hq,occurrences,todaySessions,weekSessions,upcoming,plans,packing,importantActions,currentMilestone,targetMilestone,exam};
+ const degreeProgress={bachelors:getDegreeProgressByLevel(initialized.state,'bachelors'),masters:getDegreeProgressByLevel(initialized.state,'masters')};
+ return{...initialized,hq,occurrences,todaySessions,weekSessions,upcoming,plans,packing,importantActions,currentMilestone,targetMilestone,exam,degreeProgress};
 }
 
 function replaceById(rows,id,next){const index=rows.findIndex(row=>String(row?.id)===String(id));return index<0?[...rows,next]:rows.map((row,rowIndex)=>rowIndex===index?next:row)}

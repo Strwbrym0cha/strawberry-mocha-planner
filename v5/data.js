@@ -1,5 +1,6 @@
-import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.2.0-work-hq';
-import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.2.0-work-hq';
+import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.3.0-study-nook';
+import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.3.0-study-nook';
+import{applyStudyAction,initializeStudyNook,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
 
 const V4_KEY='sm_v4_beta';
 const V5_DATA_KEY='sm_v5_data';
@@ -29,7 +30,7 @@ const COLLECTION_PATHS=[
   'life.inbox','life.tasks','life.reminders','life.routines','life.routineInstances','life.events','life.threads',
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
-  'education.programs','education.courses','education.items','education.sessions','education.reviews',
+  'education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.reviews','education.transferEvaluations','education.transferResults','education.terms','education.importantDates',
   'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
   'work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
@@ -44,7 +45,7 @@ const RECOVERY_COUNT_PATHS=[
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'work.items','work.shifts','work.training','work.career',
   'work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary',
-  'education.programs','education.courses','education.items','education.sessions','education.reviews',
+  'education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.reviews','education.transferEvaluations','education.transferResults','education.terms','education.importantDates',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments','movement.sessions',
   'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans',
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries',
@@ -337,6 +338,23 @@ export function runV5WorkAction(action={}){
   }catch(error){console.warn('KatOS V5 could not save that Work HQ action.',error);return{ok:false,error:'That Work HQ change could not be saved. Your existing work data is still safe.'}}
 }
 
+export function selectV5StudyNook(date=localDateKey()){
+  const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+  if(!source)return selectStudyNook({},date);
+  const initialized=initializeStudyNook(source,date);
+  if(initialized.changed)persistPlannerState(initialized.state,'v5-study-nook-initialize');
+  return selectStudyNook(initialized.state,date);
+}
+
+export function runV5StudyAction(action={}){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so Study Nook has a planner to update.'};
+    const result=applyStudyAction(source,action,localDateKey());if(!result.ok)return result;
+    persistPlannerState(result.state,'v5-study-nook');return{...result,state:undefined};
+  }catch(error){console.warn('KatOS V5 could not save that Study Nook action.',error);return{ok:false,error:'That Study Nook change could not be saved. Your existing school data is still safe.'}}
+}
+
 const cloneState=value=>{try{return structuredClone(value)}catch{return JSON.parse(JSON.stringify(value||{}))}};
 const itemId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
 const setAtPath=(state,path,value)=>{const keys=path.split('.');let cursor=state;for(let index=0;index<keys.length-1;index++){const key=keys[index];cursor[key]=obj(cursor[key]);cursor=cursor[key]}cursor[keys.at(-1)]=value};
@@ -416,7 +434,7 @@ export function updateV5LedgerEntry(id,fields={}){
   catch{return{ok:false,error:'That ledger entry could not be saved.'}}
 }
 
-const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary']);
+const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary']);
 export function updateV5Record(path,id,fields={}){
   try{
     if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
