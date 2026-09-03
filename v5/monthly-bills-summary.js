@@ -27,10 +27,14 @@ function buildSummary(){
   const paidAmount=paid.reduce((sum,row)=>sum+amountOf(row),0);
   const percent=total>0?Math.max(0,Math.min(100,Math.round(paidAmount/total*100))):instances.length&&handled.length===instances.length?100:0;
   const next=active.slice().sort((a,b)=>String(a.dueDate).localeCompare(String(b.dueDate)))[0];
-  return {month:monthLabel(view.today),instances,active,paid,handled,remaining,total,paidAmount,percent,next};
+  return {monthKey:month,month:monthLabel(view.today),instances,active,paid,handled,remaining,total,paidAmount,percent,next};
 }
 
-function cardHtml(summary){
+function signatureOf(summary){
+  return [summary.monthKey,summary.instances.length,summary.active.length,summary.handled.length,summary.remaining.toFixed(2),summary.paidAmount.toFixed(2),summary.total.toFixed(2),summary.next?.id||''].join('|');
+}
+
+function cardHtml(summary,signature){
   const totalCount=summary.instances.length;
   const leftCount=summary.active.length;
   const handledCount=summary.handled.length;
@@ -39,7 +43,7 @@ function cardHtml(summary){
     : totalCount
       ? 'Nothing else is waiting this month. ✨'
       : 'No monthly bills are saved yet.';
-  return `<section class="card full bills-month-card" data-monthly-bills-summary>
+  return `<section class="card full bills-month-card" data-monthly-bills-summary data-monthly-bills-signature="${signature}">
     <div class="card-head bills-month-head">
       <div>
         <div class="ey">🧾 BILLS DUE THIS MONTH · ${summary.month.toUpperCase()}</div>
@@ -61,11 +65,15 @@ function cardHtml(summary){
 function mount(){
   const grid=document.querySelector('.money-compact-grid');
   if(!grid)return;
-  grid.querySelector('[data-monthly-bills-summary]')?.remove();
   const ledger=grid.querySelector('.money-ledger-card');
   if(!ledger)return;
+  const summary=buildSummary();
+  const signature=signatureOf(summary);
+  const existing=grid.querySelector('[data-monthly-bills-summary]');
+  if(existing?.dataset.monthlyBillsSignature===signature)return;
+  existing?.remove();
   const wrapper=document.createElement('template');
-  wrapper.innerHTML=cardHtml(buildSummary()).trim();
+  wrapper.innerHTML=cardHtml(summary,signature).trim();
   grid.insertBefore(wrapper.content.firstElementChild,ledger);
 }
 
