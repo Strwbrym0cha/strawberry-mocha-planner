@@ -1,4 +1,19 @@
-/* V5 Cleanup Round 1: popup responsiveness and dense form-grid polish. */
+/* V5 Cleanup Round 1: popup responsiveness, dense form-grid polish, and a slimmer desktop shell. */
+
+/* The old 270px sidebar left a lot of dead space on iPad/desktop. Keep the same
+   V5 sidebar, just give more of the screen back to the planner. */
+@media (min-width:781px) {
+  :root { --sidebar: 210px; }
+  .brand { padding: 18px 14px 12px; }
+  .brand-row { gap: 9px; }
+  .berry { width: 42px; height: 42px; border-radius: 15px; font-size: 22px; }
+  .brand h1 { font-size: 22px; }
+  .scribble { font-size: 15px; line-height: 1.15; }
+  .nav { padding-inline: 8px; }
+  .nav-btn { padding: 9px 9px; gap: 7px; font-size: 15px; }
+  .nav-icon { width: 22px; font-size: 17px; }
+  .sidebar-foot { padding-inline: 12px; }
+}
 
 /* The modal is rendered inside .main. On iPad Safari that containing block can
    behave as the fixed-position viewport, so compensate for the desktop shell
@@ -154,7 +169,8 @@
   max-width: 100%;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 980px) and (min-width:781px) {
+  :root { --sidebar: 195px; }
   .detail-modal,
   .money-modal .detail-modal,
   .work-modal .detail-modal,
