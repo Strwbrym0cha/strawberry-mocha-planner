@@ -19,11 +19,9 @@ body { font-weight: 400; }
 .money-field > span,.daily-field > span { font-weight: 600 !important; }
 .money-open-card b,.money-list-row b,.money-row b,.money-summary b,
 .money-compact-list b,.money-card b { font-weight: 600; }
-
-/* Inputs should read like content, not headings. */
 input,select,textarea { font-weight: 450; }
 
-/* The old 270px sidebar left a lot of dead space on iPad/desktop. */
+/* Slimmer desktop/iPad shell. */
 @media (min-width:781px) {
   :root { --sidebar: 210px; }
   .brand { padding: 18px 14px 12px; }
@@ -37,44 +35,113 @@ input,select,textarea { font-weight: 450; }
   .sidebar-foot { padding-inline: 12px; }
 }
 
-/* Keep popups inside the content viewport. */
-.detail-modal-backdrop,.money-modal,.work-modal,.study-modal,.daily-modal,.lifestyle-modal {
-  box-sizing:border-box;position:fixed!important;inset:0!important;width:100%!important;max-width:100%!important;
-  height:100dvh!important;min-height:100dvh!important;z-index:1000!important;display:grid!important;
-  place-items:center!important;padding:18px!important;overflow:hidden!important;
+/* IMPORTANT: only the backdrop gets fixed full-screen positioning.
+   Some modules (notably Study Nook) use names like .study-modal on the INNER
+   dialog. Treating those inner classes as backdrops made the popup itself
+   full-screen and prevented its content from scrolling to Save/Cancel. */
+.detail-modal-backdrop {
+  box-sizing:border-box;
+  position:fixed !important;
+  inset:0 !important;
+  width:100% !important;
+  max-width:100% !important;
+  height:100dvh !important;
+  min-height:100dvh !important;
+  z-index:1000 !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:18px !important;
+  overflow:hidden !important;
 }
-.detail-modal-backdrop[hidden],.money-modal[hidden],.work-modal[hidden],.study-modal[hidden],.daily-modal[hidden],.lifestyle-modal[hidden]{display:none!important}
-.detail-modal,.money-modal .detail-modal,.work-modal .detail-modal,.study-modal .detail-modal,.daily-modal .detail-modal,.lifestyle-modal .detail-modal{
-  box-sizing:border-box;width:min(760px,calc(100% - 8px));max-width:calc(100% - 8px);max-height:calc(100dvh - 36px);
-  overflow-y:auto;overflow-x:hidden;margin:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+.detail-modal-backdrop[hidden] { display:none !important; }
+
+/* The actual V5 popup card stays bounded and scrolls vertically when needed. */
+.detail-modal {
+  box-sizing:border-box;
+  width:min(760px,calc(100% - 8px));
+  max-width:calc(100% - 8px);
+  max-height:calc(100dvh - 36px);
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+  margin:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:max(18px,env(safe-area-inset-bottom));
 }
-.detail-modal *,.money-modal .detail-modal *,.work-modal .detail-modal *,.study-modal .detail-modal *,.daily-modal .detail-modal *,.lifestyle-modal .detail-modal *{box-sizing:border-box;min-width:0}
+.detail-modal * { box-sizing:border-box; min-width:0; }
 
 /* Shared V5 popup field grids. */
-.detail-modal .room-detail-fields,.money-modal .room-detail-fields,.work-modal .room-detail-fields,.study-modal .room-detail-fields,.daily-modal .room-detail-fields,.lifestyle-modal .room-detail-fields{
-  display:grid!important;grid-template-columns:repeat(12,minmax(0,1fr))!important;gap:10px!important;align-items:start;
+.detail-modal .room-detail-fields {
+  display:grid !important;
+  grid-template-columns:repeat(12,minmax(0,1fr)) !important;
+  gap:10px !important;
+  align-items:start;
 }
-.detail-modal .room-detail-fields>.daily-field,.money-modal .room-detail-fields>.money-field,.money-modal .room-detail-fields>.daily-field,.work-modal .room-detail-fields>.daily-field,.study-modal .room-detail-fields>.daily-field,.daily-modal .room-detail-fields>.daily-field,.lifestyle-modal .room-detail-fields>.daily-field{grid-column:span 4;min-width:0}
-.detail-modal .room-detail-fields>.daily-field.daily-field-wide,.money-modal .room-detail-fields>.money-field.wide,.money-modal .room-detail-fields>.daily-field.daily-field-wide,.work-modal .room-detail-fields>.daily-field.daily-field-wide,.study-modal .room-detail-fields>.daily-field.daily-field-wide,.daily-modal .room-detail-fields>.daily-field.daily-field-wide,.lifestyle-modal .room-detail-fields>.daily-field.daily-field-wide{grid-column:1/-1}
-.money-modal .room-detail-fields>.money-field:nth-child(1),.money-modal .room-detail-fields>.daily-field:nth-child(1){grid-column:1/-1}
-.money-modal .room-detail-fields>.money-field:nth-child(2),.money-modal .room-detail-fields>.money-field:nth-child(3),.money-modal .room-detail-fields>.daily-field:nth-child(2),.money-modal .room-detail-fields>.daily-field:nth-child(3){grid-column:span 6}
-.money-modal .room-detail-fields>.money-field:nth-child(n+4):nth-child(-n+8),.money-modal .room-detail-fields>.daily-field:nth-child(n+4):nth-child(-n+8){grid-column:span 4}
-.money-modal .money-field>span,.money-modal .daily-field>span,.detail-modal .daily-field>span{min-height:0!important;line-height:1.2;overflow-wrap:anywhere;word-break:normal}
-.money-modal input,.money-modal select,.money-modal textarea,.detail-modal input,.detail-modal select,.detail-modal textarea{max-width:100%}
-.money-reconcile,.money-payment-form,.money-receive,.money-contribution{grid-template-columns:repeat(2,minmax(0,1fr))!important}
-.money-reconcile>button,.money-payment-form>button,.money-receive>button,.money-contribution>button,.money-reconcile>.btn,.money-payment-form>.btn,.money-receive>.btn,.money-contribution>.btn{grid-column:1/-1;width:100%}
-.detail-modal .daily-actions,.money-modal .daily-actions{display:flex;flex-wrap:wrap;gap:8px}.detail-modal .daily-actions .btn,.money-modal .daily-actions .btn{max-width:100%}
+.detail-modal .room-detail-fields>.daily-field,
+.detail-modal .room-detail-fields>.money-field {
+  grid-column:span 4;
+  min-width:0;
+}
+.detail-modal .room-detail-fields>.daily-field.daily-field-wide,
+.detail-modal .room-detail-fields>.money-field.wide {
+  grid-column:1/-1;
+}
+
+/* Money/account forms need more deliberate widths than the generic 3-up grid. */
+.money-modal .room-detail-fields>.money-field:nth-child(1),
+.money-modal .room-detail-fields>.daily-field:nth-child(1){grid-column:1/-1}
+.money-modal .room-detail-fields>.money-field:nth-child(2),
+.money-modal .room-detail-fields>.money-field:nth-child(3),
+.money-modal .room-detail-fields>.daily-field:nth-child(2),
+.money-modal .room-detail-fields>.daily-field:nth-child(3){grid-column:span 6}
+.money-modal .room-detail-fields>.money-field:nth-child(n+4):nth-child(-n+8),
+.money-modal .room-detail-fields>.daily-field:nth-child(n+4):nth-child(-n+8){grid-column:span 4}
+
+.money-modal .money-field>span,.money-modal .daily-field>span,.detail-modal .daily-field>span{
+  min-height:0 !important;
+  line-height:1.2;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+.money-modal input,.money-modal select,.money-modal textarea,
+.detail-modal input,.detail-modal select,.detail-modal textarea{max-width:100%}
+
+.money-reconcile,.money-payment-form,.money-receive,.money-contribution{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+.money-reconcile>button,.money-payment-form>button,.money-receive>button,.money-contribution>button,
+.money-reconcile>.btn,.money-payment-form>.btn,.money-receive>.btn,.money-contribution>.btn{
+  grid-column:1/-1;
+  width:100%;
+}
+.detail-modal .daily-actions,.money-modal .daily-actions{display:flex;flex-wrap:wrap;gap:8px}
+.detail-modal .daily-actions .btn,.money-modal .daily-actions .btn{max-width:100%}
 
 @media (max-width:980px) and (min-width:781px){
   :root{--sidebar:195px}
-  .detail-modal .room-detail-fields>.daily-field,.money-modal .room-detail-fields>.money-field,.money-modal .room-detail-fields>.daily-field,.work-modal .room-detail-fields>.daily-field,.study-modal .room-detail-fields>.daily-field,.daily-modal .room-detail-fields>.daily-field,.lifestyle-modal .room-detail-fields>.daily-field{grid-column:span 6}
-  .money-modal .room-detail-fields>.money-field:nth-child(1),.money-modal .room-detail-fields>.daily-field:nth-child(1),.money-modal .room-detail-fields>.money-field.wide,.money-modal .room-detail-fields>.daily-field.daily-field-wide{grid-column:1/-1}
+  .detail-modal .room-detail-fields>.daily-field,
+  .detail-modal .room-detail-fields>.money-field{grid-column:span 6}
+  .money-modal .room-detail-fields>.money-field:nth-child(1),
+  .money-modal .room-detail-fields>.daily-field:nth-child(1),
+  .money-modal .room-detail-fields>.money-field.wide,
+  .money-modal .room-detail-fields>.daily-field.daily-field-wide{grid-column:1/-1}
 }
+
 @media (max-width:620px){
-  .detail-modal-backdrop,.money-modal,.work-modal,.study-modal,.daily-modal,.lifestyle-modal{padding:8px!important;align-items:end!important}
-  .detail-modal,.money-modal .detail-modal,.work-modal .detail-modal,.study-modal .detail-modal,.daily-modal .detail-modal,.lifestyle-modal .detail-modal{width:100%;max-width:100%;max-height:calc(100dvh - 16px);border-radius:22px 22px 16px 16px}
-  .detail-modal .room-detail-fields,.money-modal .room-detail-fields,.work-modal .room-detail-fields,.study-modal .room-detail-fields,.daily-modal .room-detail-fields,.lifestyle-modal .room-detail-fields{grid-template-columns:1fr!important}
-  .detail-modal .room-detail-fields>*,.money-modal .room-detail-fields>*,.work-modal .room-detail-fields>*,.study-modal .room-detail-fields>*,.daily-modal .room-detail-fields>*,.lifestyle-modal .room-detail-fields>*{grid-column:1/-1!important}
-  .money-reconcile,.money-payment-form,.money-receive,.money-contribution{grid-template-columns:1fr!important}
-  .detail-modal input,.detail-modal select,.detail-modal textarea,.money-modal input,.money-modal select,.money-modal textarea{font-size:16px}
+  .detail-modal-backdrop{
+    padding:8px !important;
+    align-items:end !important;
+  }
+  .detail-modal{
+    width:100%;
+    max-width:100%;
+    max-height:calc(100dvh - 16px);
+    border-radius:22px 22px 16px 16px;
+    padding-bottom:max(18px,env(safe-area-inset-bottom));
+  }
+  .detail-modal .room-detail-fields{grid-template-columns:1fr !important}
+  .detail-modal .room-detail-fields>*{grid-column:1/-1 !important}
+  .money-reconcile,.money-payment-form,.money-receive,.money-contribution{grid-template-columns:1fr !important}
+  .detail-modal input,.detail-modal select,.detail-modal textarea,
+  .money-modal input,.money-modal select,.money-modal textarea{font-size:16px}
 }
