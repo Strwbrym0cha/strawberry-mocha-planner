@@ -1,3 +1,5 @@
+import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.1.0-daily-shit';
+
 const V4_KEY='sm_v4_beta';
 const V5_DATA_KEY='sm_v5_data';
 const V4_BACKUP_KEY='sm_v4_beta_backup_before_v5';
@@ -27,7 +29,7 @@ const COLLECTION_PATHS=[
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
-  'work.items','work.shifts','work.gigShifts','work.gigGoals','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.notes','work.rbt.sessionNotes',
+  'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
@@ -57,6 +59,7 @@ function stateCounts(state){
   return counts;
 }
 function hasUserContent(state){return stateCounts(state).total>0}
+function hasRecoverableV5Content(state){return hasUserContent(state)||list(pathValue(state,'v4.archive')).length>0}
 function shouldRefreshFromV4(migrated,v4){
   if(!v4)return false;
   if(!migrated)return true;
@@ -120,33 +123,28 @@ function bestLegacyCandidate(){
   const keys=[V4_KEY,'sm_v4_beta_backup_before_v5','sm_v4_beta_backup','sm_v16','sm_v16_backup','sm_v3_beta'];
   try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&(/^(sm_v4_beta_before_restore_|sm_v4_beta_before_cloud_restore_|sm_v16_backups)/.test(key)))keys.push(key)}}catch{}
   const candidates=keys.map(candidateFromKey).filter(candidate=>candidate?.state);
-  return candidates.find(candidate=>candidate.key===V4_KEY&&hasUserContent(candidate.state))||candidates.filter(candidate=>hasUserContent(candidate.state)).sort((a,b)=>stateCounts(b.state).total-stateCounts(a.state).total)[0]||candidates[0]||null;
+  return candidates.find(candidate=>candidate.key===V4_KEY&&hasRecoverableV5Content(candidate.state))||candidates.filter(candidate=>hasUserContent(candidate.state)).sort((a,b)=>stateCounts(b.state).total-stateCounts(a.state).total)[0]||candidates[0]||null;
 }
 
 function ledgerEntryFromV4(row,index,kindHint=''){
-  const item=obj(row),rawKind=text(item.kind||item.type||kindHint).toLowerCase();
-  const kind=['income','expense','transfer'].includes(rawKind)?rawKind:(kindHint==='income'||['paycheck','gig','earning','income'].includes(rawKind)?'income':'expense');
-  const amount=Math.abs(Number(item.actualNet??item.receivedAmount??item.actualAmount??item.netAmount??item.amount??item.total??0));
-  const label=text(item.label||item.name||item.description||item.title||item.employer)||'Transaction';
-  const dateValue=text(item.receivedDate||item.date||item.expectedDate);
-  const date=/^\d{4}-\d{2}-\d{2}$/.test(dateValue)?dateValue:localDateKey();
+  const item=obj(row),rawKind=text(item.kind||item.type||kindHint).toLowerCase(),kind=['income','expense','transfer'].includes(rawKind)?rawKind:(kindHint==='income'?'income':'expense');
+  const amount=Math.abs(Number(item.amount??item.actualAmount??item.receivedAmount??item.netAmount??item.total??0));
+  const label=text(item.label||item.name||item.description||item.title)||'Transaction';
+  const date=/^\d{4}-\d{2}-\d{2}$/.test(text(item.date||item.receivedDate||item.expectedDate))?text(item.date||item.receivedDate||item.expectedDate):localDateKey();
   if(!label||!Number.isFinite(amount)||amount<=0)return null;
-  return{id:`v4-${text(item.id)||index}`,kind,label,amount:cents(amount),date,category:text(item.category)||'Other',account:text(item.accountId||item.account||item.fromAccountId),toAccount:text(item.toAccountId||item.toAccount),note:text(item.note),createdAt:text(item.createdAt)||'',sourceId:text(item.sourceId)||text(item.id),sourceType:text(item.sourceType)||kindHint||rawKind||'v4',source:'v4-migration'};
+  return{id:`v4-${text(item.id)||index}`,kind,label,amount:cents(amount),date,category:text(item.category)||'Other',account:text(item.accountId||item.account||item.fromAccountId),toAccount:text(item.toAccountId||item.toAccount),note:text(item.note),createdAt:text(item.createdAt)||'',source:'v4-migration'};
 }
 
 function importedLedgerEntries(state){
-  const moneyState=obj(state?.money);
-  const direct=[...list(moneyState.ledger),...list(moneyState.transactions)].map((row,index)=>ledgerEntryFromV4(row,`ledger-${index}`)).filter(Boolean);
-  const linked=new Set(direct.map(row=>text(row.sourceId)).filter(Boolean));
-  const earnings=list(moneyState.earnings).filter(row=>row?.status==='received'||row?.received===true||Number(row?.receivedAmount)||Number(row?.actualAmount)||Number(row?.actualNet)).filter(row=>!linked.has(text(row?.id))).map((row,index)=>ledgerEntryFromV4({...obj(row),kind:'income',label:row?.label||row?.employer||row?.name},`earning-${index}`,'income')).filter(Boolean);
-  const spending=list(moneyState.spending).map((row,index)=>ledgerEntryFromV4({...obj(row),kind:'expense',label:row?.description||row?.label||row?.name},`spending-${index}`,'expense')).filter(Boolean);
-  return[...direct,...earnings,...spending];
+  const moneyState=obj(state?.money),rawLedger=list(moneyState.ledger).length?moneyState.ledger:list(moneyState.transactions);
+  const source=rawLedger.length?rawLedger:[...list(moneyState.spending).map(row=>({...obj(row),kind:'expense',label:row?.description||row?.label||row?.name})),...list(moneyState.earnings).filter(row=>row?.status==='received'||row?.received===true||row?.actualAmount||row?.amount).map(row=>({...obj(row),kind:'income',label:row?.label||row?.employer||row?.name}))];
+  return source.map((row,index)=>ledgerEntryFromV4(row,index)).filter(Boolean);
 }
 
 function mergeImportedLedger(state){
   const source=importedLedgerEntries(state);
   if(!source.length)return 0;
-  const current=loadV5Ledger(),seen=new Set(current.entries.map(entry=>String(entry?.id))),sourceSeen=new Set(current.entries.map(entry=>text(entry?.sourceId)).filter(Boolean)),fresh=source.filter(entry=>!seen.has(String(entry.id))&&!sourceSeen.has(text(entry.sourceId)));
+  const current=loadV5Ledger(),seen=new Set(current.entries.map(entry=>String(entry?.id))),fresh=source.filter(entry=>!seen.has(String(entry.id)));
   if(!fresh.length)return 0;
   try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:[...current.entries,...fresh].slice(-500)}));return fresh.length}catch{return 0}
 }
@@ -191,10 +189,6 @@ export function readV4State(){
       if(!migrated?.state||shouldRefreshFromV4(migrated.state,v4)){
         if(migrated?.raw){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,migrated.raw)}catch{}}
         saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,migrated?.state?'refresh':'repair');
-      }else{
-        // Keep the connected ledger current when older V4 income/spending sources are discovered.
-        mergeImportedLedger(v4);
-        mergeImportedDailyNotes(v4);
       }
       return v4;
     }
@@ -270,8 +264,7 @@ export function loadV5DailyNote(day=localDateKey()){
 }
 
 export function saveV5DailyNote(fields){
-  const selectedDate=/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey();
-  const entry={...fields,date:selectedDate,updatedAt:new Date().toISOString()};
+  const entry={...fields,date:localDateKey(),updatedAt:new Date().toISOString()};
   try{
     const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==entry.date);
     entries.push(entry);
@@ -297,29 +290,32 @@ export function saveV5RoomDetail(room,fields){
   return entry;
 }
 
+// Daily Shit uses the existing V5 planner snapshot as its only source of truth.
+// It adds occurrence metadata to existing task/routine/reminder records instead
+// of creating a second task database.
+export function selectV5DailyShit(date=localDateKey(),options={}){
+  const state=readV4State()||candidateFromKey(V5_DATA_KEY)?.state||{};
+  return selectDailyShit(state,date,options);
+}
+
+export function runV5DailyAction(action={}){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so Daily Shit has a planner to update.'};
+    const result=applyDailyAction(source,action,localDateKey());
+    if(!result.ok)return result;
+    const state=result.state,now=new Date().toISOString();state.meta={...obj(state.meta),updatedAt:now};
+    const existing=localStorage.getItem(V4_KEY)||'',parsed=parseStored(existing);const envelope=parsed&&JSON.parse(existing)?.data?{...JSON.parse(existing),data:state}:{data:state};const raw=JSON.stringify(envelope);
+    localStorage.setItem(V4_KEY,raw);saveImportedState(state,raw,V4_KEY,'v5-daily-shit');
+    return{ok:true,result:result.result};
+  }catch(error){console.warn('KatOS V5 could not save that Daily Shit action.',error);return{ok:false,error:'That Daily Shit change could not be saved. Your planner is still safe.'}}
+}
+
 const cloneState=value=>{try{return structuredClone(value)}catch{return JSON.parse(JSON.stringify(value||{}))}};
 const itemId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
 const setAtPath=(state,path,value)=>{const keys=path.split('.');let cursor=state;for(let index=0;index<keys.length-1;index++){const key=keys[index];cursor[key]=obj(cursor[key]);cursor=cursor[key]}cursor[keys.at(-1)]=value};
 const appendAtPath=(state,path,row)=>{const current=list(pathValue(state,path));setAtPath(state,path,[...current,row])};
 const minutesFrom=value=>({"5 minutes":5,"15 minutes":15,"30 minutes":30,"45 minutes":45,"1 hour":60,"Longer than an hour":90,"Longer":90}[text(value)]||0);
-function validDate(value){return/^\d{4}-\d{2}-\d{2}$/.test(text(value))}
-function shiftDate(value,days){const date=new Date(`${value}T12:00:00Z`);date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10)}
-function shiftMonth(value){const date=new Date(`${value}T12:00:00Z`);date.setUTCMonth(date.getUTCMonth()+1);return date.toISOString().slice(0,10)}
-function rbtSessionDates(start,repeat,through){
-  if(!validDate(start))return[];
-  const frequency=text(repeat)||'Does not repeat';
-  if(frequency==='Does not repeat'||frequency==='Never')return[start];
-  if(!validDate(through)||through<start)return[];
-  const dates=[],limit=180;let cursor=start;
-  while(cursor<=through&&dates.length<limit){
-    if(frequency!=='Weekdays'||!['0','6'].includes(String(new Date(`${cursor}T12:00:00Z`).getUTCDay())))dates.push(cursor);
-    if(frequency==='Weekly')cursor=shiftDate(cursor,7);
-    else if(frequency==='Every 2 weeks')cursor=shiftDate(cursor,14);
-    else if(frequency==='Monthly')cursor=shiftMonth(cursor);
-    else cursor=shiftDate(cursor,1);
-  }
-  return dates;
-}
 
 // V5's pop-ups update the planner data itself, not just a display card.  The
 // original V4 envelope is retained so V4 remains a safe recovery copy.
@@ -331,70 +327,20 @@ export function saveV5Workspace(view,fields={}){
     switch(view){
       case'home':state.context={...obj(state.context),focus:value('focus'),capacity:value('capacity'),energy:value('energy'),location:value('location'),protected:value('protected'),nextStep:value('nextStep'),needs:value('needs'),note:value('homeNotes')};break;
       case'boss':if(!value('date'))return{ok:false,error:'Choose the date for the gig shift first.'};appendAtPath(state,'work.gigShifts',{id:itemId('gig'),source:value('source')||'Gig work',date:value('date'),startTime:value('startTime'),endTime:value('endTime'),targetAmount:Number(fields.targetAmount)||0,note:value('note'),status:'planned',createdAt:now});break;
-      case'gig-earning':{
-        if(!value('platform')||!(Number(fields.amount)>0)||!validDate(value('date')))return{ok:false,error:'Choose the app, date, and amount earned first.'};
-        const earningId=itemId('gig-earning'),amount=Number(fields.amount);
-        appendAtPath(state,'money.earnings',{id:earningId,label:value('platform'),platform:value('platform'),source:value('platform'),kind:'gig',amount,actualAmount:amount,receivedAmount:amount,received:true,status:'received',date:value('date'),receivedDate:value('date'),account:value('account')||'DoorDash',notes:value('note'),createdAt:now});
-        saveV5LedgerEntry({label:value('platform'),kind:'income',amount,date:value('date'),category:'Gig work',account:value('account')||'DoorDash',note:value('note'),sourceId:earningId,sourceType:'work.gig'});
-        break;
-      }
-      case'gig-goal':{
-        if(!value('name')||!(Number(fields.amount)>0))return{ok:false,error:'Give the goal a name and dollar amount first.'};
-        appendAtPath(state,'work.gigGoals',{id:itemId('gig-goal'),name:value('name'),amount:Number(fields.amount),period:value('period')||'weekly',platform:value('platform')||'All gig apps',startDate:value('startDate')||today,endDate:value('endDate'),note:value('note'),archived:false,createdAt:now});
-        break;
-      }
-      case'rbt-client':{if(!value('code'))return{ok:false,error:'Use a client code or nickname first.'};const serviceDays=list(fields.serviceDays).map(day=>text(day)).filter(Boolean);appendAtPath(state,'work.rbt.clients',{id:itemId('rbt-client'),code:value('code'),setting:value('setting')||'Home',schedule:serviceDays.join(', ')||value('schedule'),serviceDays,supervisor:value('supervisor'),focus:value('focus'),reminders:value('reminders'),status:value('status')||'Active',createdAt:now});break;}
-      case'rbt-supervisor':if(!value('name'))return{ok:false,error:'Add a supervisor name or initials first.'};appendAtPath(state,'work.rbt.supervisors',{id:itemId('rbt-supervisor'),name:value('name'),credential:value('credential')||'BCBA',availability:value('availability'),contact:value('contact'),notes:value('notes'),status:value('status')||'Active',createdAt:now});break;
-      case'rbt-session':{
-        if(!value('clientId')||!validDate(value('date')))return{ok:false,error:'Choose a client and date for the appointment first.'};
-        const repeat=value('repeat')||'Does not repeat',dates=rbtSessionDates(value('date'),repeat,value('repeatThrough'));
-        if(!dates.length)return{ok:false,error:repeat==='Does not repeat'?'Choose a valid date.':'Choose an end date for the repeating appointment.'};
-        const client=list(state?.work?.rbt?.clients).find(row=>String(row?.id)===value('clientId')),clientLabel=text(client?.code)||'RBT session';
-        dates.forEach(date=>{
-          const sessionId=itemId('rbt-session');
-          appendAtPath(state,'work.rbt.sessions',{id:sessionId,clientId:value('clientId'),date,startTime:value('startTime'),endTime:value('endTime'),setting:value('setting'),supervisor:value('supervisor'),appointmentType:value('appointmentType')||'Direct session',repeat,repeatThrough:value('repeatThrough'),note:value('note'),noteStatus:value('noteStatus')||'draft',status:'scheduled',createdAt:now});
-          appendAtPath(state,'life.events',{id:itemId('rbt-event'),title:`RBT · ${clientLabel}`,date,startTime:value('startTime'),endTime:value('endTime'),location:value('setting'),area:'Work',category:'Work shift',type:'RBT session',notes:value('note'),rbtSessionId:sessionId,createdAt:now});
-        });break;
-      }
-      case'rbt-session-plan':{
-        if(!value('clientId')||!validDate(value('date')))return{ok:false,error:'Choose a client code and date for the plan first.'};
-        const repeat=value('repeat')||'Does not repeat',dates=rbtSessionDates(value('date'),repeat,value('repeatThrough'));
-        if(!dates.length)return{ok:false,error:repeat==='Does not repeat'?'Choose a valid date.':'Choose an end date for the repeating plan.'};
-        const client=list(state?.work?.rbt?.clients).find(row=>String(row?.id)===value('clientId')),clientLabel=text(client?.code)||'RBT plan';
-        dates.forEach(date=>{
-          const planId=itemId('rbt-plan');
-          appendAtPath(state,'work.rbt.sessionPlans',{id:planId,clientId:value('clientId'),date,startTime:value('startTime'),endTime:value('endTime'),setting:value('setting'),supervisor:value('supervisor'),appointmentType:value('appointmentType')||'Direct session',repeat,repeatThrough:value('repeatThrough'),goals:value('goals'),materials:value('materials'),planNotes:value('planNotes'),status:value('status')||'planned',createdAt:now});
-          appendAtPath(state,'life.events',{id:itemId('rbt-plan-event'),title:`RBT plan · ${clientLabel}`,date,startTime:value('startTime'),endTime:value('endTime'),location:value('setting'),area:'Work',category:'RBT session plan',type:'RBT plan',notes:value('planNotes'),rbtPlanId:planId,createdAt:now});
-        });break;
-      }
-      case'rbt-career-progress':{
-        const keys=['btRlt','rbtTraining','rbtCompetency','rbtApplication','rbtExam','rbtMaintenance','bachelors','leadRbt','bcabaEligibility','bcabaSupervisor','bcabaFieldwork','bcabaExam','masters','bcbaEligibility','bcbaSupervisor','bcbaFieldwork','bcbaExam'];
-        const progress={...obj(state?.work?.rbt?.careerProgress),stage:value('stage'),targetDate:value('targetDate'),nextStep:value('nextStep'),notes:value('notes'),updatedAt:now};
-        keys.forEach(key=>{progress[key]=fields[key]==='on'});
-        state.work={...obj(state.work),rbt:{...obj(state.work?.rbt),careerProgress:progress}};
-        break;
-      }
-      case'time':appendAtPath(state,'life.events',{id:itemId('event'),title:value('anchor')||'Schedule item',date:value('date')||today,startTime:value('startTime'),endTime:value('endTime'),location:value('location'),priority:value('priority'),area:value('area'),category:value('category'),notes:value('scheduleNotes'),createdAt:now});break;
-      case'tasks':{if(!value('task'))return{ok:false,error:'Give the to-do a name first.'};const priorityMap={'Need to do today':'today','Should do soon':'soon','Whenever':'whenever','Idea':'idea',Today:'today',High:'high',Soon:'soon',Normal:'normal'};appendAtPath(state,'life.tasks',{id:itemId('task'),text:value('task'),title:value('task'),date:value('due'),dueDate:value('due'),priority:priorityMap[value('priority')]||value('priority').toLowerCase()||'normal',pile:value('priority'),area:value('area'),minutes:minutesFrom(value('timeEstimate')),location:value('location'),protected:value('protected').startsWith('Yes'),firstStep:value('firstStep'),notes:value('taskNotes'),done:false,createdAt:now});break;};
+      case'time':appendAtPath(state,'life.events',{id:itemId('event'),title:value('anchor')||'Schedule item',date:value('date')||today,startTime:value('startTime'),endTime:value('endTime'),location:value('location'),priority:value('priority'),notes:value('scheduleNotes'),createdAt:now});break;
+      case'tasks':if(!value('task'))return{ok:false,error:'Give the to-do a name first.'};appendAtPath(state,'life.tasks',{id:itemId('task'),text:value('task'),title:value('task'),date:value('due'),dueDate:value('due'),priority:value('priority').toLowerCase()||'normal',minutes:minutesFrom(value('timeEstimate')),location:value('location'),protected:value('protected').startsWith('Yes'),firstStep:value('firstStep'),notes:value('taskNotes'),done:false,createdAt:now});break;
       case'mochini':state.mochini={...obj(state.mochini),life:{...obj(state.mochini?.life),mood:value('mood'),energy:value('energy'),help:value('help'),suggestions:value('suggestions'),topic:value('topic'),context:value('context'),boundary:value('boundary'),updatedAt:now}};break;
-      case'pings':if(!value('reminder'))return{ok:false,error:'Write the reminder first.'};appendAtPath(state,'life.reminders',{id:itemId('ping'),title:value('reminder'),date:value('date'),timing:value('when'),urgency:value('urgency'),category:value('category'),repeat:value('repeat'),place:value('place'),notes:value('pingNotes'),completed:false,createdAt:now});break;
-      case'routines':if(!value('routine'))return{ok:false,error:'Give the routine a name first.'};appendAtPath(state,'life.routines',{id:itemId('routine'),name:value('routine'),category:value('category'),daypart:value('time'),recurrence:{'Every day':'daily',Weekdays:'weekdays','A few times a week':'selected',Weekly:'weekly','As needed':'as-needed'}[value('rhythm')]||'daily',cue:value('cue'),lowEnergy:value('energyVersion'),skipRule:value('skipRule'),steps:value('routineNotes').split('\n').map(label=>text(label)).filter(Boolean).map(label=>({id:itemId('step'),label,minutes:5,optional:false})),archived:false,createdAt:now});break;
-      case'motion':appendAtPath(state,'movement.sessions',{id:itemId('movement'),label:value('type')||'Movement',type:value('type')||'movement',category:value('category'),minutes:Number(fields.minutes)||0,effort:value('intensity'),location:value('location'),body:value('body'),after:value('after'),note:value('motionNotes'),date:today,createdAt:now});break;
-      case'people':if(!value('person'))return{ok:false,error:'Add the person’s name first.'};appendAtPath(state,'v4.people',{id:itemId('person'),name:value('person'),relationship:value('relationship'),category:value('category'),contactMethod:value('contactMethod'),nextContact:value('nextContact'),plans:value('plan'),boundary:value('boundary'),notes:value('important'),createdAt:now});break;
+      case'pings':if(!value('reminder'))return{ok:false,error:'Write the reminder first.'};appendAtPath(state,'life.reminders',{id:itemId('ping'),title:value('reminder'),date:value('date'),timing:value('when'),urgency:value('urgency'),repeat:value('repeat'),place:value('place'),notes:value('pingNotes'),completed:false,createdAt:now});break;
+      case'routines':if(!value('routine'))return{ok:false,error:'Give the routine a name first.'};appendAtPath(state,'life.routines',{id:itemId('routine'),name:value('routine'),daypart:value('time'),recurrence:{'Every day':'daily',Weekdays:'weekdays','A few times a week':'selected',Weekly:'weekly','As needed':'as-needed'}[value('rhythm')]||'daily',cue:value('cue'),lowEnergy:value('energyVersion'),skipRule:value('skipRule'),steps:value('routineNotes').split('\n').map(label=>text(label)).filter(Boolean).map(label=>({id:itemId('step'),label,minutes:5,optional:false})),archived:false,createdAt:now});break;
+      case'motion':appendAtPath(state,'movement.sessions',{id:itemId('movement'),label:value('type')||'Movement',type:value('type')||'movement',minutes:Number(fields.minutes)||0,effort:value('intensity'),location:value('location'),body:value('body'),after:value('after'),note:value('motionNotes'),date:today,createdAt:now});break;
+      case'people':if(!value('person'))return{ok:false,error:'Add the person’s name first.'};appendAtPath(state,'v4.people',{id:itemId('person'),name:value('person'),relationship:value('relationship'),contactMethod:value('contactMethod'),nextContact:value('nextContact'),plans:value('plan'),boundary:value('boundary'),notes:value('important'),createdAt:now});break;
       case'hobbies':if(!value('hobby'))return{ok:false,error:'Give the hobby a name first.'};appendAtPath(state,'v4.hobbies',{id:itemId('hobby'),name:value('hobby'),kind:value('category'),status:{'Currently playing':'playing','Trying it':'playing',Curious:'curious',Paused:'shelf',Someday:'shelf'}[value('status')]||'curious',energy:value('energy'),mood:value('mood'),nextStep:value('next'),notes:value('hobbyNotes'),createdAt:now});break;
-      case'study':if(!value('goal'))return{ok:false,error:'Add what you want to finish first.'};appendAtPath(state,'education.items',{id:itemId('study'),title:value('goal'),course:value('course'),type:value('activity')||'study',category:value('category')||'Education',energy:value('energy'),minutes:minutesFrom(value('sessionLength')),dueDate:value('due'),nextStep:value('next'),notes:value('studyNotes'),done:false,createdAt:now});break;
+      case'study':if(!value('goal'))return{ok:false,error:'Add what you want to finish first.'};appendAtPath(state,'education.items',{id:itemId('study'),title:value('goal'),course:value('course'),type:value('activity')||'study',energy:value('energy'),minutes:minutesFrom(value('sessionLength')),dueDate:value('due'),nextStep:value('next'),notes:value('studyNotes'),done:false,createdAt:now});break;
       case'growth':if(!value('goal'))return{ok:false,error:'Give the goal a name first.'};appendAtPath(state,'growth.goals',{id:itemId('goal'),title:value('goal'),why:value('why'),area:value('area'),timeframe:value('timeframe'),feeling:value('feeling'),pace:value('pace'),support:value('support'),nextStep:value('next'),proof:value('proof'),status:'moving',createdAt:now});break;
       case'dump':if(!value('thought'))return{ok:false,error:'Write the thought first.'};appendAtPath(state,'v4.brainDump',{id:itemId('dump'),text:value('thought'),bucket:value('bucket').toLowerCase()||'inbox',urgency:value('urgency'),keep:value('keep'),nextStep:value('next'),notes:value('dumpNotes'),createdAt:now});break;
       case'archive':if(!value('title'))return{ok:false,error:'Name what you are saving first.'};appendAtPath(state,'v4.archive',{id:itemId('archive'),title:value('title'),kind:value('kind'),room:value('room'),reason:value('reason'),find:value('find'),notes:value('archiveNotes'),archivedAt:now});break;
-      case'money-account':if(!value('name'))return{ok:false,error:'Name the account first.'};appendAtPath(state,'money.accounts',{id:itemId('account'),name:value('name'),type:value('type')||'checking',balance:Number(fields.balance)||0,note:value('note'),createdAt:now});break;
-      case'money-bill':if(!value('name'))return{ok:false,error:'Name the bill first.'};appendAtPath(state,'money.bills',{id:itemId('bill'),name:value('name'),amount:Number(fields.amount)||0,dueDay:Number(fields.dueDay)||0,dueDate:value('dueDate'),category:value('category')||'Bill',recurring:value('repeat')!=='One time',repeat:value('repeat')||'Monthly',paid:false,createdAt:now});break;
-      case'money-subscription':if(!value('name'))return{ok:false,error:'Name the subscription first.'};appendAtPath(state,'money.subscriptions',{id:itemId('subscription'),name:value('name'),amount:Number(fields.amount)||0,category:value('category')||'Subscription',cycle:value('cycle')||'monthly',dueDay:Number(fields.dueDay)||0,nextCharge:value('nextCharge'),active:true,archived:false,notes:value('notes'),createdAt:now});break;
-      case'money-savings':if(!value('name'))return{ok:false,error:'Name the savings goal first.'};appendAtPath(state,'money.savingsGoals',{id:itemId('savings'),name:value('name'),target:Number(fields.target)||0,amount:Number(fields.amount)||0,category:value('category')||'Savings',targetDate:value('targetDate'),note:value('note'),createdAt:now});break;
-      case'money-gig':if(!value('date'))return{ok:false,error:'Choose a date for the gig shift first.'};appendAtPath(state,'work.gigShifts',{id:itemId('gig'),source:value('source')||'Gig work',date:value('date'),startTime:value('startTime'),endTime:value('endTime'),targetAmount:Number(fields.targetAmount)||0,note:value('note'),status:'planned',createdAt:now});break;
-      case'money-income':if(!value('label'))return{ok:false,error:'Name the income first.'};appendAtPath(state,'money.earnings',{id:itemId('income'),label:value('label'),employer:value('employer'),kind:value('kind')||'paycheck',expectedAmount:Number(fields.amount)||0,expectedDate:value('date')||today,frequency:value('frequency'),status:'expected',createdAt:now});break;
-      case'study-progress':state.education={...obj(state.education),degreeProgress:{...obj(state.education?.degreeProgress),program:value('program')||'B.A. Special Education',school:value('school')||'WGU',totalCourses:Number(fields.totalCourses)||36,transferredCourses:Number(fields.transferredCourses)||0,completedWguCourses:Number(fields.completedWguCourses)||0,sophiaDeadline:value('sophiaDeadline'),wguStart:value('wguStart'),nextMilestone:value('nextMilestone'),notes:value('notes'),updatedAt:now}};break;
       case'settings':state.profile={...obj(state.profile),preferences:{...obj(state.profile?.preferences),v5:{...fields,updatedAt:now}}};break;
-      case'review':{const reviewDate=/^\d{4}-\d{2}-\d{2}$/.test(value('date'))?value('date'):today,reviews=list(state.insights?.dayReviews),existingReview=reviews.find(row=>text(row?.date)===reviewDate),entry={...fields,id:existingReview?.id||itemId('review'),date:reviewDate,happened:value('whatHappened'),helped:value('whatHelped'),hard:value('whatWasHard'),proud:value('win'),tomorrow:value('tomorrowFocus'),updatedAt:now,createdAt:existingReview?.createdAt||now};setAtPath(state,'insights.dayReviews',[...reviews.filter(row=>text(row?.date)!==reviewDate),entry]);break}
+      case'review':{const reviews=list(state.insights?.dayReviews),entry={...fields,id:reviews.find(row=>text(row?.date)===today)?.id||itemId('review'),date:today,happened:value('whatHappened'),helped:value('whatHelped'),hard:value('whatWasHard'),proud:value('win'),tomorrow:value('tomorrowFocus'),updatedAt:now,createdAt:reviews.find(row=>text(row?.date)===today)?.createdAt||now};setAtPath(state,'insights.dayReviews',[...reviews.filter(row=>text(row?.date)!==today),entry]);break}
       default:return{ok:true};
     }
     state.meta={...obj(state.meta),updatedAt:now};
@@ -417,77 +363,115 @@ export function loadV5Ledger(){
   }catch{return{openingBalance:0,entries:[]}}
 }
 
-export function reconcileV5Ledger(actualBalance){
-  const actual=Number(actualBalance);
-  if(!Number.isFinite(actual)||actual<0)return{ok:false,error:'Enter the total money you actually have right now.'};
-  const current=loadV5Ledger();
-  const income=current.entries.filter(entry=>entry.kind==='income').reduce((sum,entry)=>sum+cents(entry.amount),0);
-  const expenses=current.entries.filter(entry=>entry.kind==='expense').reduce((sum,entry)=>sum+cents(entry.amount),0);
-  const openingBalance=cents(actual-income+expenses);
-  try{
-    localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance,entries:current.entries}));
-    return{ok:true,openingBalance,available:cents(openingBalance+income-expenses)};
-  }catch{return{ok:false,error:'Your balance could not be reconciled. Nothing was changed.'}}
-}
-
 export function saveV5LedgerEntry(fields){
   const label=text(fields?.label||fields?.name),amount=Math.abs(Number(fields?.amount));
   if(!label||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'Add a name and an amount first.'};
   const kind=['income','expense','transfer'].includes(text(fields?.kind))?text(fields.kind):'expense';
   const date=/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey();
-  const current=loadV5Ledger(),sourceId=text(fields?.sourceId),alreadyLogged=sourceId&&current.entries.find(item=>text(item?.sourceId)===sourceId);
-  if(alreadyLogged)return{ok:true,entry:alreadyLogged,alreadyLogged:true};
-  const entry={id:`v5-ledger-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,label,amount:cents(amount),date,category:text(fields?.category)||'Other',account:text(fields?.account)||'General',toAccount:text(fields?.toAccount),note:text(fields?.note),sourceId,sourceType:text(fields?.sourceType),createdAt:new Date().toISOString()};
+  const entry={id:`v5-ledger-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,kind,label,amount:cents(amount),date,category:text(fields?.category)||'Other',account:text(fields?.account)||'General',toAccount:text(fields?.toAccount),note:text(fields?.note),createdAt:new Date().toISOString()};
+  const current=loadV5Ledger();
   try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:[...current.entries,entry].slice(-500)}));return{ok:true,entry}}
   catch(error){console.warn('KatOS V5 could not save this ledger entry.',error);return{ok:false,error:'This entry could not be saved.'}}
 }
 
 export function removeV5LedgerEntry(id){
-  const current=loadV5Ledger();
-  try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries:current.entries.filter(entry=>String(entry?.id)!==String(id))}));return true}
-  catch(error){console.warn('KatOS V5 could not remove this ledger entry.',error);return false}
+  return archiveV5Record('v5.ledger',id).ok;
 }
 
-function isRecurringBill(row){return row?.recurring!==false&&text(row?.repeat).toLowerCase()!=='one time'}
-function validBillDay(row){const dated=text(row?.dueDate||row?.due),fromDate=/^\d{4}-\d{2}-(\d{2})$/.exec(dated);const value=Number(row?.dueDay||fromDate?.[1]||0);return value>=1&&value<=31?value:0}
-function localMonth(value){return String(value||localDateKey()).slice(0,7)}
-function calendarDate(month,day){const [year,monthNumber]=month.split('-').map(Number),last=new Date(year,monthNumber,0).getDate();return `${month}-${String(Math.min(Math.max(day,1),last)).padStart(2,'0')}`}
-export function billCycleDate(row,today=localDateKey()){
-  const due=text(row?.dueDate||row?.due);
-  if(isRecurringBill(row)){const day=validBillDay(row);return day?calendarDate(localMonth(today),day):localMonth(today)}
-  return /^\d{4}-\d{2}-\d{2}$/.test(due)?due:localMonth(today);
-}
-export function billCycleMonth(row,today=localDateKey()){return billCycleDate(row,today).slice(0,7)}
-export function billPaidForCycle(row,today=localDateKey()){
-  const cycle=billCycleMonth(row,today),stored=text(row?.paidCycle||row?.lastPaidCycle);
-  if(stored)return stored===cycle;
-  if(row?.paid!==true)return false;
-  if(!isRecurringBill(row))return true;
-  const dated=text(row?.lastPaidAt||row?.lastPaidDueDate||row?.updatedAt);
-  return /^\d{4}-\d{2}/.test(dated)?dated.slice(0,7)===cycle:cycle===localMonth(today);
-}
-export function subscriptionPaidForCycle(row,today=localDateKey()){
-  const paidAt=text(row?.lastChargedAt||row?.paidAt);
-  return /^\d{4}-\d{2}/.test(paidAt)&&paidAt.slice(0,7)===localMonth(today);
-}
-function scheduledMoney(state,today){
-  const moneyState=obj(state?.money),month=String(today).slice(0,7),onDate=(row,fallbackDay)=>{const dated=text(row?.nextCharge||row?.dueDate||row?.due);if(/^\d{4}-\d{2}-\d{2}$/.test(dated))return dated;const day=Number(row?.dueDay||fallbackDay||0);return day?`${month}-${String(day).padStart(2,'0')}`:month};
-  const bills=list(moneyState.bills).filter(row=>!billPaidForCycle(row,today)).map(row=>({id:text(row.id),sourcePath:'money.bills',label:text(row.name||row.label)||'Bill',amount:cents(row.amount),date:billCycleDate(row,today),cycle:billCycleMonth(row,today),category:'Bill',status:'due',record:obj(row)}));
-  const subscriptions=list(moneyState.subscriptions).filter(row=>row?.archived!==true&&row?.active!==false&&!subscriptionPaidForCycle(row,today)).map(row=>({id:text(row.id),sourcePath:'money.subscriptions',label:text(row.name||row.label)||'Subscription',amount:cents(row.amount),date:onDate(row),category:text(row.category)||'Subscription',status:'recurring',record:obj(row)}));
-  const expectedIncome=list(moneyState.earnings).filter(row=>!(row?.status==='received'||row?.received===true||Number(row?.receivedAmount)||Number(row?.actualAmount)||Number(row?.actualNet))).map(row=>({id:text(row.id),sourcePath:'money.earnings',label:text(row.label||row.employer||row.name)||'Expected income',amount:cents(row.expectedAmount??row.estimatedGross??row.amount),date:text(row.expectedDate||row.date)||today,category:'Income',status:'expected',record:obj(row)}));
-  const plannedGigs=list(state?.work?.gigShifts).filter(row=>!Number(row?.actualAmount)).map(row=>({id:text(row.id),sourcePath:'work.gigShifts',label:text(row.source||row.platform||row.label)||'Gig shift',amount:cents(row.targetAmount??row.amount),date:text(row.date)||today,category:'Gig work',status:'planned',record:obj(row)}));
-  return{bills,subscriptions,expectedIncome,plannedGigs};
+export function updateV5LedgerEntry(id,fields={}){
+  const current=loadV5Ledger(),index=current.entries.findIndex(entry=>String(entry?.id)===String(id));
+  if(index<0)return{ok:false,error:'That ledger entry is no longer here.'};
+  const old=current.entries[index],label=text(fields.label)||old.label,amount=Math.abs(Number(fields.amount));
+  if(!label||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'Keep a name and amount on the entry.'};
+  const kind=['income','expense','transfer'].includes(text(fields.kind))?text(fields.kind):old.kind;
+  const updated={...old,...fields,label,amount:cents(amount),kind,updatedAt:new Date().toISOString()};
+  const entries=current.entries.map((entry,i)=>i===index?updated:entry);
+  try{localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries}));return{ok:true,entry:updated}}
+  catch{return{ok:false,error:'That ledger entry could not be saved.'}}
 }
 
-export function ledgerSummary(today=localDateKey(),state=null){
-  const current=loadV5Ledger();
-  const entries=current.entries.slice().sort((a,b)=>String(a?.date||'').localeCompare(String(b?.date||'') )||String(a?.createdAt||'').localeCompare(String(b?.createdAt||'')));
+const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions']);
+export function updateV5Record(path,id,fields={}){
+  try{
+    if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
+    if(!EDITABLE_RECORD_PATHS.has(path))return{ok:false,error:'This type of record is not editable yet.'};
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so V5 has a planner to update.'};
+    const state=cloneState(source),items=list(pathValue(state,path)),index=items.findIndex(item=>String(item?.id)===String(id));
+    if(index<0)return{ok:false,error:'That entry is no longer in your planner.'};
+    const original=obj(items[index]),updated={...original,...fields,id:original.id,updatedAt:new Date().toISOString()};
+    setAtPath(state,path,items.map((item,itemIndex)=>itemIndex===index?updated:item));
+    state.meta={...obj(state.meta),updatedAt:new Date().toISOString()};
+    const existing=localStorage.getItem(V4_KEY)||'',parsed=parseStored(existing);const envelope=parsed&&JSON.parse(existing)?.data?{...JSON.parse(existing),data:state}:{data:state};const raw=JSON.stringify(envelope);
+    localStorage.setItem(V4_KEY,raw);saveImportedState(state,raw,V4_KEY,'v5-record-edit');
+    return{ok:true,entry:updated};
+  }catch(error){console.warn('KatOS V5 could not update this record.',error);return{ok:false,error:'That entry could not be saved. Your existing data is still safe.'}}
+}
+
+export function archiveV5Record(path,id){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so V5 has a planner to update.'};
+    const state=cloneState(source),now=new Date().toISOString();
+    let item=null;
+    if(path==='v5.ledger'){
+      const ledger=loadV5Ledger(),index=ledger.entries.findIndex(entry=>String(entry?.id)===String(id));
+      if(index<0)return{ok:false,error:'That ledger entry is no longer here.'};
+      item=ledger.entries[index];
+    }else{
+      if(!EDITABLE_RECORD_PATHS.has(path)||path==='v4.archive')return{ok:false,error:'This item cannot be archived here.'};
+      const items=list(pathValue(state,path)),index=items.findIndex(entry=>String(entry?.id)===String(id));
+      if(index<0)return{ok:false,error:'That entry is no longer in your planner.'};
+      item=items[index];setAtPath(state,path,items.filter((_,entryIndex)=>entryIndex!==index));
+    }
+    const archive=list(pathValue(state,'v4.archive'));
+    setAtPath(state,'v4.archive',[...archive,{id:itemId('archive'),kind:path,originalId:item?.id||id,title:text(item?.title||item?.text||item?.name||item?.label)||'Archived item',data:item,archivedAt:now}]);
+    state.meta={...obj(state.meta),updatedAt:now};
+    const existing=localStorage.getItem(V4_KEY)||'',parsed=parseStored(existing);const envelope=parsed&&JSON.parse(existing)?.data?{...JSON.parse(existing),data:state}:{data:state};const raw=JSON.stringify(envelope);
+    localStorage.setItem(V4_KEY,raw);saveImportedState(state,raw,V4_KEY,'v5-record-archive');
+    if(path==='v5.ledger'){
+      const ledger=loadV5Ledger();
+      localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:ledger.openingBalance,entries:ledger.entries.filter(entry=>String(entry?.id)!==String(id))}));
+    }
+    return{ok:true};
+  }catch(error){console.warn('KatOS V5 could not archive this record.',error);return{ok:false,error:'That entry could not be archived. Your data is still safe.'}}
+}
+
+// Archive is the reversible replacement for delete in V5. Restoring returns the
+// original record to its recorded collection and removes only that archive copy.
+export function restoreV5Record(archiveId){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so V5 has a planner to restore into.'};
+    const state=cloneState(source),archive=list(pathValue(state,'v4.archive')),index=archive.findIndex(entry=>String(entry?.id)===String(archiveId));
+    if(index<0)return{ok:false,error:'That archived entry is no longer here.'};
+    const saved=obj(archive[index]),path=text(saved.kind),item=saved.data;
+    if(!item||typeof item!=='object')return{ok:false,error:'This older Memory Box item does not include restorable record data.'};
+    if(path==='v5.ledger'){
+      const ledger=loadV5Ledger();
+      if(ledger.entries.some(entry=>String(entry?.id)===String(item.id)))return{ok:false,error:'That ledger entry is already restored.'};
+      localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:ledger.openingBalance,entries:[...ledger.entries,item]}));
+    }else{
+      if(!EDITABLE_RECORD_PATHS.has(path)||path==='v4.archive')return{ok:false,error:'This Memory Box item cannot be restored automatically.'};
+      const items=list(pathValue(state,path));
+      if(items.some(entry=>String(entry?.id)===String(item.id)))return{ok:false,error:'That planner entry is already restored.'};
+      appendAtPath(state,path,item);
+    }
+    setAtPath(state,'v4.archive',archive.filter((_,entryIndex)=>entryIndex!==index));
+    const now=new Date().toISOString();state.meta={...obj(state.meta),updatedAt:now};
+    const existing=localStorage.getItem(V4_KEY)||'',parsed=parseStored(existing);const envelope=parsed&&JSON.parse(existing)?.data?{...JSON.parse(existing),data:state}:{data:state};const raw=JSON.stringify(envelope);
+    localStorage.setItem(V4_KEY,raw);saveImportedState(state,raw,V4_KEY,'v5-record-restore');
+    return{ok:true,entry:item};
+  }catch(error){console.warn('KatOS V5 could not restore this record.',error);return{ok:false,error:'That entry could not be restored. Your archived copy is still safe.'}}
+}
+
+export function ledgerSummary(baseBalance=0,today=localDateKey()){
+  const entries=loadV5Ledger().entries.slice().sort((a,b)=>String(a?.date||'').localeCompare(String(b?.date||''))||String(a?.createdAt||'').localeCompare(String(b?.createdAt||'')));
   const month=String(today).slice(0,7),monthEntries=entries.filter(entry=>String(entry?.date||'').startsWith(month));
   const income=entries.filter(entry=>entry.kind==='income').reduce((sum,entry)=>sum+cents(entry.amount),0),expenses=entries.filter(entry=>entry.kind==='expense').reduce((sum,entry)=>sum+cents(entry.amount),0);
   const incomeMonth=monthEntries.filter(entry=>entry.kind==='income').reduce((sum,entry)=>sum+cents(entry.amount),0),expenseMonth=monthEntries.filter(entry=>entry.kind==='expense').reduce((sum,entry)=>sum+cents(entry.amount),0);
   const categories={};monthEntries.filter(entry=>entry.kind==='expense').forEach(entry=>{const key=text(entry.category)||'Other';categories[key]=cents((categories[key]||0)+Number(entry.amount||0))});
-  const scheduled=scheduledMoney(state,today);
-  return{entries,monthEntries,income,expenses,net:cents(income-expenses),incomeMonth,expenseMonth,netMonth:cents(incomeMonth-expenseMonth),categories,openingBalance:current.openingBalance,available:cents(current.openingBalance+income-expenses),...scheduled};
+  return{entries,monthEntries,income,expenses,net:cents(income-expenses),incomeMonth,expenseMonth,netMonth:cents(incomeMonth-expenseMonth),categories,available:cents(Number(baseBalance)+income-expenses)};
 }
 
 function amountOfGig(row){
@@ -504,118 +488,19 @@ export function snapshotV4(){
   const state=readV4State();
   const today=localDateKey();
   if(!state){
-    return{found:false,today,clients:[],sessions:[],sessionPlans:[],shifts:[],gigs:[],gigGoals:[],jobPaychecks:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
+    return{found:false,today,clients:[],sessions:[],shifts:[],gigs:[],activeClients:[],todaySessions:[],todayShifts:[],waitingNotes:[],recentGigs:[]};
   }
 
   const clients=list(state?.work?.rbt?.clients);
   const sessions=list(state?.work?.rbt?.sessions);
-  const sessionPlans=list(state?.work?.rbt?.sessionPlans);
   const gigShifts=list(state?.work?.gigShifts);
-  const gigGoals=list(state?.work?.gigGoals);
   const shifts=[...list(state?.work?.shifts),...gigShifts];
-  const isGigEarning=row=>{const kind=text(row?.kind||row?.incomeType||row?.type).toLowerCase(),source=text(row?.source||row?.platform||row?.incomeSource||row?.label||row?.name).toLowerCase().replace(/[^a-z]/g,'');return kind==='gig'||kind==='gigwork'||['doordash','shipt','ubereats','instacart','grubhub','spark'].includes(source)};
-  const earnings=list(state?.money?.earnings).map(row=>({...row,_v5Amount:amountOfGig(row)}));
-  const gigs=earnings.filter(isGigEarning),jobPaychecks=earnings.filter(row=>!isGigEarning(row));
+  const gigs=list(state?.money?.earnings).map(row=>({...row,_v5Amount:amountOfGig(row)}));
   const activeClients=clients.filter(row=>row?.status!=='closed');
   const todaySessions=sessions.filter(row=>row?.date===today&&row?.status!=='canceled').sort((a,b)=>String(a?.startTime||'').localeCompare(String(b?.startTime||'')));
   const todayShifts=shifts.filter(row=>row?.date===today).sort((a,b)=>String(a?.startTime||'').localeCompare(String(b?.startTime||'')));
   const waitingNotes=sessions.filter(row=>row?.status!=='canceled'&&row?.noteStatus!=='submitted').sort(sessionSort);
   const recentGigs=gigs.slice().sort((a,b)=>String(b?.date||'').localeCompare(String(a?.date||''))).slice(0,8);
 
-  return{found:true,today,state,clients,sessions,sessionPlans,shifts,gigs,gigGoals,jobPaychecks,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
-}
-
-
-const EDITABLE_RECORD_PATHS=new Set([
-  'life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines',
-  'v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins',
-  'v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions',
-  'money.earnings','work.gigShifts','work.gigGoals','work.shifts','work.rbt.clients','work.rbt.sessions','work.rbt.sessionPlans','work.rbt.supervisors','insights.dayReviews'
-]);
-
-function persistEditedState(state){
-  const now=new Date().toISOString();
-  state.meta={...obj(state.meta),updatedAt:now};
-  const existing=localStorage.getItem(V4_KEY)||'';
-  let envelope={data:state};
-  try{const parsed=JSON.parse(existing);if(parsed?.data&&typeof parsed.data==='object')envelope={...parsed,data:state}}catch{}
-  const raw=JSON.stringify(envelope);
-  localStorage.setItem(V4_KEY,raw);
-  saveImportedState(state,raw,V4_KEY,'v5-record-edit');
-  return state;
-}
-
-export function updateV5LedgerEntry(id,fields={}){
-  const current=loadV5Ledger(),index=current.entries.findIndex(entry=>String(entry?.id)===String(id));
-  if(index<0)return{ok:false,error:'That ledger entry could not be found.'};
-  const existing=current.entries[index];
-  const amount=fields.amount===undefined?existing.amount:Math.abs(Number(fields.amount));
-  if(!text(fields.label??existing.label)||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'A ledger entry needs a name and amount.'};
-  const entry={...existing,...fields,id:existing.id,amount:cents(amount),updatedAt:new Date().toISOString()};
-  try{
-    const entries=current.entries.slice();entries[index]=entry;
-    localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries}));
-    return{ok:true,record:entry};
-  }catch{return{ok:false,error:'That ledger entry could not be updated.'}}
-}
-
-export function updateV5Record(path,id,fields={}){
-  if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
-  if(!EDITABLE_RECORD_PATHS.has(path))return{ok:false,error:'That kind of entry cannot be edited here yet.'};
-  try{
-    const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
-    const collection=list(pathValue(state,path)),index=collection.findIndex(row=>String(row?.id)===String(id));
-    if(index<0)return{ok:false,error:'That saved entry could not be found.'};
-    const old=obj(collection[index]);
-    let prepared={...fields};
-    if(path==='money.bills'&&prepared.paid===true&&!text(prepared.paidCycle))prepared.paidCycle=localMonth(localDateKey());
-    if(path==='money.bills'&&prepared.paid===false)prepared.paidCycle='';
-    const record={...old,...prepared,id:old.id,createdAt:old.createdAt||new Date().toISOString(),updatedAt:new Date().toISOString()};
-    const next=collection.slice();next[index]=record;setAtPath(state,path,next);if(path==='insights.dayReviews')syncDetailedDailyNote(record);persistEditedState(state);
-    return{ok:true,record};
-  }catch{return{ok:false,error:'That entry could not be updated. Your existing data is still safe.'}}
-}
-
-export function archiveV5Record(path,id){
-  try{
-    if(path==='v5.ledger'){
-      const current=loadV5Ledger(),index=current.entries.findIndex(row=>String(row?.id)===String(id));
-      if(index<0)return{ok:false,error:'That ledger entry could not be found.'};
-      const item=current.entries[index],entries=current.entries.filter((_,rowIndex)=>rowIndex!==index);
-      localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:current.openingBalance,entries}));
-      const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
-      appendAtPath(state,'v4.archive',{id:itemId('archive'),kind:'v5.ledger',originalId:item.id,title:item.label||'Ledger entry',data:item,archivedAt:new Date().toISOString()});
-      persistEditedState(state);return{ok:true};
-    }
-    if(!EDITABLE_RECORD_PATHS.has(path)||path==='v4.archive')return{ok:false,error:'This entry cannot be archived here.'};
-    const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
-    const collection=list(pathValue(state,path)),index=collection.findIndex(row=>String(row?.id)===String(id));
-    if(index<0)return{ok:false,error:'That saved entry could not be found.'};
-    const item=collection[index],next=collection.filter((_,rowIndex)=>rowIndex!==index);
-    setAtPath(state,path,next);
-    if(path==='insights.dayReviews')removeDetailedDailyNote(item.date);
-    appendAtPath(state,'v4.archive',{id:itemId('archive'),kind:path,originalId:item.id,title:rowTitleForArchive(item),data:item,archivedAt:new Date().toISOString()});
-    persistEditedState(state);return{ok:true};
-  }catch{return{ok:false,error:'That entry could not be archived. Your existing data is still safe.'}}
-}
-
-function syncDetailedDailyNote(row){
-  const date=text(row?.date);if(!date)return;
-  const note={date,mood:text(row.mood),sleepHours:text(row.sleepHours),sleepQuality:text(row.sleepQuality),energy:text(row.energy),stress:text(row.stress),meds:text(row.meds),food:text(row.food),movement:text(row.movement),social:text(row.social),whatHappened:text(row.whatHappened||row.happened),whatHelped:text(row.whatHelped||row.helped),whatWasHard:text(row.whatWasHard||row.hard),win:text(row.win||row.proud),tomorrowFocus:text(row.tomorrowFocus||row.tomorrow),notes:text(row.notes),updatedAt:text(row.updatedAt)||new Date().toISOString(),source:'v5-record-edit'};
-  try{const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==date);entries.push(note);localStorage.setItem(V5_DAILY_NOTES_KEY,JSON.stringify(entries.slice(-180)))}catch{}
-}
-function removeDetailedDailyNote(date){try{const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==text(date));localStorage.setItem(V5_DAILY_NOTES_KEY,JSON.stringify(entries))}catch{}}
-function rowTitleForArchive(row){return text(row?.title)||text(row?.text)||text(row?.name)||text(row?.label)||'Archived entry'}
-
-export function openV5DayReview(date){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(text(date)))return{ok:false,error:'Choose a valid calendar date.'};
-  try{
-    const state=cloneState(readV4State()||candidateFromKey(V5_DATA_KEY)?.state);
-    const reviews=list(pathValue(state,'insights.dayReviews'));
-    const existing=reviews.find(row=>text(row?.date)===date);
-    if(existing)return{ok:true,record:existing};
-    const now=new Date().toISOString();
-    const record={id:itemId('review'),date,mood:'',sleepHours:'',sleepQuality:'',energy:'',stress:'',meds:'',food:'',movement:'',social:'',whatHappened:'',whatHelped:'',whatWasHard:'',win:'',tomorrowFocus:'',notes:'',createdAt:now,updatedAt:now};
-    return{ok:true,record,isNew:true};
-  }catch{return{ok:false,error:'That day review could not be opened.'}}
+  return{found:true,today,state,clients,sessions,shifts,gigs,gigShifts,activeClients,todaySessions,todayShifts,waitingNotes,recentGigs};
 }

@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <meta name="theme-color" content="#fff4fa">
-  <meta name="sm-build" content="V5.6.0-2026-09-02">
+  <meta name="sm-build" content="V5.4.1-2026-09-01">
   <title>KatOS V5</title>
   <link rel="stylesheet" href="./styles.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v20-skin.css?v=22.0.1-20260816">
@@ -16,45 +16,89 @@
   <link rel="stylesheet" href="./v21-shell.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v21-pages.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v22-design-fixes.css?v=22.1.22-20260817">
+  <link rel="stylesheet" href="./v5-daily-flow.css?v=5.0.0-20260831">
+  <link rel="stylesheet" href="./v5-tasks.css?v=5.0.1-20260831">
+  <link rel="stylesheet" href="./v5-planner.css?v=5.0.2-20260831">
+  <link rel="stylesheet" href="./v5-rituals.css?v=5.0.3-20260831">
+  <link rel="stylesheet" href="./v5-attic.css?v=5.0.4-20260831">
+  <link rel="stylesheet" href="./v5-home.css?v=5.4.0-20260831">
+  <link rel="stylesheet" href="./v5-pings.css?v=5.0.6-20260831">
+  <link rel="stylesheet" href="./v5-mochini.css?v=5.0.7-20260831">
+  <link rel="stylesheet" href="./v5-brain.css?v=5.0.8-20260831">
   <link rel="stylesheet" href="./v22-maintenance.css?v=22.1.26-20260818">
-  <link rel="stylesheet" href="./daily-shit.css?v=23.0.0-20260902">
-  <link rel="stylesheet" href="./daily-shit-stabilization.css?v=23.0.1-20260902">
-  <link rel="stylesheet" href="./work-hq.css?v=24.0.0-20260902">
-  <link rel="stylesheet" href="./study-nook.css?v=25.0.0-20260902">
-  <link rel="stylesheet" href="./money-cafe.css?v=26.0.0-20260902">
-  <link rel="stylesheet" href="./lifestyle.css?v=27.0.0-20260902">
-  <!-- The old /v5 app is retained as a presentation reference only. Its data runtime is never loaded. -->
-  <link rel="stylesheet" href="../v5/styles.css?v=5.4.3-sidebar-serif">
-  <link rel="stylesheet" href="./katos-v5-shell.css?v=5.7.0">
+  <link rel="stylesheet" href="./v22-popup-polish.css?v=22.3.1-20260819">
+  <style id="katos-v225-full-skin">
+    :root{--katos-strawberry:#ef8fb4;--katos-strawberry-deep:#bd557d;--katos-mocha:#6a4438;--katos-cream:#fffaf5;--katos-sage:#b8d3a6;--katos-gold:#d6aa63;--katos-page-accent:#ef8fb4;--katos-page-soft:#fff0f6;--katos-page-motif:"🍓  HOME SWEET HOME  ✦  🎀"}
+    body{background:radial-gradient(circle at 8% 9%,rgba(255,210,228,.42),transparent 23%),radial-gradient(circle at 90% 14%,rgba(214,231,202,.48),transparent 25%),linear-gradient(145deg,#fff7fb 0%,#fffaf5 52%,#f6fbf1 100%)!important;color:var(--katos-mocha)}
+    .v21-app{background:transparent!important}
+    .v21-sidebar{border:1.5px solid #efc0d2!important;background:linear-gradient(160deg,rgba(255,239,247,.98),rgba(255,253,250,.97) 52%,rgba(239,248,233,.98))!important;box-shadow:0 22px 60px rgba(105,68,56,.13)!important}
+    .v21-sidebar:before{content:"♡  strawberry mocha  ♡";display:block;text-align:center;padding:0 4px 11px;color:#c96a8e;font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}
+    .v21-brand{border-bottom:1px dashed #eab9ca!important}
+    .v21-brand-mark{background:linear-gradient(145deg,#ffe3ee,#fff7fb 58%,#e9f5e2)!important;border:1px solid #f1c2d4!important}
+    .v21-nav-group>small{color:#aa7b70!important}
+    .v21-nav-item{border-radius:18px!important}
+    .v21-nav-item:hover{background:#fff9fc!important;border-color:#efcfdb!important}
+    .v21-nav-item.active{background:linear-gradient(110deg,var(--katos-page-accent),#c9dcae)!important;box-shadow:0 9px 20px color-mix(in srgb,var(--katos-page-accent) 22%,transparent)!important}
+    .v21-sidebar-footer{color:#d68ba7!important}
+    #tab-root{--katos-page-accent:#ef8fb4;--katos-page-soft:#fff0f6;--katos-page-motif:"🍓  HOME SWEET HOME  ✦  🎀";position:relative}
+    #tab-root:before{content:var(--katos-page-motif);display:block;margin:0 0 14px;padding:12px 18px;border:1.5px solid color-mix(in srgb,var(--katos-page-accent) 45%,white);border-radius:22px;background:linear-gradient(100deg,var(--katos-page-soft),rgba(255,255,255,.94) 55%,#f4faef);box-shadow:0 10px 26px rgba(105,68,56,.07);color:color-mix(in srgb,var(--katos-page-accent) 68%,#6a4438);font-size:11px;font-weight:950;letter-spacing:.13em;text-transform:uppercase;text-align:center}
+    #tab-root:after{content:"";display:block;position:absolute;left:18px;right:18px;top:0;height:8px;background:radial-gradient(circle at 6px 0,#fff 5px,transparent 5.5px) 0 0/12px 9px repeat-x;pointer-events:none}
+    #tab-root .v17-card,#tab-root .v21-card,#tab-root .v21-pulse,#tab-root .v21-home-hero,#tab-root .v17-home-hero,#tab-root .v17-planner-hero{border-color:color-mix(in srgb,var(--katos-page-accent) 28%,#ead9d1)!important;box-shadow:0 16px 45px rgba(105,68,56,.085)!important}
+    #tab-root h1,#tab-root h2,#tab-root h3{color:#5f3d34}
+    #tab-root .primary,#tab-root .v21-primary{background:linear-gradient(105deg,var(--katos-page-accent),#b9d5a5)!important;color:white!important;border-color:transparent!important}
+    #tab-root input:focus,#tab-root textarea:focus,#tab-root select:focus{border-color:var(--katos-page-accent)!important;box-shadow:0 0 0 4px color-mix(in srgb,var(--katos-page-accent) 14%,transparent)!important}
+    .v21-app:has([data-nav="home"].active){--katos-page-accent:#ed8eb2}.v21-app:has([data-nav="home"].active) #tab-root{--katos-page-accent:#ed8eb2;--katos-page-soft:#fff0f6;--katos-page-motif:"🏡  HOME SWEET HOME  ✦  🍓"}
+    .v21-app:has([data-nav="planner"].active){--katos-page-accent:#ca8fbd}.v21-app:has([data-nav="planner"].active) #tab-root{--katos-page-accent:#ca8fbd;--katos-page-soft:#faf0ff;--katos-page-motif:"📅  BERRY BUSY  ✦  ✏️"}
+    .v21-app:has([data-nav="tasks"].active){--katos-page-accent:#df89a8}.v21-app:has([data-nav="tasks"].active) #tab-root{--katos-page-accent:#df89a8;--katos-page-soft:#fff0f5;--katos-page-motif:"📝  SWEET TO-DOS  ✦  ✅"}
+    .v21-app:has([data-nav="mochini"].active){--katos-page-accent:#d99bab}.v21-app:has([data-nav="mochini"].active) #tab-root{--katos-page-accent:#d99bab;--katos-page-soft:#fff1f5;--katos-page-motif:"🍡  MOCHINI  ✦  💭"}
+    .v21-app:has([data-nav="garden"].active){--katos-page-accent:#8eb783}.v21-app:has([data-nav="garden"].active) #tab-root{--katos-page-accent:#8eb783;--katos-page-soft:#f1f8ed;--katos-page-motif:"🌷  GROWTH GARDEN  ✦  🪴"}
+    .v21-app:has([data-nav="school"].active){--katos-page-accent:#9d8dcc}.v21-app:has([data-nav="school"].active) #tab-root{--katos-page-accent:#9d8dcc;--katos-page-soft:#f5f1ff;--katos-page-motif:"📚  STUDY NOOK  ✦  ✏️"}
+    .v21-app:has([data-nav="work"].active){--katos-page-accent:#7e9fb2}.v21-app:has([data-nav="work"].active) #tab-root{--katos-page-accent:#7e9fb2;--katos-page-soft:#eef7fb;--katos-page-motif:"💼  BOSS MODE  ✦  📎"}
+    .v21-app:has([data-nav="money"].active){--katos-page-accent:#d5a05e}.v21-app:has([data-nav="money"].active) #tab-root{--katos-page-accent:#d5a05e;--katos-page-soft:#fff6e5;--katos-page-motif:"👛  COIN PURSE  ✦  🪙"}
+    .v21-app:has([data-nav="reminders"].active){--katos-page-accent:#d8849f}.v21-app:has([data-nav="reminders"].active) #tab-root{--katos-page-accent:#d8849f;--katos-page-soft:#fff0f4;--katos-page-motif:"🔔  LITTLE PINGS  ✦  💌"}
+    .v21-app:has([data-nav="noms"].active){--katos-page-accent:#d59373}.v21-app:has([data-nav="noms"].active) #tab-root{--katos-page-accent:#d59373;--katos-page-soft:#fff2eb;--katos-page-motif:"🍱  NOMS NOOK  ✦  🥐"}
+    .v21-app:has([data-nav="sips"].active){--katos-page-accent:#7db4c8}.v21-app:has([data-nav="sips"].active) #tab-root{--katos-page-accent:#7db4c8;--katos-page-soft:#eefaff;--katos-page-motif:"💧  SIP STATION  ✦  🫧"}
+    .v21-app:has([data-nav="brain"].active){--katos-page-accent:#aa91ce}.v21-app:has([data-nav="brain"].active) #tab-root{--katos-page-accent:#aa91ce;--katos-page-soft:#f6f0ff;--katos-page-motif:"🧠  BRAIN BLOOM  ✦  🌸"}
+    .v21-app:has([data-nav="wellness"].active){--katos-page-accent:#d983ad}.v21-app:has([data-nav="wellness"].active) #tab-root{--katos-page-accent:#d983ad;--katos-page-soft:#fff0f7;--katos-page-motif:"🌸  SOFT RESET  ✦  🌿"}
+    .v21-app:has([data-nav="goals"].active){--katos-page-accent:#978bc6}.v21-app:has([data-nav="goals"].active) #tab-root{--katos-page-accent:#978bc6;--katos-page-soft:#f4f1ff;--katos-page-motif:"🌙  DREAM BOARD  ✦  ⭐"}
+    .v21-app:has([data-nav="projects"].active){--katos-page-accent:#bf8c9e}.v21-app:has([data-nav="projects"].active) #tab-root{--katos-page-accent:#bf8c9e;--katos-page-soft:#fff2f6;--katos-page-motif:"🗂️  PROJECT PATCH  ✦  📌"}
+    .v21-app:has([data-nav="labs"].active){--katos-page-accent:#79a99e}.v21-app:has([data-nav="labs"].active) #tab-root{--katos-page-accent:#79a99e;--katos-page-soft:#eef9f6;--katos-page-motif:"🔬  KAT LABS  ✦  🧪"}
+    .v21-app:has([data-nav="wins"].active){--katos-page-accent:#d4a35f}.v21-app:has([data-nav="wins"].active) #tab-root{--katos-page-accent:#d4a35f;--katos-page-soft:#fff7e8;--katos-page-motif:"🏆  WIN SHELF  ✦  🌟"}
+    .v21-app:has([data-nav="settings"].active){--katos-page-accent:#c382a7}.v21-app:has([data-nav="settings"].active) #tab-root{--katos-page-accent:#c382a7;--katos-page-soft:#fff0f8;--katos-page-motif:"🎀  BEHIND THE BOWS  ✦  ⚙️"}
+    .v21-app:has([data-nav="hub"].active){--katos-page-accent:#7ca7b2}.v21-app:has([data-nav="hub"].active) #tab-root{--katos-page-accent:#7ca7b2;--katos-page-soft:#eff9fb;--katos-page-motif:"✨  BERRY BASE  ✦  🍓"}
+    .v21-app:has([data-nav="archive"].active){--katos-page-accent:#a98f84}.v21-app:has([data-nav="archive"].active) #tab-root{--katos-page-accent:#a98f84;--katos-page-soft:#f8f3f0;--katos-page-motif:"📦  MEMORY BOX  ✦  🎀"}
+    @media(max-width:600px){#tab-root:before{margin-bottom:10px;padding:9px 10px;border-radius:17px;font-size:9px;letter-spacing:.08em}.v21-sidebar:before{display:none}}
+  </style>
+  <link rel="stylesheet" href="./v5-money.css?v=5">
+<link rel="stylesheet" href="./v5-work.css?v=5"><link rel="stylesheet" href="./v5-motion.css?v=5"><link rel="stylesheet" href="./v5-wins.css?v=5"><link rel="stylesheet" href="./v5-settings.css?v=5">  <link rel="stylesheet" href="./v5-quiet-rooms.css?v=5.1">
+  <link rel="stylesheet" href="./v5-study.css?v=5.1">
+  <link rel="stylesheet" href="./v5-shell.css?v=5.3">
+  <link rel="stylesheet" href="./v5-reset.css?v=5.4.1-20260901">
 </head>
 <body>
-  <div id="app" class="katos v17-app">
-    <aside id="v5-sidebar" class="sidebar" aria-label="KatOS V5 navigation"></aside>
-    <button id="v5-sidebar-backdrop" class="sidebar-backdrop" type="button" aria-label="Close navigation" hidden></button>
-    <header id="v5-topbar" class="topbar"></header>
-    <main class="main v21-main"><div id="tab-root"><section class="v17-card"><p class="v17-eyebrow">KATOS V5 • LIFE OS</p><h1>🍓 Loading KatOS…</h1><p class="v17-muted">Opening your life OS safely.</p></section></div></main>
+  <div id="app" class="v17-app v21-app">
+    <aside id="v21-sidebar" class="v21-sidebar" aria-label="Strawberry Mocha navigation"></aside>
+    <main class="v21-main"><div id="tab-root"><section class="v17-card"><h1>🍓 KatOS V5</h1><span class="v18-badge">V2 • FRESH BUILD ✦</span><p class="v17-muted">Loading your pretty planner…</p></section></div></main>
   </div>
   <script src="./v20-popup.js?v=22.0.1-20260816"></script>
+  <script src="./v22-popup-polish.js?v=22.10.0-20260819"></script>
+  <script src="./v22-ui-polish-2210.js?v=22.10.0-20260819"></script>
   <script type="module">
-    const BUILD='V5.6.0-2026-09-02';
+    const BUILD='V5.4.1-2026-09-01';
     const moduleSuffix=location.protocol==='file:'?'':'?build='+encodeURIComponent(BUILD);
-    const root=document.getElementById('tab-root'),sidebar=document.getElementById('v5-sidebar'),topbar=document.getElementById('v5-topbar'),sidebarBackdrop=document.getElementById('v5-sidebar-backdrop');
-    const groups=[['TODAY',[['home','🏠','Home'],['planner','📅','Calendar'],['tasks','📝','Daily Shit'],['mochini','🍡','Mochini']]],['LIFE',[['work','💼','Work HQ'],['school','🎓','Study Nook'],['money','☕','Money Café'],['movement','🏃','Get Movin'],['hobbies','🎨','Hobby Shelf'],['growth','🌱','Growth']]],['COZY',[['noms','🍱','Noms'],['sips','💧','Sips'],['brain','🧠','Catch-All'],['wellness','🌸','Wellness']]],['MORE',[['goals','🌙','Dreamscape'],['projects','🗂','Projects'],['labs','🔬','Kat Labs'],['wins','🏆','Wins']]],['SYSTEM',[['settings','⚙️','Settings'],['hub','✨','KatOS Hub']]]];
-    const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Archive'});
-    const queued=new Set(Object.keys(labels));let modules={},routerRef=null,visualMode=localStorage.getItem('katos_v5_visual_mode')||'normal';
-    const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-    function navHTML(page){return '<div class="brand"><div class="brand-row"><div class="berry">🍓</div><div><h1>KatOS V5</h1><div class="scribble">pretty, smart, and nosy enough</div></div></div><span class="build">V5 • LIFE OS</span></div><nav class="nav">'+groups.map(([title,items])=>'<section class="nav-group"><div class="nav-label">'+title+'</div>'+items.map(([key,icon,label])=>'<button type="button" class="nav-btn '+(key===page?'active':'')+'" data-nav="'+key+'"><span class="nav-icon">'+icon+'</span><span>'+label+' <em data-nav-meta="'+key+'"></em></span></button>').join('')+'</section>').join('')+'<section class="nav-group"><div class="nav-label">KEEPSAKES</div><button type="button" class="nav-btn '+(page==='archive'?'active':'')+'" data-nav="archive"><span class="nav-icon">📦</span><span>Archive</span></button></section></nav><div class="sidebar-foot"><b>KatOS V5</b><br>Your personal life OS. 🍓</div>'}
-    function topbarHTML(page){return '<button type="button" class="btn menu" data-shell-action="toggle-sidebar" aria-label="Open navigation">☰</button><div class="top-title">'+esc(labels[page]||'KatOS V5')+'</div><div class="top-spacer"></div><div class="mode-switch" aria-label="Energy mode"><button type="button" class="mode-btn '+(visualMode==='normal'?'active':'')+'" data-mode="normal">🍓 <span>Normal</span></button><button type="button" class="mode-btn '+(visualMode==='tiny'?'active':'')+'" data-mode="tiny">🫧 <span>Tiny</span></button><button type="button" class="mode-btn '+(visualMode==='power'?'active':'')+'" data-mode="power">⚡ <span>Power</span></button></div>'}
+    const root=document.getElementById('tab-root'),sidebar=document.getElementById('v21-sidebar');
+    const groups=[['CORE',[['home','🏠','Home Sweet Home'],['daily','🪞','Daily Flow'],['planner','🗓️','Plannin'],['tasks','📝','Sweet To-Dos'],['rituals','🌷','Routine Garden'],['reset','🚨','Emergency Reset'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Growth Garden'],['school','🎓','Study Nook'],['work','💼','Boss Mode'],['money','☕','Money Café'],['reminders','🔔','Little Pings']]],['MIND',[['brain','🧠','Brain Bloom'],['goals','🌙','Dream Board'],['wins','🏆','Win Shelf']]],['SYSTEM',[['attic','🗝️','Castle Attic'],['settings','🎀','Behind the Bows'],['hub','✨','Berry Base']]]];
+    const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Memory Box',tasktools:'Full Task Tools',plannertools:'Full Planner Tools',schooltools:'Full Study Tools',hometools:'Full Home Tools',remindertools:'Full Ping Tools',mochinitools:'Full Mochini',moneytools:'Full Money Tools',worktools:'Full Work Tools',gardentools:'Full Garden Tools',goaltools:'Full Dream Board Tools',projects:'Threads'});
+    const queued=new Set(Object.keys(labels));let modules={},routerRef=null;
+    const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
+    function navHTML(page){return '<div class="v21-brand"><div class="v21-brand-mark">🍓</div><div><strong>KATOS</strong><span>V5</span><em>V5</em></div></div>'+groups.map(([title,items])=>'<section class="v21-nav-group"><small>✦ '+title+'</small>'+items.map(([key,icon,label])=>'<button type="button" class="v21-nav-item '+(key===page?'active':'')+'" data-nav="'+key+'"><span class="v21-nav-icon">'+icon+'</span><span class="v21-nav-copy"><b>'+label+'</b><em data-nav-meta="'+key+'"></em></span></button>').join('')+'</section>').join('')+'<div class="v21-nav-spacer"></div><button type="button" class="v21-nav-item '+(page==='archive'?'active':'')+'" data-nav="archive"><span class="v21-nav-icon">📦</span><span class="v21-nav-copy"><b>Memory Box</b></span></button><div class="v21-sidebar-footer">🍓 ✦ 🎀 ✦ 🍓</div>'+'<nav class="v5-mobile-dock" aria-label="Quick rooms">'+[['home','🏠','Home'],['planner','🗓️','Plan'],['tasks','📝','Tasks'],['money','☕','Café'],['brain','🧠','Brain']].map(item=>'<button type="button" class="'+(item[0]===page?'active':'')+'" data-nav="'+item[0]+'"><span>'+item[1]+'</span>'+item[2]+'</button>').join('')+'</nav>'}
     function localDateKey(){const date=new Date();return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`}
     function refreshMeta(){const store=window.__smStore;if(!store)return;const data=store.get(),today=localDateKey(),tasks=(data.tasks||[]).filter(task=>(!task.date||task.date===today)&&!task.done).length,events=(data.events||[]).filter(event=>event.date===today).length;sidebar.querySelector('[data-nav-meta="tasks"]')?.replaceChildren(document.createTextNode(tasks?`• ${tasks} remaining`:'• all clear'));sidebar.querySelector('[data-nav-meta="planner"]')?.replaceChildren(document.createTextNode(events?`• ${events} today`:'• no events'))}
-    function setVisualMode(mode){visualMode=['normal','tiny','power'].includes(mode)?mode:'normal';localStorage.setItem('katos_v5_visual_mode',visualMode);document.body.classList.remove('mode-normal','mode-tiny','mode-power');document.body.classList.add('mode-'+visualMode);topbar.querySelectorAll('[data-mode]').forEach(button=>button.classList.toggle('active',button.dataset.mode===visualMode))}
-    function closeSidebar(){sidebar.classList.remove('open');sidebarBackdrop.hidden=true}
-    function buildNav(page){sidebar.innerHTML=navHTML(page);topbar.innerHTML=topbarHTML(page);sidebar.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>{closeSidebar();routerRef?.go(button.dataset.nav)}));topbar.querySelector('[data-shell-action="toggle-sidebar"]')?.addEventListener('click',()=>{sidebar.classList.add('open');sidebarBackdrop.hidden=false});topbar.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>setVisualMode(button.dataset.mode)));setVisualMode(visualMode);setTimeout(refreshMeta,0)}
-    function normalizeRenderedBranding(){const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode())node.nodeValue=node.nodeValue.replace(/KATOS V2\b/gi,'KATOS V5')}
-    function errorScreen(title,error){root.innerHTML='<section class="v17-card"><p class="v17-eyebrow">KATOS V5 • SAFE MODE</p><h1>🍓 '+esc(title)+'</h1><p class="v17-muted">The KatOS shell loaded, but this tab could not start. Your existing planner data is safe.</p><details open><summary>Technical details</summary><pre style="white-space:pre-wrap;overflow:auto;font-size:11px">'+esc(error?.message||error||'Unknown error')+'</pre></details></section>'}
-    async function loadModule(page){if(modules[page])return modules[page];if(!queued.has(page))return null;const path=page==='home'?'home-v22.js':page==='planner'?'planner-v18.js':page==='school'?'school-v18.js':page+'.js';try{const module=await Promise.race([import('./tabs/'+path+moduleSuffix),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timed out loading '+page)),10000))]);const name='render'+page[0].toUpperCase()+page.slice(1);if(typeof module[name]!=='function')throw new Error('Missing export '+name+' in '+path);modules[page]=module[name];return modules[page]}catch(error){errorScreen(labels[page]||page,error);return null}}
-    async function renderTab(page,context){buildNav(page);root.innerHTML='<section class="v17-card"><p class="v17-eyebrow">KATOS V5 • LIFE OS</p><h1>🍓 Loading KatOS…</h1><p class="v17-muted">Opening '+esc(labels[page]||page)+'…</p></section>';try{const render=await loadModule(page);if(render)await render(context);normalizeRenderedBranding()}catch(error){errorScreen(labels[page]||page,error)}}
-    async function start(){try{sidebarBackdrop.addEventListener('click',closeSidebar);const appModule=await import('./app/app.js'+moduleSuffix);const app=appModule.createApp({root,renderTab});routerRef=app.router;window.__smStore=app.store;document.documentElement.dataset.smBuild=BUILD;document.title='KatOS V5';buildNav(routerRef.page);app.store?.subscribe(refreshMeta)}catch(error){errorScreen('KatOS V5 could not start',error)}}
+    function buildNav(page){sidebar.innerHTML=navHTML(page);sidebar.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>routerRef?.go(button.dataset.nav)));setTimeout(refreshMeta,0)}
+    function errorScreen(title,error){root.innerHTML='<section class="v17-card"><h1>🍓 '+esc(title)+'</h1><span class="v18-badge">KatOS V2 • FRESH BUILD ✦</span><p class="v17-muted">The KatOS shell loaded, but this tab could not start. Your existing planner data is safe.</p><details open><summary>Technical details</summary><pre style="white-space:pre-wrap;overflow:auto;font-size:11px">'+esc(error?.message||error||'Unknown error')+'</pre></details></section>'}
+    async function loadModule(page){if(modules[page])return modules[page];if(!queued.has(page))return null;const path=page==='home'?'home-v5.js':page==='hometools'?'home-v22.js':page==='planner'?'planner-v5.js':page==='plannertools'?'planner-v18.js':page==='school'?'school-v5.js':page==='schooltools'?'school-v18.js':page==='tasks'?'tasks-v5.js':page==='tasktools'?'tasks.js':page==='reminders'?'reminders-v5.js':page==='remindertools'?'reminders.js':page==='mochini'?'mochini-v5.js':page==='mochinitools'?'mochini.js':page==='money'?'money-v5.js':page==='moneytools'?'money.js':page==='work'?'work-v5.js':page==='worktools'?'work.js':page==='garden'?'garden-v5.js':page==='gardentools'?'garden.js':page==='goals'?'goals-v5.js':page==='goaltools'?'goals.js':page+'.js';try{const module=await Promise.race([import('./tabs/'+path+moduleSuffix),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timed out loading '+page)),10000))]);const name=page==='home'?'renderHomeV5':page==='hometools'?'renderHome':page==='tasks'?'renderTasksV5':page==='tasktools'?'renderTasks':page==='reminders'?'renderRemindersV5':page==='remindertools'?'renderReminders':page==='mochini'?'renderMochiniV5':page==='mochinitools'?'renderMochini':page==='money'?'renderMoneyV5':page==='moneytools'?'renderMoney':page==='work'?'renderWorkV5':page==='worktools'?'renderWork':page==='planner'?'renderPlannerV5':page==='plannertools'?'renderPlanner':page==='school'?'renderSchoolV5':page==='schooltools'?'renderSchool':'render'+page[0].toUpperCase()+page.slice(1);if(typeof module[name]!=='function')throw new Error('Missing export '+name+' in '+path);modules[page]=module[name];return modules[page]}catch(error){errorScreen(labels[page]||page,error);return null}}
+    async function renderTab(page,context){buildNav(page);root.innerHTML='<section class="v17-card"><h1>🍓 Loading KatOS V2…</h1><p class="v17-muted">Opening '+esc(labels[page]||page)+'…</p></section>';try{const render=await loadModule(page);if(render)await render(context)}catch(error){errorScreen(labels[page]||page,error)}}
+    async function start(){try{const appModule=await import('./app/app.js'+moduleSuffix);const app=appModule.createApp({root,renderTab});routerRef=app.router;window.__smStore=app.store;const routineOverlay=await import('./app/routine-overlay.js'+moduleSuffix);routineOverlay.installRoutineOverlay();document.documentElement.dataset.smBuild=BUILD;document.title='KatOS V5';buildNav(routerRef.page);app.store?.subscribe(refreshMeta)}catch(error){errorScreen('KatOS V5 could not start',error)}}
     start();
   </script>
 </body>
