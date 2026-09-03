@@ -17,6 +17,12 @@
   <link rel="stylesheet" href="./v21-pages.css?v=22.0.1-20260816">
   <link rel="stylesheet" href="./v22-design-fixes.css?v=22.1.22-20260817">
   <link rel="stylesheet" href="./v22-maintenance.css?v=22.1.26-20260818">
+  <link rel="stylesheet" href="./daily-shit.css?v=23.0.0-20260902">
+  <link rel="stylesheet" href="./daily-shit-stabilization.css?v=23.0.1-20260902">
+  <link rel="stylesheet" href="./work-hq.css?v=24.0.0-20260902">
+  <link rel="stylesheet" href="./study-nook.css?v=25.0.0-20260902">
+  <link rel="stylesheet" href="./money-cafe.css?v=26.0.0-20260902">
+  <link rel="stylesheet" href="./lifestyle.css?v=27.0.0-20260902">
 </head>
 <body>
   <div id="app" class="v17-app v21-app">
@@ -28,7 +34,7 @@
     const BUILD='V22.2.0-2026-08-18';
     const moduleSuffix=location.protocol==='file:'?'':'?build='+encodeURIComponent(BUILD);
     const root=document.getElementById('tab-root'),sidebar=document.getElementById('v21-sidebar');
-    const groups=[['CORE',[['home','🏠','Home'],['planner','📅','Planner'],['tasks','📝','Tasks'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Garden'],['school','🎓','School'],['work','💼','Work'],['money','☕','Money'],['reminders','🔔','Reminders'],['noms','🍱','Noms'],['sips','💧','Sips']]],['MIND',[['brain','🧠','Brain'],['wellness','🌸','Wellness'],['goals','🌙','Dreamscape'],['projects','🗂','Projects'],['labs','🔬','Kat Labs'],['wins','🏆','Wins']]],['SYSTEM',[['settings','⚙️','Settings'],['hub','✨','KatOS Hub']]]];
+    const groups=[['CORE',[['home','🏠','Home'],['planner','📅','Calendar'],['tasks','📝','Daily Shit'],['mochini','🍡','Mochini']]],['LIFE',[['garden','🌷','Garden'],['school','🎓','Study Nook'],['work','💼','Work HQ'],['money','☕','Money Café'],['movement','🏃','Get Movin'],['hobbies','🎨','Hobby Shelf'],['growth','🌱','Growth'],['noms','🍱','Noms'],['sips','💧','Sips']]],['MIND',[['brain','🧠','Brain'],['wellness','🌸','Wellness'],['goals','🌙','Dreamscape'],['projects','🗂','Projects'],['labs','🔬','Kat Labs'],['wins','🏆','Wins']]],['SYSTEM',[['settings','⚙️','Settings'],['hub','✨','KatOS Hub']]]];
     const labels=Object.fromEntries(groups.flatMap(group=>group[1].map(item=>[item[0],item[2]])));Object.assign(labels,{archive:'Archive'});
     const queued=new Set(Object.keys(labels));let modules={},routerRef=null;
     const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

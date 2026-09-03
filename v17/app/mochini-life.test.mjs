@@ -1,0 +1,15 @@
+import assert from'node:assert/strict';
+import{applyElapsedEnergy,calculateMochiniMood,feedMochiniBerry,interactWithMochini,normalizeMochiniLife,pickMochiniDialogue,reactToMochiniEvent,refreshObsession,requiresMochiniAI}from'./mochini-life.js';
+const morning=new Date('2026-08-23T09:00:00');
+const fresh=normalizeMochiniLife({},morning);assert.equal(fresh.energy,70);assert.equal(fresh.mood,'content');assert.deepEqual(fresh.dailyFlags,{});
+const legacy=normalizeMochiniLife({affection:999,energy:-40,dailyKey:'2026-08-22',interactionsToday:9,dailyFlags:{old:true}},morning);assert.equal(legacy.affection,100);assert.equal(legacy.energy,0);assert.equal(legacy.interactionsToday,0);assert.deepEqual(legacy.dailyFlags,{});
+const corrupted=normalizeMochiniLife('broken',morning);assert.equal(corrupted.energy,70);assert.deepEqual(corrupted.dialogueHistory,[]);
+const late=new Date('2026-08-23T23:30:00');assert.equal(calculateMochiniMood({...fresh,energy:20},{},late),'sleepy');assert.equal(calculateMochiniMood({...fresh,dailyFlags:{celebratedAllTasks:true}},{},morning),'proud');
+assert.ok(applyElapsedEnergy({...fresh,energy:99,lastEnergyAt:'2026-08-20T00:00:00.000Z'},morning).energy<=100);
+const obsession=refreshObsession({...fresh,currentObsession:'tiny hats',obsessionStartedAt:'2026-08-21T09:00:00.000Z'},morning,()=>.99);assert.equal(obsession.currentObsession,'tiny hats');const expired=refreshObsession({...fresh,currentObsession:'tiny hats',obsessionStartedAt:'2026-08-10T09:00:00.000Z'},morning,()=>.1);assert.equal(expired.currentObsession,null);
+let history=fresh;const lines=[];for(let i=0;i<3;i++){const picked=pickMochiniDialogue('greeting',history,()=>0);lines.push(picked.line);history=picked.life}assert.equal(new Set(lines).size,3);
+const poke=interactWithMochini(fresh,'poke',{now:morning,random:()=>0});assert.equal(poke.requiresAI,false);assert.match(poke.line,/\?\?\?/);assert.equal(poke.life.pokeCount,1);
+let berry=feedMochiniBerry({...fresh,energy:99,affection:99},{now:morning,random:()=>0});assert.equal(berry.requiresAI,false);assert.equal(berry.life.energy,100);for(let i=0;i<6;i++)berry=feedMochiniBerry(berry.life,{now:morning,random:()=>0});assert.equal(berry.accepted,false);assert.ok(berry.life.berriesFedToday<=6);
+const task=reactToMochiniEvent(fresh,'taskComplete',{now:morning,random:()=>0});assert.equal(task.local,true);assert.equal(task.life.dailyFlags.celebratedTask,true);const routine=reactToMochiniEvent(fresh,'routineComplete',{now:morning,random:()=>0});assert.equal(routine.life.dailyFlags.celebratedRoutine,true);
+['greeting','poke','berry','taskComplete','routineComplete','activity'].forEach(intent=>assert.equal(requiresMochiniAI(intent),false));assert.equal(requiresMochiniAI('complex'),true);assert.equal(requiresMochiniAI('open_conversation'),true);
+console.log('Mochini Life Engine tests: PASS');

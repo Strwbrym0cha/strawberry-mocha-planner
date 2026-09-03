@@ -1,0 +1,3 @@
+/* Stage 1 stabilization: keep repeated action controls comfortably touchable. */
+.sm-action button,.sm-now-item button,.sm-routine button{min-height:44px}
+@media(max-width:650px){.sm-routine-step{align-items:flex-start;flex-wrap:wrap}.sm-routine-step button{width:100%}}

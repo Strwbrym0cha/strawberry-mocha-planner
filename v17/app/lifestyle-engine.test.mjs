@@ -1,0 +1,18 @@
+import assert from'node:assert/strict';
+import{addGrowthArea,addGrowthGoal,addGrowthMilestone,addGrowthWin,addHobby,addHobbyProject,addMovementActivity,addMovementType,completeGrowthMilestone,completeMovementActivity,getGrowthWins,getHobbyRecommendation,getMovementSummary,getRecommendedGrowthStep,getRecommendedMovement,publishLifestyleAction,skipMovementActivity}from'./lifestyle-engine.js';
+import{completeAction,createAction}from'./unified-actions.js';
+import{validateState}from'./data.js';
+
+let state={tasks:[]};
+let result=addMovementType(state,{id:'pilates',name:'Pilates',defaultDurationOptional:20,defaultIntensityOptional:'Gentle'});state=result.state;
+result=addMovementActivity(state,{id:'move-1',typeId:'pilates',title:'Pilates',date:'2026-09-02',plannedMinutes:20});state=result.state;
+state=completeMovementActivity(state,'move-1',20);assert.equal(getMovementSummary(state,{from:'2026-09-02',to:'2026-09-02'}).totalMinutes,20);state=skipMovementActivity(state,'move-1');assert.equal(state.lifestyle.movement.activities[0].status,'skipped');
+assert.equal(getRecommendedMovement(state,{energy:'low',availableMinutes:20,date:'2026-09-03'}).primary.name,'Pilates');
+result=addHobby(state,{id:'python',title:'Python',status:'current',energyLevelOptional:'low',typicalMinutesOptional:15});state=result.state;result=addHobbyProject(state,{id:'python-project',hobbyId:'python',title:'Make a tiny calculator'});state=result.state;assert.equal(getHobbyRecommendation(state,{energy:'low',availableMinutes:15}).primary.id,'python');
+result=addGrowthArea(state,{id:'confidence',title:'Confidence'});state=result.state;result=addGrowthGoal(state,{id:'driving',areaId:'confidence',title:'Drive new places'});state=result.state;result=addGrowthMilestone(state,{id:'new-store',goalId:'driving',title:'Drive to a new store'});state=result.state;assert.equal(getRecommendedGrowthStep(state).milestone.id,'new-store');state=completeGrowthMilestone(state,'new-store');result=addGrowthWin(state,{id:'manual-win',title:'Drove somewhere unfamiliar',source:'manual'});state=result.state;assert.equal(getGrowthWins(state).length,1);
+const store={get:()=>state,update:fn=>{state=fn(state)},createAction:draft=>createAction(store,draft)};
+result=addMovementActivity(state,{id:'move-2',typeId:'pilates',title:'Pilates',date:'2026-09-02',plannedMinutes:20});state=result.state;
+const movementAction=publishLifestyleAction(store,{source:'movement',id:'move-2',title:'Do Pilates',scheduledDate:'2026-09-02',estimatedMinutes:20});completeAction(store,movementAction.action.id,'2026-09-02');assert.equal(state.lifestyle.movement.activities.find(item=>item.id==='move-2').status,'completed','movement action completion updates its linked movement activity');
+publishLifestyleAction(store,{source:'hobby',id:'python-project',title:'Do one Python exercise',scheduledDate:'2026-09-02'});publishLifestyleAction(store,{source:'hobby',id:'python-project',title:'Do one Python exercise',scheduledDate:'2026-09-02'});assert.equal(state.tasks.filter(item=>item.source==='hobby').length,1,'stable lifestyle external IDs prevent duplicate actions');assert.equal(state.lifestyle.hobbies.projects.length,1,'linked action leaves hobby project intact');
+const legacy=validateState({schemaVersion:5,myLoves:[{id:'interest',name:'Coloring',category:'hobby'},{id:'sentimental',name:'Someone special',category:'person'}]}).state,again=validateState(legacy).state;assert.equal(legacy.lifestyle.hobbies.items.filter(item=>item.id==='migrated-hobby-interest').length,1);assert.equal(legacy.lifestyle.legacyMyLoves.length,2);assert.deepEqual(again.lifestyle,legacy.lifestyle,'Stage 6 migration is idempotent');
+console.log('Lifestyle engine tests: PASS');

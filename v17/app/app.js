@@ -1,5 +1,6 @@
 import{createStore}from'./storage.js?v=22.1.27-20260818';
 import{createRouter}from'./router.js?v=22.1.18-20260817';
+import{installMochiniLifeObserver}from'./mochini-life-observer.js?v=22.3.0-20260823';
 
 function installFloatingIslands(){
  if(document.getElementById('sm-floating-islands'))return;
@@ -27,4 +28,4 @@ function installFloatingIslands(){
  document.head.appendChild(style);
 }
 
-export function createApp({root,renderTab}){installFloatingIslands();const store=createStore();const router=createRouter({initial:location.hash.slice(1)||'home',onChange:page=>renderTab(page,{root,store,router})});renderTab(router.page,{root,store,router});return{store,router}}
+export function createApp({root,renderTab}){installFloatingIslands();const store=createStore();installMochiniLifeObserver(store);const router=createRouter({initial:location.hash.slice(1)||'home',onChange:page=>renderTab(page,{root,store,router})});renderTab(router.page,{root,store,router});return{store,router}}

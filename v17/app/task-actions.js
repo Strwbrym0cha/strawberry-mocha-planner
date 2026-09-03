@@ -78,7 +78,7 @@ export function completeTask(store,id){
  if(id==null||id==='')return fail('A task ID is required.');
  return apply(store,data=>{
   const task=findTask(data,id);if(!task)return fail('Task not found.');
-  const updated=normalizeTask({...task,done:true});
+  const completedAt=new Date().toISOString(),updated=normalizeTask(task.recurrence?{...task,occurrences:{...(task.occurrences||{}),[localDateKey()]:{...(task.occurrences?.[localDateKey()]||{}),date:localDateKey(),status:'completed',completedAt}}}:{...task,done:true,status:'completed',completedAt});
   return{ok:true,data:{...data,tasks:tasksOf(data).map(item=>String(item.id)===String(id)?updated:item),taskbot:String(data.taskbot?.missionId)===String(id)?{...(data.taskbot||{}),missionId:null}:data.taskbot},response:ok(updated)};
  });
 }
