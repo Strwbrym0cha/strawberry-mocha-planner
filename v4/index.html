@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#fff7fb">
+  <meta name="sm-build" content="4.1.12-ipad-boot-watchdog">
+  <title>KatOS V4 Preview 🎀</title>
+  <link rel="manifest" href="../manifest.json?v=4">
+  <link rel="icon" href="../icon.svg">
+  <link rel="stylesheet" href="./styles.css?v=4.1.12">
+  <link rel="stylesheet" href="./record-tools.css?v=4.1.12">
+  <link rel="stylesheet" href="./v5-embed-skin.css?v=4.1.27">
+</head>
+<body>
+  <div id="app" class="loading">🎀 KatOS V4 is waking up…</div>
+  <script type="module">
+    const app=document.getElementById('app');
+    let bootFailed=false;
+    const showBootError=error=>{
+      if(bootFailed||window.__KATOS_V4_RUNTIME)return;
+      bootFailed=true;
+      console.error('KatOS recovery boot failed:',error);
+      if(app)app.innerHTML=`<main style="padding:28px;font-family:-apple-system,sans-serif;color:#6f4153"><h2>🎀 V4 got stuck loading.</h2><p>${String(error?.message||error||'The boot sequence timed out.')}</p><p>Your browser data was not changed.</p><button type="button" onclick="location.reload()" style="margin-top:8px;padding:10px 14px;border:1px solid #e8bfd0;border-radius:999px;background:#fff7fb;color:#7b4258;font:inherit;font-weight:700">Try again</button></main>`;
+    };
+
+    // Start KatOS immediately. Safari cache/service-worker housekeeping is deliberately
+    // best-effort and must never be allowed to block the planner from rendering.
+    import(`./loader.js?v=4.1.12-ipad-boot-watchdog&t=${Date.now()}`).catch(showBootError);
+
+    setTimeout(()=>{
+      if(!window.__KATOS_V4_RUNTIME)showBootError(new Error('KatOS took too long to start on this browser.'));
+    },15000);
+
+    setTimeout(async()=>{
+      try{
+        if('serviceWorker' in navigator){
+          const regs=await navigator.serviceWorker.getRegistrations();
+          await Promise.allSettled(regs.map(reg=>reg.unregister()));
+        }
+      }catch(error){console.warn('KatOS service-worker cleanup skipped:',error)}
+      try{
+        if('caches' in window){
+          const keys=await caches.keys();
+          await Promise.allSettled(keys.filter(key=>key.startsWith('strawberry-mocha-')||key.startsWith('katos-v3-')||key.startsWith('katos-v4-')).map(key=>caches.delete(key)));
+        }
+      }catch(error){console.warn('KatOS cache cleanup skipped:',error)}
+    },1000);
+  </script>
+</body>
+</html>

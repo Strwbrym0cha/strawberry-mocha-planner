@@ -1,1 +1,50 @@
-const CACHE='strawberry-mocha-v4';const ASSETS=['./index.html','./v17/index.html','./v17/v18-theme.css','./v17/v18-modal-fix.css','./v17/styles.css','./manifest.json','./icon.svg'];self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(x=>{const copy=x.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return x}).catch(()=>caches.match('./index.html'))))});
+const CACHE='katos-v4-recovery2';
+const SCOPE=self.registration.scope;
+const url=p=>new URL(p,SCOPE).toString();
+const CORE=[
+  url('./index.html'),
+  url('./v4/'),
+  url('./v4/index.html'),
+  url('./manifest.json?v=4'),
+  url('./icon.svg')
+];
+
+self.addEventListener('install',event=>{
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).catch(()=>{}));
+});
+
+self.addEventListener('activate',event=>{
+  event.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(keys.filter(key=>(key.startsWith('strawberry-mocha-')||key.startsWith('katos-v3-')||key.startsWith('katos-v4-'))&&key!==CACHE).map(key=>caches.delete(key))))
+      .then(()=>self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch',event=>{
+  if(event.request.method!=='GET')return;
+  const request=event.request;
+  const requestUrl=new URL(request.url);
+  const scopeUrl=new URL(SCOPE);
+  if(requestUrl.origin!==scopeUrl.origin||!requestUrl.pathname.startsWith(scopeUrl.pathname))return;
+  if(requestUrl.pathname.includes('/v3/')||requestUrl.pathname.includes('/v17/')||requestUrl.pathname.includes('/legacy-v2/'))return;
+
+  event.respondWith(
+    fetch(request,{cache:'no-store'}).then(response=>{
+      if(response&&response.ok&&request.mode==='navigate'){
+        const copy=response.clone();
+        caches.open(CACHE).then(cache=>cache.put(request,copy)).catch(()=>{});
+      }
+      return response;
+    }).catch(async()=>{
+      const cached=await caches.match(request);
+      if(cached)return cached;
+      if(request.mode==='navigate'){
+        if(requestUrl.pathname.includes('/v4/'))return caches.match(url('./v4/index.html'));
+        return caches.match(url('./index.html'));
+      }
+      return Response.error();
+    })
+  );
+});

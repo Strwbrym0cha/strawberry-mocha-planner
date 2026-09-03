@@ -1,0 +1,21 @@
+/* KatOS V5: Daily Flow — a calm, flat-color home for Tasks, Planner, and Routines. */
+.v5-daily-flow{--v5-pink:#f4a7c0;--v5-pink-soft:#ffe6ef;--v5-matcha:#9fbb78;--v5-matcha-soft:#e9f1d9;--v5-blue:#99c9e8;--v5-blue-soft:#e6f4fc;--v5-lavender:#b8a8e5;--v5-lavender-soft:#eee9ff;--v5-cream:#fffaf3;--v5-cocoa:#583b38;display:grid;gap:16px;color:var(--v5-cocoa)}
+.v5-daily-flow *{box-sizing:border-box}
+.v5-daily-hero{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px;border:2px solid var(--v5-pink);border-radius:30px;background:var(--v5-pink-soft)}
+.v5-daily-kicker{margin:0 0 5px;color:#a94d70;font-size:11px;font-weight:900;letter-spacing:.11em}
+.v5-daily-hero h1{margin:0;color:var(--v5-cocoa);font-size:clamp(27px,4vw,42px)}
+.v5-daily-hero p{margin:7px 0 0;max-width:45ch;line-height:1.45}
+.v5-daily-hero-icon{display:grid;place-items:center;flex:0 0 auto;width:76px;height:76px;border:2px solid #fff;border-radius:26px;background:#fff6fa;font-size:38px}
+.v5-daily-grid{display:grid;grid-template-columns:1.35fr .9fr;gap:16px}
+.v5-daily-card{padding:18px;border:2px solid var(--v5-pink);border-radius:25px;background:var(--v5-cream)}
+.v5-daily-card h2{margin:0;color:var(--v5-cocoa);font-size:21px}.v5-daily-card p{margin:6px 0 0;line-height:1.45}
+.v5-mirror{border-color:var(--v5-pink);background:var(--v5-pink-soft)}
+.v5-mirror-list{display:grid;gap:10px;margin-top:15px}.v5-mirror-row{display:grid;grid-template-columns:58px minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px;border:2px solid #fff;border-radius:18px;background:var(--v5-cream)}
+.v5-mirror-row small{font-size:10px;font-weight:900;letter-spacing:.08em;color:#a94d70}.v5-mirror-row b{display:block;overflow-wrap:anywhere}.v5-mirror-row button{min-width:40px;min-height:40px;border:0;border-radius:14px;background:var(--v5-matcha);color:#fff;font-size:18px;font-weight:900}
+.v5-protected{border-color:var(--v5-matcha);background:var(--v5-matcha-soft)}.v5-protected-list{display:grid;gap:8px;margin-top:13px}.v5-protected-item{display:flex;align-items:center;gap:9px;padding:10px 0;border-top:1px solid rgba(88,59,56,.14);font-weight:800}.v5-protected-item:first-child{border-top:0}.v5-protected-dot{color:#5d7e32}
+.v5-routine-card{border-color:var(--v5-lavender);background:var(--v5-lavender-soft)}.v5-routine-line{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px;padding:12px;border:2px solid #fff;border-radius:18px;background:var(--v5-cream)}.v5-routine-line b{display:block}.v5-routine-line small{display:block;margin-top:3px;color:#756789}
+.v5-status-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.v5-status-card{min-height:126px;padding:16px;border:2px solid;border-radius:23px}.v5-status-card h2{font-size:18px}.v5-status-card[data-tone="blue"]{border-color:var(--v5-blue);background:var(--v5-blue-soft)}.v5-status-card[data-tone="matcha"]{border-color:var(--v5-matcha);background:var(--v5-matcha-soft)}.v5-status-card[data-tone="lavender"]{border-color:var(--v5-lavender);background:var(--v5-lavender-soft)}.v5-status-card[data-tone="pink"]{border-color:var(--v5-pink);background:var(--v5-pink-soft)}
+.v5-room-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}.v5-room-actions button{min-height:46px;padding:10px 14px;border:2px solid var(--v5-pink);border-radius:16px;background:var(--v5-cream);color:var(--v5-cocoa);font-weight:900}.v5-room-actions button.primary{border-color:var(--v5-pink);background:var(--v5-pink);color:#fff}
+.v5-empty{margin-top:12px;padding:13px;border:2px dashed rgba(88,59,56,.22);border-radius:16px;background:rgba(255,255,255,.55);line-height:1.4}
+@media(max-width:760px){.v5-daily-hero{align-items:flex-start;padding:18px}.v5-daily-hero-icon{width:58px;height:58px;border-radius:20px;font-size:29px}.v5-daily-grid{grid-template-columns:1fr}.v5-status-grid{grid-template-columns:1fr 1fr}.v5-mirror-row{grid-template-columns:51px minmax(0,1fr) auto}.v5-room-actions button{flex:1 1 45%}}
+@media(max-width:430px){.v5-status-grid{grid-template-columns:1fr}.v5-daily-hero h1{font-size:28px}.v5-daily-hero-icon{display:none}}

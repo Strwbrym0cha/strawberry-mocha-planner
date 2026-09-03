@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fff7fb">
+<title>KatOS Safari Vault Check</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#6f4153;background:#fff7fb}*{box-sizing:border-box}body{margin:0;padding:22px;background:linear-gradient(180deg,#fff4fa,#fffdf9);min-height:100vh}.wrap{max-width:760px;margin:auto}.card{background:#fff;border:1px solid #efc7d8;border-radius:24px;padding:20px;box-shadow:0 18px 50px rgba(95,54,72,.12);margin-bottom:14px}h1{margin:0 0 6px;font-size:26px}h2{margin:0 0 8px;font-size:18px}.muted{color:#987080;font-size:13px;line-height:1.5}.status{padding:12px;border-radius:14px;margin:12px 0;font-weight:750}.ok{background:#eef9f1;color:#416c4d}.warn{background:#fff1f6;color:#8a4962}.row{border:1px solid #efd4df;border-radius:16px;padding:12px;margin:9px 0;background:#fffafd}.key{font-weight:850;word-break:break-all}.meta{font-size:12px;color:#987080;margin-top:4px}.yes{color:#39744a}.no{color:#9d506b}button{width:100%;min-height:48px;border:1px solid #e5bed0;border-radius:14px;background:#fff6fa;color:#744255;font:inherit;font-weight:850;padding:10px 14px;margin-top:10px}code{background:#fff0f6;padding:2px 5px;border-radius:6px}.big{font-size:20px;font-weight:900}.small{font-size:11px;color:#9b7584;margin-top:8px;line-height:1.45}
+</style>
+</head>
+<body><main class="wrap">
+<section class="card"><h1>🍓 KatOS Safari Vault Check</h1><p class="muted">Read-only. This page checks the storage container of the browser that opened it. It does not restore, delete, sync, or change planner data.</p><div id="mode"></div></section>
+<section class="card"><h2>🧪 V17 / V5 storage keys</h2><div id="v17"></div></section>
+<section class="card"><h2>📦 All KatOS planner keys in this vault</h2><div id="all"></div><button id="download" type="button">Download planner-only recovery bundle</button><div class="small">Session/auth/token keys are deliberately excluded from this export.</div></section>
+</main>
+<script>
+(()=>{
+ const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||window.navigator.standalone===true;
+ const mode=document.getElementById('mode');
+ mode.innerHTML=standalone
+  ? '<div class="status warn">⚠️ You are still inside the Home Screen KatOS app. This is the PWA vault, not Safari\'s browser vault.<br><br>Copy this page address, open the Safari app itself, paste it into Safari\'s address bar, and load it there.</div>'
+  : '<div class="status ok">✅ Browser mode detected. This is the Safari/browser storage vault we wanted to inspect.</div>';
+ const excluded=k=>/session|auth|token|access|refresh|password/i.test(String(k));
+ const relevant=k=>{const s=String(k||'').toLowerCase();return !excluded(s)&&(s.startsWith('sm_v')||s.startsWith('katos')||s.startsWith('strawberry'));};
+ const records=[];
+ try{for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i)||'';if(!relevant(key))continue;let value='';try{value=localStorage.getItem(key)||''}catch{}records.push({key,bytes:value.length,value});}}catch(e){}
+ const byKey=new Map(records.map(r=>[r.key,r]));
+ const wanted=['sm_v16','sm_v16_backup','sm_v16_backups','sm_v4_beta','sm_v3_beta'];
+ document.getElementById('v17').innerHTML=wanted.map(key=>{const r=byKey.get(key);return `<div class="row"><div class="key ${r?'yes':'no'}">${r?'✅':'❌'} ${key}</div><div class="meta">${r?`${r.bytes.toLocaleString()} characters found`:'Not present in this vault'}</div></div>`}).join('');
+ document.getElementById('all').innerHTML=records.length?`<div class="big">${records.length} planner-ish key${records.length===1?'':'s'} found</div>`+records.map(r=>`<div class="row"><div class="key">${r.key}</div><div class="meta">${r.bytes.toLocaleString()} characters</div></div>`).join(''):'<div class="status warn">No KatOS planner keys were found in this storage vault.</div>';
+ document.getElementById('download').addEventListener('click',()=>{
+   const bundle={format:'katos-safari-vault-bundle',version:1,exportedAt:new Date().toISOString(),origin:location.origin,standalone,records:records.map(r=>({key:r.key,bytes:r.bytes,value:r.value}))};
+   const blob=new Blob([JSON.stringify(bundle,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download=`katos-safari-vault-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ });
+})();
+</script></body></html>

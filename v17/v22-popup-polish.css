@@ -1,0 +1,151 @@
+/* KatOS V22.3: category-aware Strawberry Mocha popup polish.
+   Keeps the stable flow-popup behavior while making every form feel like one family. */
+:root{
+  --sm-popup-pink:#f39abc;
+  --sm-popup-deep:#b65378;
+  --sm-popup-line:#f1b9cf;
+  --sm-popup-cream:#fffdfb;
+  --sm-popup-green:#b8d5a8;
+  --sm-popup-ink:#5c382f;
+  --sm-popup-muted:#9b7770;
+}
+.v17-modal-box,.v18-event-modal-box,.v18-day-review-box,.sm-routine-editor,.sm-popup-inline{
+  --sm-popup-accent:var(--sm-popup-pink);
+  position:relative;
+  background:
+    radial-gradient(circle at 92% 14%,rgba(243,154,188,.16) 0 3px,transparent 4px),
+    radial-gradient(circle at 88% 19%,rgba(184,213,168,.15) 0 2px,transparent 3px),
+    linear-gradient(135deg,#fff9fc 0%,#fffdfb 58%,#f6fbf1 100%)!important;
+  border:2px solid var(--sm-popup-line)!important;
+  border-radius:34px!important;
+  padding:26px!important;
+  color:var(--sm-popup-ink)!important;
+  box-shadow:0 24px 70px rgba(92,56,47,.17),0 0 0 7px rgba(255,255,255,.5)!important;
+  overflow:hidden!important;
+}
+.v17-modal-box::after,.v18-event-modal-box::after,.v18-day-review-box::after,.sm-routine-editor::after,.sm-popup-inline::after{
+  content:"";
+  position:absolute;
+  left:22px;right:22px;top:0;height:9px;
+  background:radial-gradient(circle at 7px 0,#fff 6px,transparent 6.5px) 0 0/14px 10px repeat-x;
+  opacity:.95;
+  pointer-events:none;
+}
+.sm-popup-category-badge{
+  display:flex;align-items:center;gap:12px;
+  padding:4px 52px 14px 0;
+  margin-bottom:8px;
+  border-bottom:1px dashed #f3cfdd;
+}
+.sm-popup-category-icon{
+  width:52px;height:52px;flex:0 0 52px;
+  display:grid;place-items:center;
+  border:1.5px solid #f0bfd1;
+  border-radius:17px;
+  background:linear-gradient(145deg,#fff,#fff1f7 70%,#f4faef);
+  box-shadow:0 8px 18px rgba(182,83,120,.10);
+  font-size:27px;
+}
+.sm-popup-category-copy{min-width:0;display:flex;flex-direction:column;gap:2px}
+.sm-popup-category-copy b{font-size:10px;letter-spacing:.13em;color:var(--sm-popup-deep);font-weight:950}
+.sm-popup-category-copy span{font-size:12px;color:var(--sm-popup-muted)}
+.v17-modal-box h2,.v18-event-modal-box h2,.v18-day-review-box h2,.sm-routine-editor h2,.sm-popup-inline h2{
+  margin:6px 48px 6px 0!important;
+  font-size:clamp(25px,3vw,34px)!important;
+  line-height:1.08!important;
+  letter-spacing:-.025em;
+  color:#512e27!important;
+}
+.v17-modal-box>p,.v18-event-modal-box>p,.v18-day-review-box>p,.sm-routine-editor>p,.sm-popup-inline p{color:var(--sm-popup-muted)!important}
+.v17-modal-close,.sm-routine-editor [data-close]:first-of-type{
+  position:absolute!important;top:16px!important;right:16px!important;
+  width:43px!important;height:43px!important;padding:0!important;
+  border-radius:50%!important;border:1.5px solid #ed9fbc!important;
+  background:linear-gradient(145deg,#fff,#ffeaf3)!important;
+  color:#e45e91!important;font-size:25px!important;line-height:1!important;
+  box-shadow:0 6px 15px rgba(228,94,145,.10)!important;
+  z-index:30!important;
+}
+.v17-modal-box label,.v18-event-modal-box label,.v18-day-review-box label,.sm-routine-editor label,.sm-popup-inline label{
+  color:#85504e;font-weight:850;font-size:12px;
+}
+.v17-modal-box label>span,.v18-event-modal-box label>span,.v18-day-review-box label>span{color:#9b5864!important;font-weight:900!important}
+.v17-modal-box input,.v17-modal-box textarea,.v17-modal-box select,
+.v18-event-modal-box input,.v18-event-modal-box textarea,.v18-event-modal-box select,
+.v18-day-review-box input,.v18-day-review-box textarea,.v18-day-review-box select,
+.sm-routine-editor input,.sm-routine-editor textarea,.sm-routine-editor select,.sm-popup-inline input,.sm-popup-inline textarea,.sm-popup-inline select{
+  width:100%;
+  min-height:48px;
+  padding:13px 14px!important;
+  border:1.5px solid #efb4ca!important;
+  border-radius:17px!important;
+  background:rgba(255,255,255,.9)!important;
+  color:var(--sm-popup-ink)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 3px 10px rgba(92,56,47,.035)!important;
+  outline:none!important;
+}
+.v17-modal-box textarea,.v18-event-modal-box textarea,.v18-day-review-box textarea,.sm-routine-editor textarea,.sm-popup-inline textarea{min-height:112px!important}
+.v17-modal-box input:focus,.v17-modal-box textarea:focus,.v17-modal-box select:focus,
+.v18-event-modal-box input:focus,.v18-event-modal-box textarea:focus,.v18-event-modal-box select:focus,
+.v18-day-review-box input:focus,.v18-day-review-box textarea:focus,.v18-day-review-box select:focus,
+.sm-routine-editor input:focus,.sm-routine-editor textarea:focus,.sm-routine-editor select:focus,.sm-popup-inline input:focus,.sm-popup-inline textarea:focus,.sm-popup-inline select:focus{
+  border-color:#e879a4!important;
+  box-shadow:0 0 0 4px rgba(232,121,164,.11)!important;
+}
+.v17-modal-actions,.sm-routine-editor-actions{
+  position:relative;
+  display:flex!important;justify-content:flex-end!important;align-items:center!important;gap:10px!important;
+  margin-top:22px!important;padding-top:22px!important;
+  border-top:1px dashed #f2cddd!important;
+}
+.v17-modal-actions::before,.sm-routine-editor-actions::before{
+  content:"🎀";position:absolute;left:50%;top:-11px;transform:translateX(-50%);
+  background:#fffdfb;padding:0 8px;font-size:15px;
+}
+.v17-modal-actions button,.sm-routine-editor-actions button{min-height:44px!important;border-radius:15px!important;padding:10px 16px!important}
+.v17-modal-actions .primary,.sm-routine-editor-actions .primary,
+.v17-modal-box button.primary,.v18-event-modal-box button.primary,.v18-day-review-box button.primary,.sm-popup-inline button.primary{
+  border:0!important;
+  background:linear-gradient(100deg,#f28fb7 0%,#ef9fc0 47%,#b7d39e 100%)!important;
+  color:white!important;
+  box-shadow:0 9px 20px rgba(211,107,150,.18)!important;
+}
+.sm-popup-polished[data-popup-category="money"]{--sm-popup-accent:#d99a54}
+.sm-popup-polished[data-popup-category="school"]{--sm-popup-accent:#9a88d7}
+.sm-popup-polished[data-popup-category="work"]{--sm-popup-accent:#7d9eb5}
+.sm-popup-polished[data-popup-category="noms"]{--sm-popup-accent:#d49374}
+.sm-popup-polished[data-popup-category="sips"]{--sm-popup-accent:#83b9cf}
+.sm-popup-polished[data-popup-category="wellness"]{--sm-popup-accent:#d98ab3}
+.sm-popup-polished[data-popup-category="brain"]{--sm-popup-accent:#b69ad9}
+.sm-popup-polished .sm-popup-category-icon{border-color:color-mix(in srgb,var(--sm-popup-accent) 55%,white);}
+.v18-day-review-modal,.sm-routine-editor-backdrop{
+  background:rgba(86,61,55,.22)!important;
+  backdrop-filter:blur(13px)!important;
+  -webkit-backdrop-filter:blur(13px)!important;
+}
+.sm-popup-inline{margin:14px 0!important}
+.sm-popup-inline>[data-close-editor],.sm-popup-inline>[data-close-cycle],.sm-popup-inline header>[data-close-editor],.sm-popup-inline header>[data-close-cycle],.sm-popup-inline header>#cancelOnHand{position:absolute!important;top:16px!important;right:16px!important;width:43px!important;height:43px!important;padding:0!important;border-radius:50%!important;border:1.5px solid #ed9fbc!important;background:linear-gradient(145deg,#fff,#ffeaf3)!important;color:#e45e91!important;font-size:23px!important;z-index:30!important}
+.sm-popup-inline .sm-money-form{margin-top:10px}
+/* v20-popup intentionally keeps legacy modals in safe document flow. These higher-specificity rules skin that stable container without changing its layout mechanics. */
+.v20-flow-popup .v17-modal-box,.v20-flow-popup .v18-event-modal-box{
+  background:
+    radial-gradient(circle at 92% 14%,rgba(243,154,188,.16) 0 3px,transparent 4px),
+    radial-gradient(circle at 88% 19%,rgba(184,213,168,.15) 0 2px,transparent 3px),
+    linear-gradient(135deg,#fff9fc 0%,#fffdfb 58%,#f6fbf1 100%)!important;
+  border:2px solid var(--sm-popup-line)!important;
+  border-radius:34px!important;
+  padding:26px!important;
+  color:var(--sm-popup-ink)!important;
+  box-shadow:0 24px 70px rgba(92,56,47,.17),0 0 0 7px rgba(255,255,255,.5)!important;
+}
+.v20-flow-popup .v17-modal-box::after,.v20-flow-popup .v18-event-modal-box::after{
+  content:"";position:absolute;left:22px;right:22px;top:0;height:9px;
+  background:radial-gradient(circle at 7px 0,#fff 6px,transparent 6.5px) 0 0/14px 10px repeat-x;
+  opacity:.95;pointer-events:none;
+}
+@media(max-width:760px){
+  .v17-modal-box,.v18-event-modal-box,.v18-day-review-box,.sm-routine-editor,.sm-popup-inline,.v20-flow-popup .v17-modal-box,.v20-flow-popup .v18-event-modal-box{border-radius:27px!important;padding:20px!important}
+  .sm-popup-category-icon{width:46px;height:46px;flex-basis:46px;font-size:24px}
+  .v17-modal-actions,.sm-routine-editor-actions{flex-wrap:wrap}
+  .v17-modal-actions button,.sm-routine-editor-actions button{flex:1 1 130px}
+}
