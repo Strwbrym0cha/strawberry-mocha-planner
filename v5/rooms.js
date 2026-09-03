@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit}from'./data.js?v=5.1.0-daily-shit';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit}from'./data.js?v=5.2.0-work-hq';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};

@@ -77,6 +77,10 @@ function createRoutineInstance(state,routine,date,patch={}){const rows=routineIn
 function fail(error){return{ok:false,error}}
 
 export function applyDailyAction(source,action={},today){const state=clone(source),type=text(action.type),date=dateOk(action.date)?action.date:today;if(!dateOk(today))return fail('A local planner date is required.');
+ if(type==='ensure-linked'){
+  const externalId=text(action.externalId);if(!externalId)return fail('A stable linked-action ID is required.');const existing=items(state,'life.tasks').find(item=>text(item.externalId)===externalId);if(existing)return{ok:true,state,result:existing,reused:true};
+  const created=applyDailyAction(state,{type:'quick-add',kind:'task',title:action.title,date,priority:action.priority,energy:action.energy,duration:action.duration,deadlineType:action.deadlineType},today);if(!created.ok)return created;const linked=patchItem(created.state,'life.tasks',created.result.id,{externalId,sourceId:text(action.sourceId),sourceType:text(action.sourceType),category:'Work'});return{ok:true,state:created.state,result:linked,reused:false};
+ }
  if(type==='quick-add'){
   const title=text(action.title);if(!title)return fail('Give it a name first.');const kind=['task','ping','routine'].includes(text(action.kind))?text(action.kind):'task';
   if(kind==='routine'){const routine={id:makeId('routine'),name:title,recurrence:{kind:'daily'},steps:[],archived:false,createdAt:new Date().toISOString()};atPath(state,'life.routines',[...items(state,'life.routines'),routine]);return{ok:true,state,result:routine};}

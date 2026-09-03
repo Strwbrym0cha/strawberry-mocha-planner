@@ -1,4 +1,5 @@
-import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.1.0-daily-shit';
+import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.2.0-work-hq';
+import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.2.0-work-hq';
 
 const V4_KEY='sm_v4_beta';
 const V5_DATA_KEY='sm_v5_data';
@@ -30,6 +31,7 @@ const COLLECTION_PATHS=[
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
   'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
+  'work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
@@ -41,6 +43,7 @@ const RECOVERY_COUNT_PATHS=[
   'life.tasks','life.routines','life.routineInstances','life.events','life.reminders','life.threads',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
   'work.items','work.shifts','work.training','work.career',
+  'work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary',
   'education.programs','education.courses','education.items','education.sessions','education.reviews',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments','movement.sessions',
   'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans',
@@ -311,6 +314,29 @@ export function runV5DailyAction(action={}){
   }catch(error){console.warn('KatOS V5 could not save that Daily Shit action.',error);return{ok:false,error:'That Daily Shit change could not be saved. Your planner is still safe.'}}
 }
 
+function persistPlannerState(state,reason){
+  const now=new Date().toISOString();state.meta={...obj(state.meta),updatedAt:now};
+  const existing=localStorage.getItem(V4_KEY)||'',parsed=parseStored(existing);let stored=null;try{stored=existing?JSON.parse(existing):null}catch{}const envelope=parsed&&stored?.data?{...stored,data:state}:{data:state},raw=JSON.stringify(envelope);
+  localStorage.setItem(V4_KEY,raw);saveImportedState(state,raw,V4_KEY,reason);return state;
+}
+
+export function selectV5WorkHQ(date=localDateKey()){
+  const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+  if(!source)return selectWorkHQ({},date);
+  const initialized=initializeWorkHQ(source,date);
+  if(initialized.changed)persistPlannerState(initialized.state,'v5-work-hq-initialize');
+  return selectWorkHQ(initialized.state,date);
+}
+
+export function runV5WorkAction(action={}){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so Work HQ has a planner to update.'};
+    const result=applyWorkAction(source,action,localDateKey());if(!result.ok)return result;
+    persistPlannerState(result.state,'v5-work-hq');return{...result,state:undefined};
+  }catch(error){console.warn('KatOS V5 could not save that Work HQ action.',error);return{ok:false,error:'That Work HQ change could not be saved. Your existing work data is still safe.'}}
+}
+
 const cloneState=value=>{try{return structuredClone(value)}catch{return JSON.parse(JSON.stringify(value||{}))}};
 const itemId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
 const setAtPath=(state,path,value)=>{const keys=path.split('.');let cursor=state;for(let index=0;index<keys.length-1;index++){const key=keys[index];cursor[key]=obj(cursor[key]);cursor=cursor[key]}cursor[keys.at(-1)]=value};
@@ -390,7 +416,7 @@ export function updateV5LedgerEntry(id,fields={}){
   catch{return{ok:false,error:'That ledger entry could not be saved.'}}
 }
 
-const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions']);
+const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.courses','education.items','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary']);
 export function updateV5Record(path,id,fields={}){
   try{
     if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
