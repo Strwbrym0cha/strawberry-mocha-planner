@@ -15,6 +15,9 @@ const work=readFileSync(resolve(folder,'work-hq.js'),'utf8');
 const study=readFileSync(resolve(folder,'study.js'),'utf8');
 const studyEngine=readFileSync(resolve(folder,'study-nook.js'),'utf8');
 const studyCss=readFileSync(resolve(folder,'study.css'),'utf8');
+const money=readFileSync(resolve(folder,'money.js'),'utf8');
+const moneyEngine=readFileSync(resolve(folder,'money-gig.js'),'utf8');
+const moneyCss=readFileSync(resolve(folder,'money.css'),'utf8');
 const modalCss=readFileSync(resolve(folder,'detailed-rooms.css'),'utf8');
 
 for(const href of [...index.matchAll(/href="\.\/([^"?]+)(?:\?[^\"]*)?"/g)].map(match=>match[1]))assert.equal(existsSync(resolve(folder,href)),true,`${href} should exist`);
@@ -39,5 +42,14 @@ assert.equal(app.includes("ui.view==='study'?renderStudy"),true,'Study Nook evol
 assert.equal(`${study}\n${studyCss}\n${studyEngine}`.includes('V5 • LIFE OS'),false,'the Codex-built V17 presentation shell is not copied into Study Nook');
 assert.equal(/(?:from|url\(|href=)[^\n]*v17\//.test(`${study}\n${studyCss}\n${studyEngine}`),false,'Study Nook must not import V17 presentation assets');
 for(const protectedHook of ['data-daily-open','data-work-open','data-mode="normal"','data-mode="tiny"','data-mode="power"'])assert.equal(app.includes(protectedHook),true,`${protectedHook} must survive Pass 3`);
+for(const hook of ['data-money-open','data-money-modal','data-money-form','data-money-close','data-money-lane'])assert.equal(`${app}\n${money}`.includes(hook),true,`${hook} should keep Money and Gig records in V5-native popups`);
+assert.equal(moneyCss.includes('.money-open-card')&&moneyCss.includes('.money-modal .detail-modal'),true,'saved finance and gig cards remain tappable and use the existing modal shell');
+assert.equal(moneyCss.includes('@media(max-width:780px)')&&moneyCss.includes('font-size:16px'),true,'Money/Gig popup controls remain reachable and mobile-safe');
+assert.equal(index.includes('./money.css'),true,'the V5-native Money Café stylesheet is loaded');
+assert.equal(app.includes("ui.view==='money'?renderMoney"),true,'Money Café evolves inside the authoritative V5 shell');
+assert.equal(`${money}\n${moneyCss}\n${moneyEngine}`.includes('V5 • LIFE OS'),false,'the Codex-built V17 presentation shell is not copied into Money Café');
+assert.equal(/(?:from|url\(|href=)[^\n]*v17\//.test(`${money}\n${moneyCss}\n${moneyEngine}`),false,'Money Café must not import V17 presentation assets');
+assert.equal(boss.includes('data-money-target="gig"'),true,'the protected Work gig lane links to the full V5-native Gig Work experience');
+for(const protectedHook of ['data-daily-open','data-work-open','data-study-open','data-mode="normal"','data-mode="tiny"','data-mode="power"'])assert.equal(app.includes(protectedHook),true,`${protectedHook} must survive Pass 4`);
 
 console.log('V5 shell preservation tests passed');

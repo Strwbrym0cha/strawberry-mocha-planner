@@ -1,6 +1,9 @@
 import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.3.0-study-nook';
 import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.3.0-study-nook';
 import{applyStudyAction,initializeStudyNook,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
+import{applyMoneyGigAction,initializeMoneyGig,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
+
+export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings};
 
 const V4_KEY='sm_v4_beta';
 const V5_DATA_KEY='sm_v5_data';
@@ -33,7 +36,9 @@ const COLLECTION_PATHS=[
   'education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.reviews','education.transferEvaluations','education.transferResults','education.terms','education.importantDates',
   'work.items','work.shifts','work.gigShifts','work.training','work.career','work.schedule','work.rbt.clients','work.rbt.sessions','work.rbt.notes','work.rbt.sessionNotes',
   'work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary',
-  'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
+  'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts','money.subscriptions',
+  'money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets',
+  'work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
   'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans','v4.archive','v4.patterns','v4.energyBlocks',
@@ -42,7 +47,9 @@ const COLLECTION_PATHS=[
 ];
 const RECOVERY_COUNT_PATHS=[
   'life.tasks','life.routines','life.routineInstances','life.events','life.reminders','life.threads',
-  'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts',
+  'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts','money.subscriptions',
+  'money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets',
+  'work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals',
   'work.items','work.shifts','work.training','work.career',
   'work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary',
   'education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.reviews','education.transferEvaluations','education.transferResults','education.terms','education.importantDates',
@@ -237,11 +244,12 @@ export function importV4Export(raw){
 
 export function migrationInfo(){
   const state=readV4State(),receipt=readReceipt();
-  return{found:!!state,counts:state?stateCounts(state):{},receipt,ledgerEntries:loadV5Ledger().entries.length};
+  const canonical=state?getLedgerTransactions(state).length:0;
+  return{found:!!state,counts:state?stateCounts(state):{},receipt,ledgerEntries:canonical||loadV5Ledger().entries.length};
 }
 
 export function loadV5Ui(){
-  const fallback={view:'boss',mode:'normal',sidebarOpen:false,bossLane:'rbt'};
+  const fallback={view:'boss',mode:'normal',sidebarOpen:false,bossLane:'rbt',moneyLane:'money'};
   try{
     const parsed=JSON.parse(localStorage.getItem(V5_UI_KEY)||'null');
     if(!parsed||typeof parsed!=='object')return fallback;
@@ -250,13 +258,14 @@ export function loadV5Ui(){
       mode:['normal','tiny','power'].includes(parsed.mode)?parsed.mode:fallback.mode,
       sidebarOpen:false,
       bossLane:parsed.bossLane==='gig'?'gig':'rbt',
+      moneyLane:parsed.moneyLane==='gig'?'gig':'money',
       scheduleView:['day','week','calendar'].includes(parsed.scheduleView)?parsed.scheduleView:'day'
     };
   }catch{return fallback}
 }
 
 export function saveV5Ui(ui){
-  const safe={view:ui.view,mode:ui.mode,bossLane:ui.bossLane,scheduleView:ui.scheduleView};
+  const safe={view:ui.view,mode:ui.mode,bossLane:ui.bossLane,moneyLane:ui.moneyLane,scheduleView:ui.scheduleView};
   try{localStorage.setItem(V5_UI_KEY,JSON.stringify(safe))}catch{}
 }
 
@@ -355,6 +364,25 @@ export function runV5StudyAction(action={}){
   }catch(error){console.warn('KatOS V5 could not save that Study Nook action.',error);return{ok:false,error:'That Study Nook change could not be saved. Your existing school data is still safe.'}}
 }
 
+// Money Café owns posted money movement. Gig Work records earned work and only
+// touches the ledger through a received payout or an explicitly linked expense.
+export function selectV5MoneyGig(date=localDateKey()){
+  const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+  if(!source)return selectMoneyGig({},date,{v5Ledger:loadV5Ledger().entries});
+  const initialized=initializeMoneyGig(source,date,{v5Ledger:loadV5Ledger().entries});
+  if(initialized.changed)persistPlannerState(initialized.state,'v5-money-gig-initialize');
+  return selectMoneyGig(initialized.state,date);
+}
+
+export function runV5MoneyGigAction(action={}){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so Money Café has a planner to update.'};
+    const result=applyMoneyGigAction(source,{...action,v5Ledger:loadV5Ledger().entries},localDateKey());if(!result.ok)return result;
+    persistPlannerState(result.state,'v5-money-gig');return{...result,state:undefined};
+  }catch(error){console.warn('KatOS V5 could not save that Money Café change.',error);return{ok:false,error:'That Money Café change could not be saved. Your existing money data is still safe.'}}
+}
+
 const cloneState=value=>{try{return structuredClone(value)}catch{return JSON.parse(JSON.stringify(value||{}))}};
 const itemId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
 const setAtPath=(state,path,value)=>{const keys=path.split('.');let cursor=state;for(let index=0;index<keys.length-1;index++){const key=keys[index];cursor[key]=obj(cursor[key]);cursor=cursor[key]}cursor[keys.at(-1)]=value};
@@ -434,7 +462,7 @@ export function updateV5LedgerEntry(id,fields={}){
   catch{return{ok:false,error:'That ledger entry could not be saved.'}}
 }
 
-const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary']);
+const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary','money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets','work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals']);
 export function updateV5Record(path,id,fields={}){
   try{
     if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
@@ -497,9 +525,9 @@ export function restoreV5Record(archiveId){
       localStorage.setItem(V5_LEDGER_KEY,JSON.stringify({openingBalance:ledger.openingBalance,entries:[...ledger.entries,item]}));
     }else{
       if(!EDITABLE_RECORD_PATHS.has(path)||path==='v4.archive')return{ok:false,error:'This Memory Box item cannot be restored automatically.'};
-      const items=list(pathValue(state,path));
-      if(items.some(entry=>String(entry?.id)===String(item.id)))return{ok:false,error:'That planner entry is already restored.'};
-      appendAtPath(state,path,item);
+      const items=list(pathValue(state,path)),existingIndex=items.findIndex(entry=>String(entry?.id)===String(item.id));
+      if(existingIndex>=0){if(!items[existingIndex]?.archivedAt)return{ok:false,error:'That planner entry is already restored.'};setAtPath(state,path,items.map((entry,rowIndex)=>rowIndex===existingIndex?{...item,archivedAt:null,active:item.active!==false}:entry))}
+      else appendAtPath(state,path,item);
     }
     setAtPath(state,'v4.archive',archive.filter((_,entryIndex)=>entryIndex!==index));
     const now=new Date().toISOString();state.meta={...obj(state.meta),updatedAt:now};

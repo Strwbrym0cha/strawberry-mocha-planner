@@ -13,7 +13,7 @@ class MemoryStorage{
 globalThis.localStorage=new MemoryStorage();
 localStorage.setItem('sm_v4_beta',JSON.stringify({data:{schemaVersion:4,life:{tasks:[{id:'task-1',title:'Keep me safe'}]},v4:{archive:[]},money:{accounts:[]}}}));
 
-const {archiveV5Record,loadV5Ledger,readV4State,restoreV5Record,runV5DailyAction,runV5StudyAction,runV5WorkAction,saveV5LedgerEntry,selectV5DailyShit,selectV5StudyNook,selectV5WorkHQ}=await import('./data.js');
+const {archiveV5Record,loadV5Ledger,readV4State,restoreV5Record,runV5DailyAction,runV5MoneyGigAction,runV5StudyAction,runV5WorkAction,saveV5LedgerEntry,selectV5DailyShit,selectV5MoneyGig,selectV5StudyNook,selectV5WorkHQ}=await import('./data.js');
 
 const taskArchive=archiveV5Record('life.tasks','task-1');
 assert.equal(taskArchive.ok,true);
@@ -50,6 +50,25 @@ assert.equal(archiveV5Record('education.courses',academicCourse.id).ok,true,'aca
 state=readV4State();archived=state.v4.archive.find(entry=>entry.originalId===academicCourse.id);assert.ok(archived);
 assert.equal(restoreV5Record(archived.id).ok,true,'an archived academic record can be restored from Memory Box');
 assert.equal(readV4State().education.courses.some(row=>row.id===academicCourse.id),true);
+
+let moneyView=selectV5MoneyGig('2026-09-03');
+assert.equal(moneyView.gig.platforms.some(row=>row.name==='Shipt'),true,'Money/Gig initialization persists the reusable platform model');
+const accountResult=runV5MoneyGigAction({type:'account-save',name:'Persistence Checking',accountType:'checking',openingBalance:300});
+assert.equal(accountResult.ok,true);
+moneyView=selectV5MoneyGig('2026-09-03');
+const moneyAccount=moneyView.hq.accounts.find(row=>row.name==='Persistence Checking');assert.ok(moneyAccount);
+assert.equal(runV5MoneyGigAction({type:'transaction-save',transactionType:'income',accountId:moneyAccount.id,amount:25,date:'2026-09-03',merchant:'Persistence income',status:'posted'}).ok,true);
+assert.equal(selectV5MoneyGig('2026-09-03').accountBalances[moneyAccount.id].posted,325,'canonical Money Café writes persist through the V5 planner envelope');
+const canonicalTransaction=selectV5MoneyGig('2026-09-03').transactions.find(row=>row.merchant==='Persistence income');
+assert.equal(runV5MoneyGigAction({type:'archive',kind:'transaction',id:canonicalTransaction.id}).ok,true,'canonical ledger removal archives instead of deleting');
+assert.equal(selectV5MoneyGig('2026-09-03').accountBalances[moneyAccount.id].posted,300);
+state=readV4State();archived=state.v4.archive.find(entry=>entry.originalId===canonicalTransaction.id);assert.ok(archived);
+assert.equal(restoreV5Record(archived.id).ok,true,'canonical ledger entries restore from Memory Box');
+assert.equal(selectV5MoneyGig('2026-09-03').accountBalances[moneyAccount.id].posted,325);
+assert.equal(runV5MoneyGigAction({type:'archive',kind:'account',id:moneyAccount.id}).ok,true,'Money Café archives into Memory Box');
+state=readV4State();archived=state.v4.archive.find(entry=>entry.originalId===moneyAccount.id);assert.ok(archived);
+assert.equal(restoreV5Record(archived.id).ok,true,'Money Café records restore through the shared Memory Box control');
+assert.equal(selectV5MoneyGig('2026-09-03').hq.accounts.some(row=>row.id===moneyAccount.id&&row.active!==false),true);
 
 const savedLedger=saveV5LedgerEntry({kind:'expense',label:'Safe test entry',amount:12,date:'2026-09-03'});
 assert.equal(savedLedger.ok,true);
