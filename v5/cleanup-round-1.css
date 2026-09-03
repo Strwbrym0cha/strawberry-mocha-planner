@@ -1,6 +1,8 @@
 /* V5 Cleanup Round 1: popup responsiveness and dense form-grid polish. */
 
-/* Keep every V5 modal inside the viewport and prevent page-level horizontal scroll. */
+/* The modal is rendered inside .main. On iPad Safari that containing block can
+   behave as the fixed-position viewport, so compensate for the desktop shell
+   and center the backdrop over the whole app rather than under the sidebar. */
 .detail-modal-backdrop,
 .money-modal,
 .work-modal,
@@ -8,7 +10,18 @@
 .daily-modal,
 .lifestyle-modal {
   box-sizing: border-box;
-  max-width: 100vw;
+  position: fixed !important;
+  top: -72px !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: calc(-1 * var(--sidebar)) !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  z-index: 1000 !important;
+  place-items: center !important;
+  overflow: hidden !important;
 }
 
 .detail-modal,
@@ -18,12 +31,12 @@
 .daily-modal .detail-modal,
 .lifestyle-modal .detail-modal {
   box-sizing: border-box;
-  width: min(760px, calc(100vw - 32px));
-  max-width: calc(100vw - 32px);
-  max-height: calc(100dvh - 32px);
+  width: min(760px, calc(100vw - 40px));
+  max-width: calc(100vw - 40px);
+  max-height: calc(100dvh - 40px);
   overflow-y: auto;
   overflow-x: hidden;
-  margin-inline: auto;
+  margin: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
@@ -148,8 +161,8 @@
   .study-modal .detail-modal,
   .daily-modal .detail-modal,
   .lifestyle-modal .detail-modal {
-    width: min(720px, calc(100vw - 28px));
-    max-width: calc(100vw - 28px);
+    width: min(720px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
   }
 
   .detail-modal .room-detail-fields > .daily-field,
@@ -170,6 +183,17 @@
   }
 }
 
+@media (max-width: 780px) {
+  .detail-modal-backdrop,
+  .money-modal,
+  .work-modal,
+  .study-modal,
+  .daily-modal,
+  .lifestyle-modal {
+    left: 0 !important;
+  }
+}
+
 @media (max-width: 620px) {
   .detail-modal-backdrop,
   .money-modal,
@@ -178,7 +202,7 @@
   .daily-modal,
   .lifestyle-modal {
     padding: 8px !important;
-    align-items: end;
+    align-items: end !important;
   }
 
   .detail-modal,
@@ -187,8 +211,8 @@
   .study-modal .detail-modal,
   .daily-modal .detail-modal,
   .lifestyle-modal .detail-modal {
-    width: 100%;
-    max-width: 100%;
+    width: calc(100vw - 16px);
+    max-width: calc(100vw - 16px);
     max-height: calc(100dvh - 16px);
     border-radius: 22px 22px 16px 16px;
   }
