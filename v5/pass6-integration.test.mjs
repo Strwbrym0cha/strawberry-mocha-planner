@@ -38,6 +38,10 @@ assert.equal(rooms.includes('home:integratedHomeRoom')&&rooms.includes('mochini:
 assert.equal(rooms.includes("scheduleRows(state,canonical)"),true,'Schedule consumes canonical derived records');
 assert.equal(`${app}\n${rooms}`.includes('data-route-view')&&`${app}\n${rooms}`.includes('data-route-open'),true,'Home and Schedule route to canonical source popups');
 assert.equal(rooms.includes("result==='[object Object]'?'':result"),true,'structured Mochini values are humanized or omitted');
+assert.equal(app.includes('function showModal(modal){if(!modal)return;app.append(modal)'),true,'popups are portaled above scrollable cards instead of being clipped inside them');
+assert.equal(read('./detailed-rooms.css').includes('.katos>.detail-modal-backdrop{z-index:1000'),true,'portaled popups cover the full V5 viewport above cards and sidebar');
+assert.equal(money.includes('export function renderGigWork')&&app.includes("ui.bossLane==='gig'?renderGigWork"),true,'full Gig Work is rendered inside Boss Bitch');
+assert.equal(money.includes('Gig earnings summarized here without duplicating the work records'),true,'Money Café keeps only Gig earnings context');
 
 globalThis.localStorage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};
 const{renderRoom}=await import('./rooms.js');
