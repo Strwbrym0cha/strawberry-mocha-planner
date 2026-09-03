@@ -1,4 +1,5 @@
 import{createKatOSDataService}from'./katos-data-service.js?v=22.1.27-20260818';
+import{hydrateFromCloudIfSafer}from'./cloud-hydration.js?v=28.0.0-20260903';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
@@ -24,6 +25,13 @@ function queueCloudSave(data){
 
 export function createStore(){
  const service=createKatOSDataService({onPersist:queueCloudSave});
+ hydrateFromCloudIfSafer().then(result=>{
+  if(!result?.hydrated)return;
+  service.reload();
+  try{sessionStorage.setItem('sm_cloud_hydrated_once','1')}catch{}
+  window.dispatchEvent(new CustomEvent('sm:cloud-sync',{detail:{ok:true,hydrated:true}}));
+  location.reload();
+ }).catch(()=>{});
  return{
   get(){return service.getState()},
   set(next){service.setState(next)},
@@ -84,4 +92,4 @@ export function createStore(){
   schemaVersion:service.schemaVersion
  };
 }
-export async function cloudSync(){return{ok:!!readSession(),migrated:false}}
+export async function cloudSync(){const result=await hydrateFromCloudIfSafer();return{ok:!!readSession(),migrated:!!result?.hydrated}}
