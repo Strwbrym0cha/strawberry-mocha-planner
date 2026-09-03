@@ -6,6 +6,7 @@ import{renderRoom}from'./rooms.js?v=5.3.0-study-nook';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
+if(ui.view==='review')ui.view='home';
 ui.scheduleView=ui.scheduleView||'day';
 ui.moneyLane=ui.moneyLane||'money';
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -16,7 +17,7 @@ function openRecordEditor(path,record){if(!record?.id)return;app.querySelector('
 function recordFormValues(form){const values={};form.querySelectorAll('[data-record-key]').forEach(input=>{const key=input.dataset.recordKey,type=input.dataset.recordType,value=input.value;if(type==='json'){try{values[key]=JSON.parse(value)}catch{throw new Error(`${titleCase(key)} needs valid JSON.`)}}else if(type==='boolean')values[key]=value==='true';else if(type==='number')values[key]=value===''?0:Number(value);else values[key]=value});return values}
 
 const NAV=[['',[
-  ['home','🌸','Home'],['time','🗓️','Schedule'],['boss','💼','Boss Bitch'],['money','☕','Money Café'],['daily','🍓','Daily Shit'],['mochini','🍡','Mochini'],['review','🪷','Daily note'],
+  ['home','🌸','Home'],['time','🗓️','Schedule'],['boss','💼','Boss Bitch'],['money','☕','Money Café'],['daily','🍓','Daily Shit'],['mochini','🍡','Mochini'],
   ['motion','🌿','Get movin'],['people','💕','My loves'],['hobbies','🎨','Hobby Shelf'],
   ['study','🎓','Study Nook'],
   ['growth','🌱','Growth'],['dump','🧠','Brain dump'],['archive','📦','Memory Box'],['settings','⚙️','Settings']

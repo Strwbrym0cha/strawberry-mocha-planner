@@ -47,6 +47,10 @@ assert.equal(moneyCss.includes('.money-open-card')&&moneyCss.includes('.money-mo
 assert.equal(moneyCss.includes('@media(max-width:780px)')&&moneyCss.includes('font-size:16px'),true,'Money/Gig popup controls remain reachable and mobile-safe');
 assert.equal(index.includes('./money.css'),true,'the V5-native Money Café stylesheet is loaded');
 assert.equal(app.includes("ui.view==='money'?renderMoney"),true,'Money Café evolves inside the authoritative V5 shell');
+assert.equal(app.includes("['review','🪷','Daily note']"),false,'Daily note should not appear as a separate sidebar destination');
+assert.equal(app.includes("if(ui.view==='review')ui.view='home'"),true,'a previously saved Daily note view should return safely to Home');
+assert.equal(moneyCss.includes('grid-template-columns:repeat(auto-fit,minmax(145px,1fr))'),true,'fast transaction controls should wrap instead of overflowing the iPad content area');
+assert.equal(moneyCss.includes('font-weight:500'),true,'Money Café uses the lighter V5 text treatment');
 assert.equal(`${money}\n${moneyCss}\n${moneyEngine}`.includes('V5 • LIFE OS'),false,'the Codex-built V17 presentation shell is not copied into Money Café');
 assert.equal(/(?:from|url\(|href=)[^\n]*v17\//.test(`${money}\n${moneyCss}\n${moneyEngine}`),false,'Money Café must not import V17 presentation assets');
 assert.equal(boss.includes('data-money-target="gig"'),true,'the protected Work gig lane links to the full V5-native Gig Work experience');
