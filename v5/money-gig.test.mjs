@@ -48,6 +48,7 @@ assert.equal(flow.spent,85,'expenses count once, refunds reduce spending, and tr
 const rent=run({type:'bill-save',name:'Rent',expectedAmount:700,amountType:'fixed',recurrence:'monthly',dueDay:5,accountId:checking.id});
 const electric=run({type:'bill-save',name:'Electric',expectedAmount:80,amountType:'variable',recurrence:'monthly',dueDay:10,accountId:checking.id});
 const weekly=run({type:'bill-save',name:'Weekly payment',expectedAmount:15,recurrence:'weekly',dueDate:today,accountId:checking.id});
+const monthEndBill=run({type:'bill-save',name:'Month end',expectedAmount:25,recurrence:'monthly',dueDay:31,accountId:checking.id});
 let instances=getBillInstances(state,{from:today,to:'2026-10-12',today});
 assert.equal(instances.filter(row=>row.billId===rent.id).length,2,'monthly bill recurrence produces separate instances');
 assert.equal(instances.filter(row=>row.billId===weekly.id).length,6,'weekly bill recurrence is supported');
@@ -56,13 +57,19 @@ run({type:'bill-instance-save',id:electricInstance.id,status:'changed',actualAmo
 instances=getBillInstances(state,{from:today,to:'2026-09-15',today});
 assert.equal(instances.find(row=>row.id===electricInstance.id).actualAmount,103.42,'variable amount applies to one occurrence');
 const rentInstance=instances.find(row=>row.billId===rent.id);
-let failed=applyMoneyGigAction(state,{type:'bill-instance-save',id:rentInstance.id,status:'paid'},today);
-assert.equal(failed.ok,false,'a bill cannot claim paid without real payment activity');
+run({type:'bill-instance-save',id:rentInstance.id,status:'paid'});
+assert.equal(getBillInstances(state,{from:'2026-09-01',to:'2026-09-30',today}).find(row=>row.id===rentInstance.id).status,'paid','manual paid status is preserved even before a transaction is attached');
+let activeBills=selectMoneyGig(state,today).bills;
+assert.equal(activeBills.some(row=>row.id===rentInstance.id),false,'paid September instance does not reappear in the active September list');
+assert.equal(activeBills.some(row=>row.billId===rent.id&&row.dueDate==='2026-10-05'),true,'the next monthly bill instance remains October');
 run({type:'bill-record-payment',id:rentInstance.id,paymentType:'expense',accountId:checking.id,amount:700,date:'2026-09-05',merchant:'Rent'});
 const paymentCount=getLedgerTransactions(state).filter(row=>row.billInstanceId===rentInstance.id).length;
 run({type:'bill-record-payment',id:rentInstance.id,paymentType:'expense',accountId:checking.id,amount:700,date:'2026-09-05',merchant:'Rent corrected'});
 assert.equal(getLedgerTransactions(state).filter(row=>row.billInstanceId===rentInstance.id).length,paymentCount,'bill payment linkage is idempotent');
 assert.equal(getBillInstances(state,{from:'2026-09-05',to:'2026-09-05',today:'2026-09-06'})[0].status,'paid');
+assert.equal(getBillInstances(state,{from:'2027-02-01',to:'2027-02-28',today:'2027-02-01'}).find(row=>row.billId===monthEndBill.id).dueDate,'2027-02-28','day 31 resolves to the final valid day in a short month');
+const invalidBill=applyMoneyGigAction(state,{type:'bill-save',name:'Invalid day',expectedAmount:10,recurrence:'monthly',dueDay:32,accountId:checking.id},today);
+assert.equal(invalidBill.ok,false,'monthly due day is constrained to 1 through 31');
 run({type:'bill-link-daily',id:rentInstance.id});
 run({type:'bill-link-daily',id:rentInstance.id});
 assert.equal(state.life.tasks.filter(row=>row.externalId===`money:bill:${rentInstance.id}`).length,1,'bill Daily Shit action uses a stable occurrence ID');
@@ -137,11 +144,12 @@ assert.equal(selected.money.posted,balanceBeforeEstimate,'estimated Work HQ earn
 assert.equal(selected.cashFlowToday.received,250,'today cash-flow selector is available');
 assert.equal(selected.cashFlowWeek.net,selected.cashFlowMonth.net,'week/month selectors use the same canonical ledger for this fixture');
 
-const legacy={life:{tasks:[]},work:{},money:{accounts:[{id:'old-checking',name:'Old checking',amount:400}],bills:[{id:'old-rent',name:'Old rent',amount:600,dueDay:1}],savingsGoals:[{id:'old-goal',name:'Old goal',current:20,target:200}],earnings:[{id:'old-gig',source:'Shipt',date:today,amount:30}],sourceBalances:{paycheck:150,gig:40},sourceBalancesInitializedAt:'2026-08-01T12:00:00Z',sourceSpending:[{id:'source-spend-1',bucket:'gig',amount:10,date:today,note:'Gas'}]},v4:{archive:[]}};
+const legacy={life:{tasks:[]},work:{},money:{accounts:[{id:'old-checking',name:'Old checking',amount:400}],bills:[{id:'old-rent',name:'Old rent',amount:600,dueDay:1,paid:true,lastPaidDueDate:'2026-09-01'}],savingsGoals:[{id:'old-goal',name:'Old goal',current:20,target:200}],earnings:[{id:'old-gig',source:'Shipt',date:today,amount:30}],sourceBalances:{paycheck:150,gig:40},sourceBalancesInitializedAt:'2026-08-01T12:00:00Z',sourceSpending:[{id:'source-spend-1',bucket:'gig',amount:10,date:today,note:'Gas'}]},v4:{archive:[]}};
 const migrated=initializeMoneyGig(legacy,today,{v5Ledger:[{id:'old-v5-ledger',kind:'expense',label:'Preserved expense',amount:12,date:today,account:'Old checking'}]});
 const migratedAgain=initializeMoneyGig(migrated.state,today,{v5Ledger:[{id:'old-v5-ledger',kind:'expense',label:'Preserved expense',amount:12,date:today,account:'Old checking'}]});
 assert.equal(migratedAgain.hq.accounts.length,migrated.hq.accounts.length);
 assert.equal(migratedAgain.hq.transactions.length,migrated.hq.transactions.length);
+assert.equal(migratedAgain.hq.billInstances.filter(row=>row.status==='paid').length,1,'legacy paid bill status becomes one preserved occurrence and stays idempotent');
 assert.equal(migratedAgain.gig.orders.length,migrated.gig.orders.length,'legacy finance/gig migration is additive and idempotent');
 assert.equal(migratedAgain.state.money.accounts.length,1,'legacy source collections remain preserved');
 assert.equal(migratedAgain.hq.goals.find(row=>row.legacyId==='old-goal').manualProgress,20,'legacy savings progress preserves V4 current amounts');

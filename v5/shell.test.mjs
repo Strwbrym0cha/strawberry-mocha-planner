@@ -48,7 +48,7 @@ assert.equal(moneyCss.includes('@media(max-width:780px)')&&moneyCss.includes('fo
 assert.equal(index.includes('./money.css'),true,'the V5-native Money Café stylesheet is loaded');
 assert.equal(app.includes("ui.view==='money'?renderMoney"),true,'Money Café evolves inside the authoritative V5 shell');
 assert.equal(app.includes("['review','🪷','Daily note']"),false,'Daily note should not appear as a separate sidebar destination');
-assert.equal(app.includes("if(ui.view==='review')ui.view='home'"),true,'a previously saved Daily note view should return safely to Home');
+assert.equal(app.includes("if(ui.view==='review')ui.view='time'"),true,'a previously saved Daily note view should return safely to Schedule');
 assert.equal(moneyCss.includes('grid-template-columns:repeat(auto-fit,minmax(145px,1fr))'),true,'fast transaction controls should wrap instead of overflowing the iPad content area');
 assert.equal(moneyCss.includes('font-weight:500'),true,'Money Café uses the lighter V5 text treatment');
 assert.equal(`${money}\n${moneyCss}\n${moneyEngine}`.includes('V5 • LIFE OS'),false,'the Codex-built V17 presentation shell is not copied into Money Café');

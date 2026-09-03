@@ -13,7 +13,11 @@ class MemoryStorage{
 globalThis.localStorage=new MemoryStorage();
 localStorage.setItem('sm_v4_beta',JSON.stringify({data:{schemaVersion:4,life:{tasks:[{id:'task-1',title:'Keep me safe'}]},v4:{archive:[]},money:{accounts:[]}}}));
 
-const {archiveV5Record,loadV5Ledger,readV4State,restoreV5Record,runV5DailyAction,runV5MoneyGigAction,runV5StudyAction,runV5WorkAction,saveV5LedgerEntry,selectV5DailyShit,selectV5MoneyGig,selectV5StudyNook,selectV5WorkHQ}=await import('./data.js');
+const {archiveV5Record,loadV5DailyNote,loadV5Ledger,readV4State,restoreV5Record,runV5DailyAction,runV5LifestyleAction,runV5MoneyGigAction,runV5StudyAction,runV5WorkAction,saveV5DailyNote,saveV5LedgerEntry,selectV5DailyShit,selectV5Lifestyle,selectV5MoneyGig,selectV5StudyNook,selectV5WorkHQ}=await import('./data.js');
+
+saveV5DailyNote({date:'2026-09-12',mood:'Good',whatHappened:'Future dated note test'});
+assert.equal(loadV5DailyNote('2026-09-12').mood,'Good','calendar notes save to the explicitly selected date');
+assert.equal(loadV5DailyNote('2026-09-03'),null,'a different untouched date remains empty');
 
 const taskArchive=archiveV5Record('life.tasks','task-1');
 assert.equal(taskArchive.ok,true);
@@ -69,6 +73,15 @@ assert.equal(runV5MoneyGigAction({type:'archive',kind:'account',id:moneyAccount.
 state=readV4State();archived=state.v4.archive.find(entry=>entry.originalId===moneyAccount.id);assert.ok(archived);
 assert.equal(restoreV5Record(archived.id).ok,true,'Money Café records restore through the shared Memory Box control');
 assert.equal(selectV5MoneyGig('2026-09-03').hq.accounts.some(row=>row.id===moneyAccount.id&&row.active!==false),true);
+
+let lifestyle=selectV5Lifestyle('2026-09-03');
+assert.equal(runV5LifestyleAction({type:'hobby-save',title:'Persistence Hobby',category:'creative',status:'current',energy:'tiny',minutes:10}).ok,true);
+lifestyle=selectV5Lifestyle('2026-09-03');
+const savedHobby=lifestyle.hobbies.items.find(row=>row.title==='Persistence Hobby');assert.ok(savedHobby);
+assert.equal(runV5LifestyleAction({type:'archive',kind:'hobby',id:savedHobby.id}).ok,true,'lifestyle records archive through the shared Memory Box');
+state=readV4State();archived=state.v4.archive.find(entry=>entry.originalId===savedHobby.id);assert.ok(archived);
+assert.equal(restoreV5Record(archived.id).ok,true,'lifestyle records restore through the shared Memory Box');
+assert.equal(selectV5Lifestyle('2026-09-03').hobbies.items.some(row=>row.id===savedHobby.id),true);
 
 const savedLedger=saveV5LedgerEntry({kind:'expense',label:'Safe test entry',amount:12,date:'2026-09-03'});
 assert.equal(savedLedger.ok,true);

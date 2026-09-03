@@ -2,8 +2,9 @@ import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.3.0-study-nook'
 import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.3.0-study-nook';
 import{applyStudyAction,initializeStudyNook,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
 import{applyMoneyGigAction,initializeMoneyGig,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
+import{applyLifestyleAction,initializeLifestyle,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
 
-export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings};
+export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep};
 
 const V4_KEY='sm_v4_beta';
 const V5_DATA_KEY='sm_v5_data';
@@ -39,6 +40,7 @@ const COLLECTION_PATHS=[
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts','money.subscriptions',
   'money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets',
   'work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals',
+  'lifestyle.movement.types','lifestyle.movement.plans','lifestyle.movement.activities','lifestyle.movement.goals','lifestyle.hobbies.items','lifestyle.hobbies.projects','lifestyle.hobbies.resources','lifestyle.growth.areas','lifestyle.growth.goals','lifestyle.growth.milestones','lifestyle.growth.wins','lifestyle.growth.reflections',
   'growth.goals','growth.wins','growth.experiments',
   'insights.dayReviews','insights.activityLog','insights.observations','insights.experiments',
   'v4.people','v4.hobbies','v4.admin','v4.shopping','v4.brainDump','v4.openDayPlans','v4.archive','v4.patterns','v4.energyBlocks',
@@ -277,7 +279,7 @@ export function loadV5DailyNote(day=localDateKey()){
 }
 
 export function saveV5DailyNote(fields){
-  const entry={...fields,date:localDateKey(),updatedAt:new Date().toISOString()};
+  const entry={...fields,date:/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey(),updatedAt:new Date().toISOString()};
   try{
     const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==entry.date);
     entries.push(entry);
@@ -383,6 +385,23 @@ export function runV5MoneyGigAction(action={}){
   }catch(error){console.warn('KatOS V5 could not save that Money Café change.',error);return{ok:false,error:'That Money Café change could not be saved. Your existing money data is still safe.'}}
 }
 
+export function selectV5Lifestyle(date=localDateKey()){
+  const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+  if(!source)return selectLifestyle({},date);
+  const initialized=initializeLifestyle(source,date);
+  if(initialized.changed)persistPlannerState(initialized.state,'v5-lifestyle-initialize');
+  return selectLifestyle(initialized.state,date);
+}
+
+export function runV5LifestyleAction(action={}){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so the lifestyle rooms have a planner to update.'};
+    const result=applyLifestyleAction(source,action,localDateKey());if(!result.ok)return result;
+    persistPlannerState(result.state,'v5-lifestyle');return{...result,state:undefined};
+  }catch(error){console.warn('KatOS V5 could not save that lifestyle change.',error);return{ok:false,error:'That change could not be saved. Your existing data is still safe.'}}
+}
+
 const cloneState=value=>{try{return structuredClone(value)}catch{return JSON.parse(JSON.stringify(value||{}))}};
 const itemId=prefix=>`${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
 const setAtPath=(state,path,value)=>{const keys=path.split('.');let cursor=state;for(let index=0;index<keys.length-1;index++){const key=keys[index];cursor[key]=obj(cursor[key]);cursor=cursor[key]}cursor[keys.at(-1)]=value};
@@ -462,7 +481,7 @@ export function updateV5LedgerEntry(id,fields={}){
   catch{return{ok:false,error:'That ledger entry could not be saved.'}}
 }
 
-const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary','money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets','work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals']);
+const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary','money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets','work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals','lifestyle.movement.plans','lifestyle.movement.activities','lifestyle.movement.goals','lifestyle.hobbies.items','lifestyle.hobbies.projects','lifestyle.hobbies.resources','lifestyle.growth.areas','lifestyle.growth.goals','lifestyle.growth.milestones','lifestyle.growth.wins','lifestyle.growth.reflections']);
 export function updateV5Record(path,id,fields={}){
   try{
     if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
@@ -526,7 +545,7 @@ export function restoreV5Record(archiveId){
     }else{
       if(!EDITABLE_RECORD_PATHS.has(path)||path==='v4.archive')return{ok:false,error:'This Memory Box item cannot be restored automatically.'};
       const items=list(pathValue(state,path)),existingIndex=items.findIndex(entry=>String(entry?.id)===String(item.id));
-      if(existingIndex>=0){if(!items[existingIndex]?.archivedAt)return{ok:false,error:'That planner entry is already restored.'};setAtPath(state,path,items.map((entry,rowIndex)=>rowIndex===existingIndex?{...item,archivedAt:null,active:item.active!==false}:entry))}
+      if(existingIndex>=0){if(!items[existingIndex]?.archivedAt)return{ok:false,error:'That planner entry is already restored.'};setAtPath(state,path,items.map((entry,rowIndex)=>rowIndex===existingIndex?{...item,archivedAt:null,active:item.active!==false,status:item.status==='archived'?'active':item.status}:entry))}
       else appendAtPath(state,path,item);
     }
     setAtPath(state,'v4.archive',archive.filter((_,entryIndex)=>entryIndex!==index));
