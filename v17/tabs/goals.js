@@ -1,4 +1,4 @@
-/* KatOS V2 Dreamscape quality-of-life updates. */
+/* KatOS V5 Dreamscape quality-of-life updates. */
 const esc=s=>String(s??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 const makeId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 const list=v=>Array.isArray(v)?v:(v&&typeof v==='object'?Object.values(v):[]);

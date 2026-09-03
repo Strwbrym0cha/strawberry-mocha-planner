@@ -1,0 +1,24 @@
+:root{
+  --v5-pink:#ec7cab;
+  --v5-lavender:#c9a8e8;
+  --v5-matcha:#a9cd93;
+  --v5-paper:#fffdfc;
+  --v5-ink:#563a43;
+}
+
+html,body{background:radial-gradient(circle at 82% 0,rgba(201,168,232,.25),transparent 30%),radial-gradient(circle at 0 82%,rgba(236,124,171,.14),transparent 29%),linear-gradient(180deg,#fff9fc 0,#fffdfb 52%,#f5fbf1 100%)}
+.v21-app{max-width:1540px!important;gap:24px!important;background:transparent!important}
+.v21-sidebar{background:linear-gradient(165deg,rgba(255,249,252,.97),rgba(255,253,252,.97) 56%,rgba(242,250,237,.97))!important;border-color:#ead8df!important}
+.v21-sidebar:before{content:'♡  KATOS V5  ♡';display:block;padding:0 6px 12px;text-align:center;color:#bf5f88;font-size:9px;font-weight:900;letter-spacing:.18em}
+.v21-brand-mark{background:linear-gradient(135deg,#ffe4ef,#efe3fb 58%,#eff8e9)!important;border:1px solid #f2cede!important}
+.v21-brand strong,.v21-brand span{font-family:Georgia,'Times New Roman',serif}
+.v21-brand span{font-size:19px!important;letter-spacing:1.5px!important}
+.v21-nav-group>small{color:#ad738c!important}
+.v21-nav-item{border-radius:18px!important;min-height:46px!important}
+.v21-nav-item.active{background:linear-gradient(105deg,#ec7cab 0%,#c9a8e8 56%,#a9cd93 100%)!important}
+.v21-home-hero,.v21-card,.v21-pulse,.v17-card{border-radius:26px!important;border-color:#ead8df!important}
+.v21-home-hero,.v17-home-hero,.v17-planner-hero{background:linear-gradient(135deg,#fff 0%,#fff2f8 44%,#f4eafd 72%,#eff8e9 100%)!important}
+.v21-primary,.primary{background:linear-gradient(100deg,#ec7cab 0%,#c9a8e8 55%,#a9cd93 100%)!important}
+button,input,select,textarea{min-height:42px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid rgba(236,124,171,.35);outline-offset:2px}
+@media(max-width:600px){.v21-sidebar:before{display:none}.v21-app{padding:10px!important}.v21-main{padding-top:12px}.v21-home-hero,.v21-card,.v21-pulse,.v17-card{border-radius:22px!important}}
