@@ -9,3 +9,4 @@ await import('./schedule-gig-labels.js?v=5.6.9-gig-shift-labels');
 await import('./brain-dump-v5.js?v=5.7.2-brain-dump');
 await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
 await import('./cloud-account.js?v=5.7.6-cloud-account');
+await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
