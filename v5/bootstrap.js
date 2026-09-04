@@ -7,5 +7,5 @@ await import('./money-budgets.js?v=5.6.6-spending-budgets');
 await import('./study-history-popup-fix.js?v=5.6.7-completed-course-edit');
 await import('./schedule-gig-labels.js?v=5.6.9-gig-shift-labels');
 await import('./brain-dump-v5.js?v=5.7.2-brain-dump');
-await import('./fixed-events.js?v=5.7.7-fixed-occurrences');
+await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
 await import('./cloud-account.js?v=5.7.6-cloud-account');
