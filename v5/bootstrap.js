@@ -15,4 +15,5 @@ await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
 await import('./mochini-avatar-lite.js?v=5.9.5-safari-art-fix');
 await import('./mochini-chat.js?v=5.9.3-mochini-performance-fix');
 await import('./mochini-polish.js?v=5.9.5-safari-art-fix');
+await import('./mochini-interactions.js?v=5.9.6-berry-poke');
 await import('./shipt-daily-groups.js?v=5.9.1-shipt-daily-groups');
