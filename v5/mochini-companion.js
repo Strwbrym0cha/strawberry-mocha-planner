@@ -4,7 +4,7 @@ const V4_KEY='sm_v4_beta';
 const V5_KEY='sm_v5_data';
 const ROOT_ID='katos-mochini-companion';
 const app=document.getElementById('app');
-let root=null,tickTimer=null,checkInTimer=null,open=false;
+let root=null,tickTimer=null,checkInTimer=null,open=false,lastContext=null;
 
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -45,6 +45,31 @@ function currentContext(){
 }
 function scene(life){return sceneMap[life.currentActivityId]||sceneMap.princessing}
 function moodLabel(mood){return String(mood||'content').replace(/-/g,' ').replace(/^./,letter=>letter.toUpperCase())}
+function contextActivity(life,context){
+  const hour=new Date().getHours(),night=hour<6||hour>=23;
+  if(night)return['tucked-in','tucked into bed under a strawberry blanket','mmf… I am technically off duty and inside a blanket. 💤'];
+  if(context==='study')return['study-book',life.mood==='bored'?'staring at the same paragraph with you':'reading beside you with her tiny book',life.mood==='bored'?'I have read this sentence four times and none of us are absorbing it.':'Book acquired. I am studying beside you now. 📖'];
+  if(context==='gig')return['car-ride','riding shotgun with you and supervising the playlist','Shotgun Mochini reporting for duty. Drive safe, I have the tiny snacks. 🚗'];
+  if(context==='work')return['clipboard','holding a tiny clipboard and taking the job extremely seriously','Clipboard out. I am on the clock with you. 📋'];
+  if(context==='money')return['money-check','counting tiny coins and judging the arithmetic','I have arrived to inspect the numbers. No suspicious arithmetic on my watch.'];
+  if(context==='schedule')return['calendar','inspecting the calendar with unnecessary authority','I am checking the calendar with executive seriousness. 🗓️'];
+  if(context==='movement')return['stretching','doing one extremely dramatic little stretch','I stretched one tiny leg. I have contributed. 🌿'];
+  if(context==='growth')return['plant','watering a tiny plant and calling it character development','Growth tab. I brought the tiny watering can. 🪴'];
+  if(context==='dump')return['notes','scribbling tiny notes beside your brain dump','You dump the thoughts. I will hold the tiny pencil. ✏️'];
+  if(context==='archive')return['memory-box','digging around in the Memory Box','I am rummaging respectfully through the Memory Box. 📦'];
+  if(context==='settings')return['gears','wearing tiny safety goggles near the settings gears','Safety goggles on. Settings are machinery now. ⚙️'];
+  if(context==='daily')return['checklist','patrolling the checklist with a strawberry pen','Checklist patrol reporting for duty. 🍓'];
+  if((context==='home'||context==='hobbies')&&['playful','happy','silly','chaotic'].includes(life.mood))return['cats','playing with Koi and Nala','Koi and Nala have recruited me. We are busy. 🐈'];
+  return['princessing','being a tiny strawberry princess',life.currentLine];
+}
+function applyContext(force=false){
+  const context=currentContext(),life=currentLife();if(!force&&context===lastContext&&life.currentContext===context)return life;lastContext=context;
+  if(context==='mochini')return life;
+  const [currentActivityId,currentActivity,contextLine]=contextActivity(life,context),protectReaction=since(life.lastInteractionAt)<30_000;
+  const next={...life,currentContext:context,currentActivityId,currentActivity,currentLine:protectReaction?life.currentLine:contextLine};
+  if(next.currentContext!==life.currentContext||next.currentActivityId!==life.currentActivityId||next.currentActivity!==life.currentActivity||next.currentLine!==life.currentLine)writeLife(next,'context');
+  return next;
+}
 
 function markup(life){const [prop,sceneClass]=scene(life),hidden=currentView()==='mochini';return `<aside id="${ROOT_ID}" class="mochini-companion scene-${escape(sceneClass)} ${hidden?'is-hidden':''}" data-mc-root data-mood="${escape(life.mood)}">
   <div class="mc-bubble ${open?'is-open':''}" data-mc-bubble role="status" aria-live="polite">
@@ -100,11 +125,12 @@ document.addEventListener('click',event=>{
   const action=event.target.closest?.('[data-mc-action]');if(action){applyDirect(action.dataset.mcAction);return}
 },true);
 
-window.addEventListener('katos:rendered',()=>{ensureRoot();syncUi()});
+window.addEventListener('katos:rendered',()=>{ensureRoot();const life=applyContext();syncUi(life)});
 window.addEventListener('katos:mochini',()=>setTimeout(()=>syncUi(currentLife()),30));
-document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(tickTimer);return}ensureRoot();if(since(currentLife().lastAutonomyAt)>90_000)tick(true);else{syncUi();scheduleTick()}});
-window.addEventListener('focus',()=>{ensureRoot();if(since(currentLife().lastAutonomyAt)>2*60_000)tick(true)});
-window.addEventListener('online',()=>{ensureRoot();syncUi()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(tickTimer);return}ensureRoot();const contextual=applyContext(true);syncUi(contextual);if(since(currentLife().lastAutonomyAt)>90_000)tick(true);else scheduleTick()});
+window.addEventListener('focus',()=>{ensureRoot();const contextual=applyContext();syncUi(contextual);if(since(currentLife().lastAutonomyAt)>2*60_000)tick(true)});
+window.addEventListener('online',()=>{ensureRoot();syncUi(applyContext())});
 
 ensureRoot();
+const initial=applyContext(true);syncUi(initial);
 setTimeout(()=>tick(since(currentLife().lastAutonomyAt)>4*60_000),1200);
