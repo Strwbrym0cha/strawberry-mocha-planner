@@ -1,0 +1,20 @@
+/* Lightweight canonical Mochini art. Replaces the observer-heavy SVG puppet. */
+.mochini-command-hero,.mochini-hero{position:relative;overflow:hidden}
+.mochini-live-lite-slot{position:absolute;right:18px;bottom:0;width:225px;height:255px;display:grid;place-items:end center;z-index:2;pointer-events:none}
+.mochini-live-lite{position:relative;width:210px;height:250px;padding:0;border:0;background:transparent;display:grid;place-items:end center;pointer-events:auto;cursor:pointer;transform-origin:50% 100%;animation:mochini-lite-idle 6.4s ease-in-out infinite}
+.mochini-live-lite__glow{position:absolute;inset:28px 8px 8px;border-radius:44%;background:radial-gradient(circle,rgba(255,255,255,.88),rgba(255,224,236,.38) 56%,transparent 74%);z-index:-1}
+.mochini-canonical-art{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 48%;border-radius:32px;box-shadow:0 13px 25px rgba(94,58,72,.10)}
+.mochini-live-lite__caption{position:absolute;right:4px;bottom:5px;display:grid;gap:1px;min-width:80px;padding:7px 9px;border:1px solid #ecd7df;border-radius:14px;background:rgba(255,253,252,.94);box-shadow:0 8px 18px rgba(95,58,73,.07);text-align:center}
+.mochini-live-lite__caption b{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-size:12px;color:#7b4c5e}
+.mochini-live-lite__caption small{font-size:8px;color:#a06f80}
+.mochini-mini-lite{display:block;width:52px;height:58px;overflow:hidden;border-radius:16px;background:#fff6fa}
+.mochini-mini-lite .mochini-canonical-art{width:100%;height:100%;object-fit:cover;object-position:50% 28%;border-radius:16px;box-shadow:none}
+.mochini-face{width:54px;height:61px;display:grid;place-items:center;font-size:0;flex:0 0 auto}
+.mochini-live-lite.is-happy{animation:mochini-lite-pop .65s ease}
+.mochini-live-lite.is-proud{animation:mochini-lite-proud .7s ease}
+@keyframes mochini-lite-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes mochini-lite-pop{0%,100%{transform:translateY(0) scale(1)}42%{transform:translateY(-8px) scale(1.015)}}
+@keyframes mochini-lite-proud{0%,100%{transform:rotate(0)}35%{transform:rotate(-1.5deg)}65%{transform:rotate(1.5deg)}}
+@media(max-width:940px){.mochini-live-lite-slot{width:190px;height:225px}.mochini-live-lite{width:180px;height:215px}}
+@media(max-width:780px){.mochini-command-hero,.mochini-hero{padding-bottom:190px!important}.mochini-live-lite-slot{right:50%;bottom:0;width:180px;height:185px;transform:translateX(50%)}.mochini-live-lite{width:170px;height:185px;animation:none}.mochini-live-lite__caption{display:none}.mochini-canonical-art{border-radius:25px}}
+@media(prefers-reduced-motion:reduce){.mochini-live-lite{animation:none!important}}
