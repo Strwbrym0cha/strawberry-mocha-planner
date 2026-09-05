@@ -11,6 +11,8 @@ const money=read('./money.js');
 const moneyCss=read('./money.css');
 const lifestyle=read('./lifestyle-render.js');
 const styles=read('./styles.css');
+const mochiniChat=read('./mochini-chat.js');
+const mochiniTabCss=read('./mochini-tab.css');
 
 assert.equal(rooms.includes('return page(detailedRoomForm(view)+inner)'),false,'generic Workspace UI is no longer prepended to V5 rooms');
 assert.equal(data.includes('saveV5Workspace'),true,'legacy Workspace persistence remains available for compatibility');
@@ -48,6 +50,10 @@ const{renderRoom}=await import('./rooms.js');
 const html=renderRoom('mochini',{today:'2026-09-03',state:{mochini:{life:{mood:{label:'Sleepy'},energy:{label:'Low'},currentLine:{text:'hidden object'}}}}},{canonical:{daily:{},work:{upcoming:[]},study:{},money:{bills:[],gigToday:{}},lifestyle:{movement:{activities:[]}}}});
 assert.equal(html.includes('[object Object]'),false,'Mochini never renders [object Object]');
 assert.equal(html.includes('Give Mochini useful context'),false,'Mochini context Workspace editor is removed');
+for(const hook of ['mochini-command-hero','RIGHT NOW','MOCHINI NOTICES','data-mochini-chat-form','COMFORT CORNER','MOCHINI’S STATS'])assert.equal(html.includes(hook),true,`Mochini command center includes ${hook}`);
+assert.equal(mochiniChat.includes('never writes planner data'),true,'Mochini chat remains a deterministic presentation layer');
+assert.equal(mochiniChat.includes('dataset.routeView'),true,'Mochini chat can route back to the canonical source rooms');
+assert.equal(mochiniTabCss.includes('.mochini-chat-form')&&mochiniTabCss.includes('.mochini-ask-grid'),true,'Mochini chat and support controls keep their V5 styling');
 
 for(const token of ['.sidebar{','font-family:Georgia','linear-gradient','body.mode-tiny','body.mode-power','.detail-modal'])assert.equal(`${styles}\n${read('./detailed-rooms.css')}`.includes(token),true,`${token} preserves the V5 shell and popup identity`);
 assert.equal(/(?:from|url\(|href=)[^\n]*v17\//.test(`${app}\n${rooms}\n${boss}\n${study}\n${money}\n${lifestyle}`),false,'Pass 6 imports no V17 presentation assets');

@@ -1,0 +1,28 @@
+/* A small, deterministic chat surface. It reads the rendered canonical summary and never writes planner data. */
+const app=document.getElementById('app');
+const visitKey='katos-v5-mochini-chat-count';
+let chatCount=Number(sessionStorage.getItem(visitKey)||0)||0;
+
+function updateCount(){app?.querySelectorAll('[data-mochini-chat-count]').forEach(node=>node.textContent=String(chatCount))}
+function reaction(kind){window.dispatchEvent(new CustomEvent('katos:mochini',{detail:{reaction:kind}}))}
+function replyFor(kind,form){const rightTitle=form?.dataset.mochiniRightTitle||'',rightOpen=form?.dataset.mochiniRightOpen||'';const rightAction=rightTitle?{label:'Open my right-now thing',view:'daily',open:rightOpen}:null;const options={
+  first:{text:rightTitle?`Let’s make “${rightTitle}” the only first thing. You do not need to solve the whole day to begin it.`:'Nothing is officially first right now. Pick one tiny thing that makes the next hour easier.',action:rightAction,reaction:'focused'},
+  plan:{text:rightTitle?`A gentle plan: start with “${rightTitle},” then come back here. We can decide what is next after that.`:'Let’s use the real schedule and choose only what belongs today.',action:{label:'Open Schedule',view:'time'},reaction:'focused'},
+  overwhelmed:{text:'Okay. We are making the list smaller, not making you smaller. One tiny step or a real rest both count.',action:{label:'Open Daily Shit',view:'daily'},reaction:'sleepy'},
+  reset:{text:'Reset can be very small: water, bathroom, snack, meds if they are due, or lying down for five minutes. Pick one—not all of them.',action:{label:'Open Daily Shit',view:'daily'},reaction:'sleepy'},
+  focus:{text:rightTitle?`For focus, open “${rightTitle}” and do only its first physical move for five minutes.`:'Pick one tab, one item, and one five-minute timer. The rest can wait outside the room.',action:rightAction,reaction:'focused'},
+  money:{text:'Money check is ready in Money Café. It keeps balances, bills, and gig earnings in their real homes.',action:{label:'Open Money Café',view:'money'},reaction:'focused'},
+  study:{text:'Study Nook has the next course step and the work that belongs with it. No need to hold that in your head.',action:{label:'Open Study Nook',view:'study'},reaction:'focused'},
+  work:{text:'Work check is in Boss Bitch, with your actual sessions and prep. We are not making a duplicate work list here.',action:{label:'Open Boss Bitch',view:'boss'},reaction:'focused'},
+  bored:{text:'The Hobby Shelf is where the fun options live. Choose something that matches your energy, not something that turns into homework.',action:{label:'Open Hobby Shelf',view:'hobbies'},reaction:'happy'},
+  comfort:{text:'You are allowed to be a person having a hard or ordinary day. You still deserve softness and support.',reaction:'happy'},
+  celebrate:{text:'Tiny win detected! I am extremely proud of you, and yes, it absolutely counts. 🍓',reaction:'proud'}
+};return options[kind]||{text:'I’m here. Tell me whether you want a tiny next step, comfort, or one planner check—and we’ll keep it simple.',reaction:'happy'} }
+function addBubble(chat,kind,text,action){const log=chat?.querySelector('.mochini-chat-log');if(!log)return;const bubble=document.createElement('div');bubble.className=`mochini-bubble ${kind==='user'?'mochini-bubble-user':'mochini-bubble-bean'}`;if(kind==='bean'){const icon=document.createElement('span');icon.className='mochini-bubble-avatar';icon.textContent='🍡';bubble.append(icon)}const paragraph=document.createElement('p');paragraph.textContent=text;bubble.append(paragraph);if(action?.view){const button=document.createElement('button');button.type='button';button.className='btn soft tiny';button.dataset.routeView=action.view;if(action.open)button.dataset.routeOpen=action.open;button.textContent=action.label;bubble.append(button)}log.append(bubble);log.scrollTop=log.scrollHeight}
+function answer(kind,chat,form){const result=replyFor(kind,form);addBubble(chat,'bean',result.text,result.action);chatCount+=1;sessionStorage.setItem(visitKey,String(chatCount));updateCount();reaction(result.reaction)}
+function categoryForMessage(message){const value=message.toLowerCase();if(/money|bill|rent|pay|earn|gig|shipt|door.?dash/.test(value))return'money';if(/study|school|class|homework|course|touchstone/.test(value))return'study';if(/work|client|session|supervisor/.test(value))return'work';if(/overwhelm|tired|anxious|stress|sad|cry|panic/.test(value))return'overwhelmed';if(/bored|fun|hobby/.test(value))return'bored';if(/plan|schedule|today/.test(value))return'plan';if(/focus|stuck|start/.test(value))return'focus';if(/win|did it|finished|complete/.test(value))return'celebrate';return'comfort'}
+
+app?.addEventListener('click',event=>{const prompt=event.target.closest?.('[data-mochini-prompt]');if(!prompt||!app.contains(prompt))return;const page=prompt.closest('.page'),chat=page?.querySelector('[data-mochini-chat]'),form=page?.querySelector('[data-mochini-chat-form]');if(!chat||!form)return;answer(prompt.dataset.mochiniPrompt,chat,form)});
+app?.addEventListener('submit',event=>{const form=event.target.closest?.('[data-mochini-chat-form]');if(!form||!app.contains(form))return;event.preventDefault();const input=form.elements.message,message=String(input?.value||'').trim();if(!message)return;const chat=form.closest('[data-mochini-chat]')||form.parentElement?.querySelector('[data-mochini-chat]');addBubble(chat,'user',message);input.value='';answer(categoryForMessage(message),chat,form);input.focus()});
+new MutationObserver(updateCount).observe(app,{childList:true,subtree:true});
+updateCount();
