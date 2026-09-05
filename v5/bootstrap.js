@@ -11,3 +11,4 @@ await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
 await import('./cloud-account.js?v=5.7.6-cloud-account');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
+await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
