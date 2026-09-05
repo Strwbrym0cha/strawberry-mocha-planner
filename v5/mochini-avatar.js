@@ -1,14 +1,15 @@
+import{expressionForMood}from'./mochini-life.js?v=6.3.0-autonomous-moods';
+
 // Lightweight, explicit lifecycle: no app-wide observers and no animation loop.
 // The illustrated source stays canonical; CSS only rigs a few visual layers.
-// These remain deliberately small, swap-in facial layers over the canonical
-// illustration.  New costumes can keep this same vocabulary and face anchor.
+// Mood vocabulary is richer than the current art set, so expressionForMood()
+// aliases new moods onto today's face assets until the next reaction sheet lands.
 const expressions=['idle','happy','excited','berry','poke','surprised','sleepy','grumpy','thinking','confused','proud','love'];
 let active=null,blinkTimer=null,visible=true,reactionTimer=null;
 const expressionSprites={idle:'mochini-canonical-hero.webp',happy:'expressions/happy.webp',excited:'expressions/berry.webp',berry:'expressions/berry.webp',poke:'expressions/poke.webp',surprised:'expressions/surprised.webp',sleepy:'expressions/sleepy.webp',grumpy:'expressions/grumpy.webp',thinking:'expressions/thinking.webp',confused:'expressions/confused.webp',proud:'expressions/proud.webp',love:'expressions/love.webp'};
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mode=()=>document.body.className.match(/mode-([a-z-]+)/)?.[1]||'normal';
 const escape=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
-const spriteSrc=expression=>`./assets/mochini/${expressionSprites[expression]||expressionSprites.idle}`;
 const closedEyeSprite='./assets/mochini/expressions/closed.webp';
 
 function markup(hero){
@@ -18,9 +19,9 @@ function markup(hero){
 
 function stopBlink(){if(blinkTimer){clearTimeout(blinkTimer);blinkTimer=null}}
 function setSprite(expression='idle'){
-  const art=active?.querySelector('[data-mochini-art]'),sprite=expressionSprites[expression]||expressionSprites.idle;
-  if(!art||art.dataset.mochiniSprite===expression)return;
-  art.dataset.mochiniSprite=expression;art.src=`./assets/mochini/${sprite}`;
+  const art=active?.querySelector('[data-mochini-art]'),next=expressions.includes(expression)?expression:expressionForMood(expression),sprite=expressionSprites[next]||expressionSprites.idle;
+  if(!art||art.dataset.mochiniSprite===next)return;
+  art.dataset.mochiniSprite=next;art.src=`./assets/mochini/${sprite}`;
 }
 function blink(){
   const art=active?.querySelector('[data-mochini-art]');if(!art)return;
@@ -32,13 +33,12 @@ function scheduleBlink(){
   blinkTimer=setTimeout(()=>{if(!active||!visible||document.hidden)return;blink();scheduleBlink()},3000+Math.random()*4000);
 }
 function setExpression(expression='idle',transient=false){
-  if(!active)return;const next=expressions.includes(expression)?expression:'idle';active.dataset.expression=next;setSprite(next);
-  if(transient){clearTimeout(reactionTimer);reactionTimer=setTimeout(()=>{if(active)active.dataset.expression=moodExpression(active.closest('.mochini-hero'))},next==='sleepy'?1200:900)}
+  if(!active)return;const mapped=expressions.includes(expression)?expression:expressionForMood(expression),next=expressions.includes(mapped)?mapped:'idle';active.dataset.expression=next;setSprite(next);
+  if(transient){clearTimeout(reactionTimer);reactionTimer=setTimeout(()=>{if(active)setExpression(moodExpression(active.closest('.mochini-hero')),false)},next==='sleepy'?1500:1000)}
 }
 function moodExpression(hero){
-  const mood=hero?.dataset.mochiniMood||'content',activity=hero?.dataset.mochiniActivity||'';
-  const fromMood={happy:'happy',excited:'excited',sleepy:'sleepy',proud:'proud',grumpy:'grumpy',chaotic:'confused',confused:'confused',love:'love',curious:'thinking',bored:'thinking'};
-  return fromMood[mood]||(/focus|study|work/i.test(activity)||mode()==='power'?'thinking':'idle');
+  const mood=hero?.dataset.mochiniMood||active?.dataset.mood||'content',activity=hero?.dataset.mochiniActivity||'';
+  const mapped=expressionForMood(mood);return mapped==='idle'&&(/focus|study|work/i.test(activity)||mode()==='power')?'thinking':mapped;
 }
 function sync(hero){
   if(!active||!hero)return;const mood=hero.dataset.mochiniMood||'content';
@@ -52,7 +52,12 @@ function mount(){
   if(!anchor.querySelector('[data-mochini-live]')){anchor.innerHTML=markup(hero);active=anchor.querySelector('[data-mochini-live]');const blinkSprite=new Image();blinkSprite.src=closedEyeSprite;active.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('katos:mochini-action',{detail:{type:'poke'}})));active.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();window.dispatchEvent(new CustomEvent('katos:mochini-action',{detail:{type:'poke'}}))}})}else active=anchor.querySelector('[data-mochini-live]');
   sync(hero);
 }
-function runReaction(detail={}){if(!active)return;const raw=detail.expression||detail.reaction||'happy',aliases={focused:'thinking',celebrate:'proud',comfort:'love',overwhelmed:'sleepy',chaotic:'confused'},expression=aliases[raw]||raw;setExpression(expression,true);const bubble=active.querySelector('[data-mochini-speech] p');if(bubble&&detail.line)bubble.textContent=detail.line;}
+function runReaction(detail={}){
+  if(!active)return;const raw=detail.mood||detail.expression||detail.reaction||'happy',aliases={celebrate:'proud',comfort:'love'},expression=aliases[raw]||raw;
+  if(detail.mood)active.dataset.mood=detail.mood;
+  setExpression(expression,!detail.autonomous);
+  const bubble=active.querySelector('[data-mochini-speech] p');if(bubble&&detail.line)bubble.textContent=detail.line;
+}
 
 window.addEventListener('katos:rendered',mount);
 window.addEventListener('katos:mochini',event=>runReaction(event.detail||{}));
