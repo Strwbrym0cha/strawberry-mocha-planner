@@ -13,6 +13,8 @@ const lifestyle=read('./lifestyle-render.js');
 const styles=read('./styles.css');
 const mochiniChat=read('./mochini-chat.js');
 const mochiniTabCss=read('./mochini-tab.css');
+const mochiniAvatar=read('./mochini-avatar.js');
+const mochiniLife=read('./mochini-life.js');
 
 assert.equal(rooms.includes('return page(detailedRoomForm(view)+inner)'),false,'generic Workspace UI is no longer prepended to V5 rooms');
 assert.equal(data.includes('saveV5Workspace'),true,'legacy Workspace persistence remains available for compatibility');
@@ -36,7 +38,7 @@ assert.equal(moneyCss.includes('.ledger-columns')&&moneyCss.includes('grid-templ
 assert.equal(moneyCss.includes('max-height:330px')&&moneyCss.includes('overflow-y:auto'),true,'large Recent Activity lists are bounded and touch-scrollable');
 
 for(const selector of ['selectV5DailyShit','selectV5WorkHQ','selectV5StudyNook','selectV5MoneyGig','selectV5Lifestyle'])assert.equal(app.includes(selector),true,`Mochini/Home use canonical ${selector}`);
-assert.equal(rooms.includes('home:integratedHomeRoom')&&rooms.includes('mochini:integratedMochiniRoom'),true,'integrated Home and Mochini are the visible renderers');
+assert.equal(rooms.includes('home:integratedHomeRoom')&&rooms.includes('mochini:canonicalMochiniRoom'),true,'integrated Home and canonical Mochini are the visible renderers');
 assert.equal(rooms.includes("scheduleRows(state,canonical)"),true,'Schedule consumes canonical derived records');
 assert.equal(`${app}\n${rooms}`.includes('data-route-view')&&`${app}\n${rooms}`.includes('data-route-open'),true,'Home and Schedule route to canonical source popups');
 assert.equal(rooms.includes("result==='[object Object]'?'':result"),true,'structured Mochini values are humanized or omitted');
@@ -51,10 +53,17 @@ const html=renderRoom('mochini',{today:'2026-09-03',state:{mochini:{life:{mood:{
 assert.equal(html.includes('[object Object]'),false,'Mochini never renders [object Object]');
 assert.equal(html.includes('Give Mochini useful context'),false,'Mochini context Workspace editor is removed');
 for(const hook of ['mochini-command-hero','RIGHT NOW','MOCHINI NOTICES','data-mochini-chat-form','COMFORT CORNER','MOCHINI’S STATS'])assert.equal(html.includes(hook),true,`Mochini command center includes ${hook}`);
+for(const hook of ['data-mochini-action="berry"','data-mochini-action="poke"','data-mochini-visual-anchor'])assert.equal(html.includes(hook),true,`Mochini has ${hook}`);
+assert.equal(rooms.includes('Berry tummy full'),true,'Mochini clearly reports the daily berry limit');
 assert.equal(mochiniChat.includes('never writes planner data'),true,'Mochini chat remains a deterministic presentation layer');
 assert.equal(mochiniChat.includes('dataset.routeView'),true,'Mochini chat can route back to the canonical source rooms');
 assert.equal(mochiniChat.includes('new MutationObserver'),false,'Mochini chat does not observe and rewrite its own DOM in a feedback loop');
 assert.equal(app.includes("new Event('katos:rendered')"),true,'Mochini syncs after a completed V5 render instead of observing every DOM mutation');
+assert.equal(app.includes('runV5MochiniAction'),true,'Berry and poke use the V5 persistence writer');
+assert.equal(data.includes('runV5MochiniAction')&&data.includes('persistPlannerState(state,\'v5-mochini-life\')'),true,'Mochini life persists through the canonical state path');
+assert.equal(mochiniLife.includes('BERRY_LIMIT=6')&&mochiniLife.includes('mochiniBerry')&&mochiniLife.includes('mochiniPoke'),true,'Mochini keeps real berry and poke rules');
+assert.equal(mochiniAvatar.includes('mochini-canonical-hero.webp')&&mochiniAvatar.includes('IntersectionObserver')&&mochiniAvatar.includes("window.addEventListener('katos:rendered',mount)"),true,'Illustrated Mochini mounts narrowly and pauses offscreen');
+assert.equal(mochiniAvatar.includes('MutationObserver'),false,'Mochini visual rig has no app-wide MutationObserver');
 assert.equal(mochiniTabCss.includes('.mochini-chat-form')&&mochiniTabCss.includes('.mochini-ask-grid'),true,'Mochini chat and support controls keep their V5 styling');
 
 for(const token of ['.sidebar{','font-family:Georgia','linear-gradient','body.mode-tiny','body.mode-power','.detail-modal'])assert.equal(`${styles}\n${read('./detailed-rooms.css')}`.includes(token),true,`${token} preserves the V5 shell and popup identity`);

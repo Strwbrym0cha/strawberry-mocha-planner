@@ -3,6 +3,7 @@ import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.3.0-s
 import{applyStudyAction,initializeStudyNook,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
 import{applyMoneyGigAction,initializeMoneyGig,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
 import{applyLifestyleAction,initializeLifestyle,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
+import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
 
 export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep};
 
@@ -330,6 +331,27 @@ function persistPlannerState(state,reason){
   const now=new Date().toISOString();state.meta={...obj(state.meta),updatedAt:now};
   const existing=localStorage.getItem(V4_KEY)||'',parsed=parseStored(existing);let stored=null;try{stored=existing?JSON.parse(existing):null}catch{}const envelope=parsed&&stored?.data?{...stored,data:state}:{data:state},raw=JSON.stringify(envelope);
   localStorage.setItem(V4_KEY,raw);saveImportedState(state,raw,V4_KEY,reason);return state;
+}
+
+// Mochini is real V5 planner state. Keep the existing V4-compatible location
+// when it exists, otherwise use the V5 Mochini life home.
+export function selectV5MochiniLife(){
+  const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state||{};
+  return normalizeMochiniLife(pathValue(source,'v4.mochiniLife')||pathValue(source,'mochini.life')||pathValue(source,'mochini'));
+}
+
+export function runV5MochiniAction(action={}){
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your V4 data first so Mochini can remember this.'};
+    const state=cloneState(source),existing=pathValue(state,'v4.mochiniLife')||pathValue(state,'mochini.life')||pathValue(state,'mochini')||{};
+    const type=text(action.type).toLowerCase();
+    const result=type==='berry'?mochiniBerry(existing):type==='poke'?mochiniPoke(existing):mochiniPrompt(existing,type);
+    if(pathValue(state,'v4.mochiniLife'))setAtPath(state,'v4.mochiniLife',result.life);
+    else setAtPath(state,'mochini.life',result.life);
+    persistPlannerState(state,'v5-mochini-life');
+    return{ok:true,...result};
+  }catch(error){console.warn('KatOS V5 could not save that Mochini interaction.',error);return{ok:false,error:'Mochini could not save that interaction. Your planner is still safe.'}}
 }
 
 export function selectV5WorkHQ(date=localDateKey()){

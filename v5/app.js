@@ -1,9 +1,9 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,restoreV5Record,runV5DailyAction,selectV5DailyShit,runV5WorkAction,selectV5WorkHQ,runV5StudyAction,selectV5StudyNook,runV5MoneyGigAction,selectV5MoneyGig,runV5LifestyleAction,selectV5Lifestyle,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=5.6.0-final-integration';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,restoreV5Record,runV5DailyAction,selectV5DailyShit,runV5WorkAction,selectV5WorkHQ,runV5StudyAction,selectV5StudyNook,runV5MoneyGigAction,selectV5MoneyGig,runV5LifestyleAction,selectV5Lifestyle,runV5MochiniAction,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=6.0.0-canonical-mochini';
 import{renderBoss}from'./boss.js?v=5.6.0-final-integration';
 import{renderStudy}from'./study.js?v=5.3.0-study-nook';
 import{renderMoney,renderGigWork}from'./money.js?v=5.6.2-gig-work-home';
 import{renderMovement,renderHobbies,renderGrowth}from'./lifestyle-render.js?v=5.6.0-final-integration';
-import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=5.9.2-mochini-command-center';
+import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=6.0.0-canonical-mochini';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
@@ -41,6 +41,7 @@ app.addEventListener('click',event=>{
   const route=event.target.closest?.('[data-route-view]');if(route&&app.contains(route)){if(route.dataset.routeLane==='gig'){ui.view='boss';ui.bossLane='gig'}else{ui.view=route.dataset.routeView;if(route.dataset.routeLane)ui.moneyLane=route.dataset.routeLane}ui.sidebarOpen=false;persist();render();const open=route.dataset.routeOpen;if(open){const modal=[...app.querySelectorAll('[data-daily-modal],[data-work-modal],[data-study-modal],[data-money-modal],[data-lifestyle-modal]')].find(node=>node.dataset.dailyModal===open||node.dataset.workModal===open||node.dataset.studyModal===open||node.dataset.moneyModal===open||node.dataset.lifestyleModal===open);showModal(modal)}return}
   const view=event.target.closest?.('[data-view]');if(view&&app.contains(view)){if(view.dataset.bossTarget==='gig'){ui.bossLane='gig';chooseView('boss')}else chooseView(view.dataset.view);return}
   const mode=event.target.closest?.('[data-mode]');if(mode&&app.contains(mode)){ui.mode=mode.dataset.mode;persist();render();return}
+  const mochiniAction=event.target.closest?.('[data-mochini-action]');if(mochiniAction&&app.contains(mochiniAction)){const result=runV5MochiniAction({type:mochiniAction.dataset.mochiniAction});if(!result.ok)window.alert(result.error||'Mochini could not save that interaction.');render();if(result.ok)window.dispatchEvent(new CustomEvent('katos:mochini',{detail:result}));return}
   const moneyLane=event.target.closest?.('[data-money-lane]');if(moneyLane&&app.contains(moneyLane)){if(moneyLane.dataset.moneyLane==='gig'){ui.view='boss';ui.bossLane='gig'}else{ui.view='money';ui.moneyLane='money'}persist();render();return}
   const moneyClose=event.target.closest?.('[data-money-close]');if(moneyClose&&app.contains(moneyClose)){moneyClose.closest('[data-money-modal]')?.setAttribute('hidden','');return}
   const moneyAction=event.target.closest?.('[data-money-action]');if(moneyAction&&app.contains(moneyAction)){const type=moneyAction.dataset.moneyAction;if(type==='archive'&&!window.confirm('Archive this record? It will move to Memory Box, not be deleted.'))return;const result=runV5MoneyGigAction({type,id:moneyAction.dataset.moneyId,kind:moneyAction.dataset.moneyKind,date:moneyAction.dataset.moneyDate});if(!result.ok)window.alert(result.error||'That Money Café action could not be saved.');render();return}

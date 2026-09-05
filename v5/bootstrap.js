@@ -1,7 +1,7 @@
 import{prepareCloudSync}from'./cloud-sync.js?v=5.7.0-phone-sync';
 
 await prepareCloudSync();
-await import('./app.js?v=5.9.3-mochini-performance-fix');
+await import('./app.js?v=6.0.0-canonical-mochini');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
 await import('./study-history-popup-fix.js?v=5.6.7-completed-course-edit');
@@ -12,8 +12,7 @@ await import('./cloud-account.js?v=5.7.6-cloud-account');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
-await import('./mochini-avatar-lite.js?v=5.9.5-safari-art-fix');
-await import('./mochini-chat.js?v=5.9.3-mochini-performance-fix');
+await import('./mochini-avatar.js?v=6.0.0-canonical-rig');
+await import('./mochini-chat.js?v=6.0.0-canonical-rig');
 await import('./mochini-polish.js?v=5.9.5-safari-art-fix');
-await import('./mochini-interactions.js?v=5.9.6-berry-poke');
 await import('./shipt-daily-groups.js?v=5.9.1-shipt-daily-groups');
