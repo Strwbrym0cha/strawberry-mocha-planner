@@ -68,6 +68,7 @@ for(const expression of ['idle','happy','excited','berry','poke','surprised','sl
 assert.equal(mochiniAvatar.includes('function moodExpression')&&mochiniAvatar.includes("chaotic:'confused'"),true,'Mochini returns to an autonomous mood face after reactions');
 assert.equal(mochiniAvatar.includes('mochini-face-rig'),false,'Mochini does not assemble facial pieces over the canonical art');
 assert.equal(mochiniAvatar.includes('expressionSprites')&&mochiniAvatar.includes('function blink()')&&mochiniAvatar.includes('data-mochini-art'),true,'Mochini swaps complete illustrated expression sprites, including a closed-eye blink');
+for(const sprite of ['closed','happy','berry','poke','surprised','sleepy','grumpy','thinking','confused','proud','love'])assert.equal(mochiniAvatar.includes(`expressions/${sprite}.webp`),true,`Mochini has the full ${sprite} expression sprite`);
 assert.equal(mochiniTabCss.includes('.mochini-chat-form')&&mochiniTabCss.includes('.mochini-ask-grid'),true,'Mochini chat and support controls keep their V5 styling');
 
 for(const token of ['.sidebar{','font-family:Georgia','linear-gradient','body.mode-tiny','body.mode-power','.detail-modal'])assert.equal(`${styles}\n${read('./detailed-rooms.css')}`.includes(token),true,`${token} preserves the V5 shell and popup identity`);

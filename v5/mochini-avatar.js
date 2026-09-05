@@ -4,11 +4,12 @@
 // illustration.  New costumes can keep this same vocabulary and face anchor.
 const expressions=['idle','happy','excited','berry','poke','surprised','sleepy','grumpy','thinking','confused','proud','love'];
 let active=null,blinkTimer=null,visible=true,reactionTimer=null;
-const expressionSprites={idle:'mochini-canonical-hero.webp',happy:'expressions/closed.webp',excited:'expressions/berry.webp',berry:'expressions/berry.webp',poke:'expressions/poke.webp',surprised:'expressions/poke.webp',sleepy:'expressions/sleepy.webp',grumpy:'expressions/grumpy.webp',thinking:'expressions/thinking.webp',confused:'expressions/thinking.webp',proud:'expressions/closed.webp',love:'expressions/closed.webp'};
+const expressionSprites={idle:'mochini-canonical-hero.webp',happy:'expressions/happy.webp',excited:'expressions/berry.webp',berry:'expressions/berry.webp',poke:'expressions/poke.webp',surprised:'expressions/surprised.webp',sleepy:'expressions/sleepy.webp',grumpy:'expressions/grumpy.webp',thinking:'expressions/thinking.webp',confused:'expressions/confused.webp',proud:'expressions/proud.webp',love:'expressions/love.webp'};
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mode=()=>document.body.className.match(/mode-([a-z-]+)/)?.[1]||'normal';
 const escape=value=>String(value??'').replace(/[&<>'"]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 const spriteSrc=expression=>`./assets/mochini/${expressionSprites[expression]||expressionSprites.idle}`;
+const closedEyeSprite='./assets/mochini/expressions/closed.webp';
 
 function markup(hero){
   const line=escape(hero.dataset.mochiniLine||'Hihi! What shall we do today? ♡');
@@ -23,7 +24,7 @@ function setSprite(expression='idle'){
 }
 function blink(){
   const art=active?.querySelector('[data-mochini-art]');if(!art)return;
-  active.dataset.blinking='true';art.dataset.mochiniSprite='blink';art.src=spriteSrc('happy');
+  active.dataset.blinking='true';art.dataset.mochiniSprite='blink';art.src=closedEyeSprite;
   setTimeout(()=>{if(active){delete active.dataset.blinking;setSprite(active.dataset.expression||'idle')}},170);
 }
 function scheduleBlink(){
@@ -48,7 +49,7 @@ function sync(hero){
 function mount(){
   const hero=document.querySelector('.mochini-hero[data-mochini-life]'),anchor=hero?.querySelector('[data-mochini-visual-anchor]');
   if(!hero||!anchor){active=null;stopBlink();return}
-  if(!anchor.querySelector('[data-mochini-live]')){anchor.innerHTML=markup(hero);active=anchor.querySelector('[data-mochini-live]');const blinkSprite=new Image();blinkSprite.src=spriteSrc('happy');active.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('katos:mochini-action',{detail:{type:'poke'}})));active.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();window.dispatchEvent(new CustomEvent('katos:mochini-action',{detail:{type:'poke'}}))}})}else active=anchor.querySelector('[data-mochini-live]');
+  if(!anchor.querySelector('[data-mochini-live]')){anchor.innerHTML=markup(hero);active=anchor.querySelector('[data-mochini-live]');const blinkSprite=new Image();blinkSprite.src=closedEyeSprite;active.addEventListener('click',()=>window.dispatchEvent(new CustomEvent('katos:mochini-action',{detail:{type:'poke'}})));active.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();window.dispatchEvent(new CustomEvent('katos:mochini-action',{detail:{type:'poke'}}))}})}else active=anchor.querySelector('[data-mochini-live]');
   sync(hero);
 }
 function runReaction(detail={}){if(!active)return;const raw=detail.expression||detail.reaction||'happy',aliases={focused:'thinking',celebrate:'proud',comfort:'love',overwhelmed:'sleepy',chaotic:'confused'},expression=aliases[raw]||raw;setExpression(expression,true);const bubble=active.querySelector('[data-mochini-speech] p');if(bubble&&detail.line)bubble.textContent=detail.line;}
