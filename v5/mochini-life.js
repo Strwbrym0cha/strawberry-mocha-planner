@@ -1,7 +1,7 @@
 // Canonical Mochini life state for V5. This is intentionally UI-free so the
 // character rig can stay light and seasonal art can be swapped independently.
 const DAY=86400000;
-const moods=new Set(['content','happy','excited','sleepy','bored','proud','grumpy','chaotic','curious']);
+const moods=new Set(['content','happy','excited','sleepy','bored','proud','grumpy','chaotic','curious','confused','love']);
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const number=(value,fallback)=>Number.isFinite(Number(value))?Number(value):fallback;
 const clamp=(value,min=0,max=100)=>Math.min(max,Math.max(min,number(value,min)));
@@ -27,7 +27,7 @@ export function mochiniPoke(value={},now=new Date()){
 
 export function mochiniBerry(value={},now=new Date()){
   const life=normalizeMochiniLife(value,now);
-  if(life.berriesFedToday>=BERRY_LIMIT){const line='My berry tummy is full for today—but I still love you lots. ♡';return {life:setLine(life,line,{lastInteractionAt:now.toISOString()}),line,expression:'sleepy',accepted:false};}
+  if(life.berriesFedToday>=BERRY_LIMIT){const line='My berry tummy is full for today—but I still love you lots. ♡';return {life:setLine(life,line,{lastInteractionAt:now.toISOString()}),line,expression:'grumpy',accepted:false};}
   const count=life.berriesFedToday+1,boost=count>=3?1:5,next={...life,berriesFedToday:count,berriesFedTotal:life.berriesFedTotal+1,interactionsToday:life.interactionsToday+1,energy:clamp(life.energy+boost),affection:clamp(life.affection+(count>=3?1:3)),lastInteractionAt:now.toISOString()};
   const line=pick(['Berry!! My little heart is sparkling!','Mmm—strawberry power acquired!','A berry for me? You are the sweetest.','Nom nom! I feel extra brave now.'],next);
   return {life:setLine(next,line,{mood:'excited'}),line,expression:'berry',accepted:true};

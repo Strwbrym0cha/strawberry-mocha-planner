@@ -64,6 +64,9 @@ assert.equal(data.includes('runV5MochiniAction')&&data.includes('persistPlannerS
 assert.equal(mochiniLife.includes('BERRY_LIMIT=6')&&mochiniLife.includes('mochiniBerry')&&mochiniLife.includes('mochiniPoke'),true,'Mochini keeps real berry and poke rules');
 assert.equal(mochiniAvatar.includes('mochini-canonical-hero.webp')&&mochiniAvatar.includes('IntersectionObserver')&&mochiniAvatar.includes("window.addEventListener('katos:rendered',mount)"),true,'Illustrated Mochini mounts narrowly and pauses offscreen');
 assert.equal(mochiniAvatar.includes('MutationObserver'),false,'Mochini visual rig has no app-wide MutationObserver');
+for(const expression of ['idle','happy','excited','berry','poke','surprised','sleepy','grumpy','thinking','confused','proud','love'])assert.equal(mochiniAvatar.includes(`'${expression}'`),true,`Mochini expression pack includes ${expression}`);
+assert.equal(mochiniAvatar.includes('function moodExpression')&&mochiniAvatar.includes("chaotic:'confused'"),true,'Mochini returns to an autonomous mood face after reactions');
+assert.equal(mochiniAvatar.includes('mochini-brow')&&mochiniAvatar.includes('mochini-face-fx'),true,'Mochini expression pack uses small facial layers rather than replacing canonical art');
 assert.equal(mochiniTabCss.includes('.mochini-chat-form')&&mochiniTabCss.includes('.mochini-ask-grid'),true,'Mochini chat and support controls keep their V5 styling');
 
 for(const token of ['.sidebar{','font-family:Georgia','linear-gradient','body.mode-tiny','body.mode-power','.detail-modal'])assert.equal(`${styles}\n${read('./detailed-rooms.css')}`.includes(token),true,`${token} preserves the V5 shell and popup identity`);
