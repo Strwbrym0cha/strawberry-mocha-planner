@@ -53,6 +53,8 @@ assert.equal(html.includes('Give Mochini useful context'),false,'Mochini context
 for(const hook of ['mochini-command-hero','RIGHT NOW','MOCHINI NOTICES','data-mochini-chat-form','COMFORT CORNER','MOCHINI’S STATS'])assert.equal(html.includes(hook),true,`Mochini command center includes ${hook}`);
 assert.equal(mochiniChat.includes('never writes planner data'),true,'Mochini chat remains a deterministic presentation layer');
 assert.equal(mochiniChat.includes('dataset.routeView'),true,'Mochini chat can route back to the canonical source rooms');
+assert.equal(mochiniChat.includes('new MutationObserver'),false,'Mochini chat does not observe and rewrite its own DOM in a feedback loop');
+assert.equal(app.includes("new Event('katos:rendered')"),true,'Mochini syncs after a completed V5 render instead of observing every DOM mutation');
 assert.equal(mochiniTabCss.includes('.mochini-chat-form')&&mochiniTabCss.includes('.mochini-ask-grid'),true,'Mochini chat and support controls keep their V5 styling');
 
 for(const token of ['.sidebar{','font-family:Georgia','linear-gradient','body.mode-tiny','body.mode-power','.detail-modal'])assert.equal(`${styles}\n${read('./detailed-rooms.css')}`.includes(token),true,`${token} preserves the V5 shell and popup identity`);

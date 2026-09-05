@@ -24,5 +24,5 @@ function categoryForMessage(message){const value=message.toLowerCase();if(/money
 
 app?.addEventListener('click',event=>{const prompt=event.target.closest?.('[data-mochini-prompt]');if(!prompt||!app.contains(prompt))return;const page=prompt.closest('.page'),chat=page?.querySelector('[data-mochini-chat]'),form=page?.querySelector('[data-mochini-chat-form]');if(!chat||!form)return;answer(prompt.dataset.mochiniPrompt,chat,form)});
 app?.addEventListener('submit',event=>{const form=event.target.closest?.('[data-mochini-chat-form]');if(!form||!app.contains(form))return;event.preventDefault();const input=form.elements.message,message=String(input?.value||'').trim();if(!message)return;const chat=form.closest('[data-mochini-chat]')||form.parentElement?.querySelector('[data-mochini-chat]');addBubble(chat,'user',message);input.value='';answer(categoryForMessage(message),chat,form);input.focus()});
-new MutationObserver(updateCount).observe(app,{childList:true,subtree:true});
+window.addEventListener('katos:rendered',updateCount);
 updateCount();
