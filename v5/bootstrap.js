@@ -12,6 +12,6 @@ await import('./cloud-account.js?v=5.7.6-cloud-account');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
-await import('./mochini-avatar.js?v=5.9.0-mochini-live');
+await import('./mochini-avatar-lite.js?v=5.9.4-canonical-art-lite');
 await import('./mochini-chat.js?v=5.9.3-mochini-performance-fix');
 await import('./shipt-daily-groups.js?v=5.9.1-shipt-daily-groups');
