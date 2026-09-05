@@ -1,0 +1,53 @@
+import{runV5MoneyGigAction,selectV5MoneyGig,updateV5Record,localDateKey}from'./data.js?v=5.7.9-doordash-shifts';
+
+const app=document.getElementById('app');
+const list=v=>Array.isArray(v)?v:[];
+const text=v=>String(v??'').trim();
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>`$${(Number(v)||0).toFixed(2)}`;
+const fmtDate=v=>{const d=new Date(`${v}T12:00:00`);return Number.isNaN(d.getTime())?v:d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'})};
+const fmtTime=v=>{if(!v)return'';const[h,m]=String(v).split(':').map(Number),d=new Date();d.setHours(h,m||0,0,0);return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})};
+const mins=(h,m)=>Math.max(0,(Number(h)||0)*60+(Number(m)||0));
+const split=v=>({h:Math.floor((Number(v)||0)/60),m:(Number(v)||0)%60});
+const total=row=>(Number(row.basePay)||0)+(Number(row.tip)||0)+(Number(row.promo)||0)+(Number(row.bonus)||0)+(Number(row.reimbursement)||0)+(Number(row.otherPay)||0);
+const isShift=row=>row?.entryMode==='shift'||row?.aggregateShift===true;
+const deliveries=rows=>list(rows).reduce((sum,row)=>sum+(isShift(row)?Math.max(0,Number(row.deliveryCount)||0):1),0);
+const getView=()=>selectV5MoneyGig(localDateKey());
+const dd=v=>v.gig.platforms.find(row=>/door\s*dash/i.test(row.name||''))||null;
+const shiftRows=v=>v.gig.orders.filter(isShift).slice().sort((a,b)=>`${b.date}${b.startTime||''}`.localeCompare(`${a.date}${a.startTime||''}`));
+
+function modal(row={}){
+  const v=getView(),platform=dd(v),a=split(row.activeMinutes),d=split(row.onlineMinutes);
+  return`<div class="detail-modal-backdrop money-modal gig-shift-modal" data-gig-shift-modal><section class="detail-modal" role="dialog" aria-modal="true"><div class="detail-modal-head"><div><div class="ey">🚗 DOORDASH SHIFT</div><h2>${row.id?'Edit DoorDash shift':'Add DoorDash shift'}</h2><p>Use the summary DoorDash already gives you. Individual deliveries are optional.</p></div><button type="button" class="detail-modal-close" data-gig-shift-close>×</button></div>${platform?`<form data-gig-shift-form${row.id?` data-gig-shift-id="${esc(row.id)}"`:''}><div class="room-detail-fields"><label class="money-field"><span>Date</span><input name="date" type="date" value="${esc(row.date||localDateKey())}" required></label><label class="money-field"><span>Start time</span><input name="startTime" type="time" value="${esc(row.startTime||'')}"></label><label class="money-field"><span>End time</span><input name="endTime" type="time" value="${esc(row.endTime||'')}"></label><label class="money-field"><span>Completed deliveries</span><input name="deliveryCount" type="number" min="0" step="1" value="${esc(row.deliveryCount||'')}"></label><label class="money-field"><span>DoorDash pay</span><input name="basePay" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(row.basePay||'')}" required></label><label class="money-field"><span>Tips</span><input name="tip" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(row.tip||'')}"></label><label class="money-field"><span>Bonus / promo</span><input name="bonus" type="number" min="0" step="0.01" inputmode="decimal" value="${esc((Number(row.bonus)||0)+(Number(row.promo)||0)||'')}"></label><label class="money-field"><span>Mileage · optional</span><input name="mileage" type="number" min="0" step="0.1" value="${esc(row.mileage||'')}"></label><fieldset class="gig-time-pair"><legend>Active time</legend><label><span>Hours</span><input name="activeHours" type="number" min="0" step="1" value="${a.h||''}"></label><label><span>Minutes</span><input name="activeMinutesPart" type="number" min="0" max="59" step="1" value="${a.m||''}"></label></fieldset><fieldset class="gig-time-pair"><legend>Dash time</legend><label><span>Hours</span><input name="dashHours" type="number" min="0" step="1" value="${d.h||''}"></label><label><span>Minutes</span><input name="dashMinutesPart" type="number" min="0" max="59" step="1" value="${d.m||''}"></label></fieldset><label class="money-field wide"><span>Notes · optional</span><textarea name="notes" rows="2">${esc(row.notes||'')}</textarea></label></div><div class="gig-shift-total"><span>Shift total</span><b data-gig-shift-total>${money(total(row))}</b><small>DoorDash pay + tips + bonus</small></div><p class="money-form-note">Shipt stays order-by-order. Use this for DoorDash so you do not have to enter every delivery.</p><div class="gig-shift-error" data-gig-shift-error></div><div class="button-row daily-actions"><button class="btn primary">🍓 Save shift</button>${row.id?'<button type="button" class="btn soft" data-gig-shift-archive>📦 Archive</button>':''}<button type="button" class="btn soft" data-gig-shift-close>Cancel</button></div></form>`:'<div class="empty">Add DoorDash as a gig platform first.</div>'}</section></div>`;
+}
+
+const shiftCard=row=>`<article class="money-open-card gig-shift-row" data-gig-shift-open="${esc(row.id)}" role="button" tabindex="0"><span class="money-kind income">🚗</span><div><b>DoorDash shift</b><span>${esc([fmtDate(row.date),row.startTime?`${fmtTime(row.startTime)}${row.endTime?`–${fmtTime(row.endTime)}`:''}`:'',row.deliveryCount?`${row.deliveryCount} deliveries`:'' ].filter(Boolean).join(' · '))}</span><small>DoorDash pay ${money(row.basePay)} · tips ${money(row.tip)}</small></div><strong>${money(total(row))}</strong></article>`;
+function section(v){const rows=shiftRows(v).slice(0,12);return`<section class="card full money-card gig-shifts-card" data-gig-shifts-card><div class="card-head"><div><div class="ey">🚗 DOORDASH SHIFTS</div><h2>Dash summaries</h2><p>One shift entry can represent every delivery inside that dash.</p></div><button type="button" class="btn tiny" data-gig-shift-add>＋ Add shift</button></div><div class="money-list bounded-money-list">${rows.length?rows.map(shiftCard).join(''):'<div class="empty">No DoorDash shifts entered yet.</div>'}</div></section>`}
+
+function setText(node,value){if(node&&node.textContent!==value)node.textContent=value}
+function decorate(v){
+  const stats=app.querySelectorAll('.stat-grid .stat');
+  if(stats.length>=3){setText(stats[0].querySelector('span'),`${deliveries(v.gigToday.orders)} deliveries · ${money(v.gigToday.tips)} tips`);setText(stats[2].querySelector('span'),`${deliveries(v.gigWeek.orders)} deliveries · ${v.gigWeek.mileage} miles`)}
+  const ratio=app.querySelector('.gig-ratios>div:first-child'),count=deliveries(v.gigWeek.orders);if(ratio){setText(ratio.querySelector('b'),count?money(v.gigWeek.gross/count):'Not enough data');setText(ratio.querySelector('span'),'average / delivery')}
+  for(const row of shiftRows(v)){const card=app.querySelector(`[data-money-open="order-${CSS.escape(String(row.id))}"]`);if(card&&card.style.display!=='none')card.style.display='none'}
+  const orderSection=[...app.querySelectorAll('.money-card')].find(n=>n.querySelector('.ey')?.textContent?.includes('RECENT ORDERS'));if(orderSection){setText(orderSection.querySelector('h2'),'Order-level entries');setText(orderSection.querySelector('p'),'Shipt works great order-by-order. DoorDash shifts live in their own section above.')}
+}
+function mount(){
+  const hero=app.querySelector('.gig-hero-card');if(!hero)return;
+  const v=getView(),buttons=hero.querySelector('.button-row');
+  if(buttons&&!buttons.querySelector('[data-gig-shift-add]'))buttons.insertAdjacentHTML('afterbegin','<button type="button" class="btn primary" data-gig-shift-add>🚗 ＋ DoorDash shift</button>');
+  if(!app.querySelector('[data-gig-shifts-card]')){const orders=[...app.querySelectorAll('.money-card')].find(n=>n.querySelector('.ey')?.textContent?.includes('RECENT ORDERS'));if(orders)orders.insertAdjacentHTML('beforebegin',section(v))}
+  decorate(v);
+}
+const open=row=>{app.querySelector('[data-gig-shift-modal]')?.remove();app.insertAdjacentHTML('beforeend',modal(row));app.querySelector('[data-gig-shift-modal] input')?.focus()};
+const close=()=>app.querySelector('[data-gig-shift-modal]')?.remove();
+const rerender=()=>app.querySelector('[data-boss-lane="gig"]')?.click();
+
+app.addEventListener('click',e=>{let b=e.target.closest('[data-gig-shift-add]');if(b){open({});return}b=e.target.closest('[data-gig-shift-open]');if(b){const row=shiftRows(getView()).find(x=>String(x.id)===String(b.dataset.gigShiftOpen));if(row)open(row);return}if(e.target.closest('[data-gig-shift-close]')||e.target.matches('[data-gig-shift-modal]')){close();return}b=e.target.closest('[data-gig-shift-archive]');if(b){const f=b.closest('[data-gig-shift-form]'),id=f?.dataset.gigShiftId;if(id){const r=runV5MoneyGigAction({type:'archive',kind:'order',id});if(!r.ok){f.querySelector('[data-gig-shift-error]').textContent=r.error||'Could not archive shift.';return}close();rerender()}}});
+app.addEventListener('input',e=>{const f=e.target.closest('[data-gig-shift-form]');if(!f)return;const d=new FormData(f),n=(Number(d.get('basePay'))||0)+(Number(d.get('tip'))||0)+(Number(d.get('bonus'))||0);setText(f.querySelector('[data-gig-shift-total]'),money(n))});
+app.addEventListener('submit',e=>{const f=e.target.closest('[data-gig-shift-form]');if(!f)return;e.preventDefault();const v=getView(),platform=dd(v),d=Object.fromEntries(new FormData(f));if(!platform)return;const basePay=Number(d.basePay)||0,tip=Number(d.tip)||0,bonus=Number(d.bonus)||0;if(basePay+tip+bonus<=0){f.querySelector('[data-gig-shift-error]').textContent='Add the DoorDash pay, tips, or bonus first.';return}const r=runV5MoneyGigAction({type:'order-save',id:f.dataset.gigShiftId||'',platformId:platform.id,date:text(d.date)||localDateKey(),basePay,tip,bonus,promo:0,reimbursement:0,otherPay:0,mileage:Number(d.mileage)||0,activeMinutes:mins(d.activeHours,d.activeMinutesPart),onlineMinutes:mins(d.dashHours,d.dashMinutesPart),status:'completed',notes:text(d.notes)});if(!r.ok){f.querySelector('[data-gig-shift-error]').textContent=r.error||'Could not save shift.';return}const id=r.result?.id||f.dataset.gigShiftId,p=updateV5Record('work.gig.orders',id,{entryMode:'shift',aggregateShift:true,deliveryCount:Math.max(0,Number(d.deliveryCount)||0),startTime:text(d.startTime),endTime:text(d.endTime),shiftLabel:'DoorDash shift'});if(!p.ok){f.querySelector('[data-gig-shift-error]').textContent=p.error||'Shift saved, but its details could not be attached.';return}close();rerender()});
+
+// KatOS replaces app's direct children when changing rooms. Watching only that level
+// avoids the self-triggering subtree loop that previously froze the lower Gig Work page.
+new MutationObserver(()=>requestAnimationFrame(mount)).observe(app,{childList:true});
+mount();
