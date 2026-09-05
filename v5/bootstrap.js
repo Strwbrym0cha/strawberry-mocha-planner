@@ -13,3 +13,4 @@ await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
 await import('./mochini-avatar.js?v=5.9.0-mochini-live');
+await import('./shipt-daily-groups.js?v=5.9.1-shipt-daily-groups');
