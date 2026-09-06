@@ -1,4 +1,4 @@
-import{prepareCloudSync}from'./cloud-sync.js?v=6.11.0-cross-device-sync';
+import{prepareCloudSync}from'./cloud-sync.js?v=6.12.0-ios-container-sync';
 import{hydrateCloudBeforePlanner}from'./cloud-first-hydrate.js?v=6.11.0-cross-device-sync';
 
 if(!localStorage.getItem('sm_cloud_session')){
@@ -15,14 +15,14 @@ if(!localStorage.getItem('sm_cloud_session')){
 await hydrateCloudBeforePlanner();
 await prepareCloudSync();
 await import('./app.js?v=6.0.0-canonical-mochini');
-await import('./cloud-resume-sync.js?v=6.11.0-cross-device-sync');
+await import('./cloud-resume-sync.js?v=6.12.0-ios-container-sync');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
 await import('./study-history-popup-fix.js?v=5.6.7-completed-course-edit');
 await import('./schedule-gig-labels.js?v=5.6.9-gig-shift-labels');
 await import('./brain-dump-v5.js?v=5.7.2-brain-dump');
 await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
-await import('./cloud-account.js?v=6.11.0-cross-device-sync');
+await import('./cloud-account.js?v=6.12.0-ios-container-sync');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
