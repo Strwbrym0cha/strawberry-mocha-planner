@@ -1,0 +1,1 @@
+Binary atlases are committed through the Git data API in the same pass.
