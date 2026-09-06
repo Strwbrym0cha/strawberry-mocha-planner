@@ -1,11 +1,11 @@
-import{cloudSignedIn,cloudSignOut,syncNow}from'./cloud-sync.js?v=5.7.0-phone-sync';
+import{cloudSignedIn,cloudSignOut,syncNow}from'./cloud-sync.js?v=6.11.0-cross-device-sync';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
 const SESSION_KEY='sm_v16_session';
 const SUPABASE_SESSION_KEY='sb-sigjwmgekmrwehylvuvu-auth-token';
 const app=document.getElementById('app');
-const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[char]));
 const text=value=>String(value??'').trim();
 
 function normalizeSession(value){const session=value?.currentSession||value?.session||value;return session?.access_token&&session?.user?.id?session:null}
