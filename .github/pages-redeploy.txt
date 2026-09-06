@@ -1,0 +1,2 @@
+GitHub Pages redeploy trigger for KatOS V5.
+Triggered 2026-09-05 after Mochini visual rig updates.
