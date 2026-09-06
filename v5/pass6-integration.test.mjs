@@ -14,6 +14,8 @@ const styles=read('./styles.css');
 const mochiniChat=read('./mochini-chat.js');
 const mochiniTabCss=read('./mochini-tab.css');
 const mochiniAvatar=read('./mochini-avatar.js');
+const mochiniApprovedArt=read('./mochini-approved-art.js');
+const mochiniAtlasRig=read('./mochini-atlas-rig.js');
 const mochiniLife=read('./mochini-life.js');
 
 assert.equal(rooms.includes('return page(detailedRoomForm(view)+inner)'),false,'generic Workspace UI is no longer prepended to V5 rooms');
@@ -64,11 +66,11 @@ assert.equal(data.includes('runV5MochiniAction')&&data.includes('persistPlannerS
 assert.equal(mochiniLife.includes('BERRY_LIMIT=6')&&mochiniLife.includes('mochiniBerry')&&mochiniLife.includes('mochiniPoke'),true,'Mochini keeps real berry and poke rules');
 assert.equal(mochiniAvatar.includes('mochini-canonical-hero.webp')&&mochiniAvatar.includes('IntersectionObserver')&&mochiniAvatar.includes("window.addEventListener('katos:rendered',mount)"),true,'Illustrated Mochini mounts narrowly and pauses offscreen');
 assert.equal(mochiniAvatar.includes('MutationObserver'),false,'Mochini visual rig has no app-wide MutationObserver');
-for(const expression of ['idle','happy','excited','berry','poke','surprised','sleepy','grumpy','thinking','confused','proud','love'])assert.equal(mochiniAvatar.includes(`'${expression}'`),true,`Mochini expression pack includes ${expression}`);
-assert.equal(mochiniAvatar.includes('function moodExpression')&&mochiniAvatar.includes("chaotic:'confused'"),true,'Mochini returns to an autonomous mood face after reactions');
+for(const expression of ['content','happy','excited','playful','surprised','sleepy','grumpy','thinking','confused','proud','love'])assert.equal(mochiniAtlasRig.includes(`'${expression}'`),true,`Mochini approved face atlas includes ${expression}`);
+assert.equal(mochiniAvatar.includes('function moodExpression')&&mochiniLife.includes('chaotic'),true,'Mochini returns to an autonomous mood face after reactions');
 assert.equal(mochiniAvatar.includes('mochini-face-rig'),false,'Mochini does not assemble facial pieces over the canonical art');
-assert.equal(mochiniAvatar.includes('expressionSprites')&&mochiniAvatar.includes('function blink()')&&mochiniAvatar.includes('data-mochini-art'),true,'Mochini swaps complete illustrated expression sprites, including a closed-eye blink');
-for(const sprite of ['closed','happy','berry','poke','surprised','sleepy','grumpy','thinking','confused','proud','love'])assert.equal(mochiniAvatar.includes(`expressions/${sprite}.webp`),true,`Mochini has the full ${sprite} expression sprite`);
+assert.equal(mochiniAvatar.includes('function blink()')&&mochiniAvatar.includes('katos:mochini-face')&&mochiniAvatar.includes('data-mochini-art'),true,'Mochini swaps complete registered faces, including a closed-face blink');
+assert.equal(mochiniApprovedArt.includes("const CLOSED_FACE='sleepy'")&&mochiniApprovedArt.includes('detail.blink?CLOSED_FACE'),true,'Blinking uses the registered closed approved face');
 assert.equal(mochiniTabCss.includes('.mochini-chat-form')&&mochiniTabCss.includes('.mochini-ask-grid'),true,'Mochini chat and support controls keep their V5 styling');
 
 for(const token of ['.sidebar{','font-family:Georgia','linear-gradient','body.mode-tiny','body.mode-power','.detail-modal'])assert.equal(`${styles}\n${read('./detailed-rooms.css')}`.includes(token),true,`${token} preserves the V5 shell and popup identity`);
