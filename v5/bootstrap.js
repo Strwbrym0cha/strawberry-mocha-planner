@@ -1,4 +1,4 @@
-import{prepareCloudSync}from'./cloud-sync.js?v=5.7.0-phone-sync';
+import{prepareCloudSync}from'./cloud-sync.js?v=5.8.0-cross-device-sync';
 
 await prepareCloudSync();
 await import('./app.js?v=6.0.0-canonical-mochini');
