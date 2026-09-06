@@ -1,25 +1,17 @@
 import{prepareCloudSync}from'./cloud-sync.js?v=5.8.1-normal-signin';
 import{hydrateCloudBeforePlanner}from'./cloud-first-hydrate.js?v=6.9.2-cloud-first';
 
-// Older V5 account UI stored the same Supabase session under legacy keys.
-// Keep the alias available for installs that already created it, while the
-// canonical KatOS account session remains the source used by cloud-sync.
 if(!localStorage.getItem('sm_cloud_session')){
   for(const key of['sm_v16_session','sb-sigjwmgekmrwehylvuvu-auth-token']){
     try{
       const raw=localStorage.getItem(key);
       const parsed=raw?JSON.parse(raw):null;
       const session=parsed?.currentSession||parsed?.session||parsed;
-      if(session?.access_token&&session?.user?.id){
-        localStorage.setItem('sm_cloud_session',JSON.stringify(session));
-        break;
-      }
+      if(session?.access_token&&session?.user?.id){localStorage.setItem('sm_cloud_session',JSON.stringify(session));break}
     }catch{}
   }
 }
 
-// On a newly signed-in device, pull the existing cloud planner before the
-// normal bidirectional engine gets any chance to compare/push stale local data.
 await hydrateCloudBeforePlanner();
 await prepareCloudSync();
 await import('./app.js?v=6.0.0-canonical-mochini');
@@ -38,7 +30,7 @@ await import('./routine-player.js?v=6.2.0-routine-player-sync');
 await import('./mochini-avatar.js?v=6.6.0-approved-atlas-final');
 await import('./mochini-companion.js?v=6.3.1-context-aware');
 await import('./mochini-face-patch.js?v=6.4.0-face-slots');
-await import('./mochini-approved-art.js?v=6.9.2-transparent-companion');
+await import('./mochini-approved-art.js?v=6.10.0-transparent-silhouettes');
 await import('./mochini-chat.js?v=6.0.0-canonical-rig');
 await import('./mochini-polish.js?v=5.9.5-safari-art-fix');
 await import('./shipt-daily-groups.js?v=5.9.2-shipt-persistent-groups');
