@@ -1,8 +1,8 @@
-import{prepareCloudSync}from'./cloud-sync.js?v=5.8.0-cross-device-sync';
+import{prepareCloudSync}from'./cloud-sync.js?v=5.8.1-normal-signin';
 
 // Older V5 account UI stored the same Supabase session under legacy keys.
-// Adopt it once so existing iPad/phone installs do not look signed in while
-// the actual cross-device sync module is offline.
+// Keep the alias available for installs that already created it, while the
+// canonical KatOS account session remains the source used by cloud-sync.
 if(!localStorage.getItem('sm_cloud_session')){
   for(const key of['sm_v16_session','sb-sigjwmgekmrwehylvuvu-auth-token']){
     try{
@@ -19,14 +19,14 @@ if(!localStorage.getItem('sm_cloud_session')){
 
 await prepareCloudSync();
 await import('./app.js?v=6.0.0-canonical-mochini');
-await import('./cloud-resume-sync.js?v=5.8.0-cross-device-sync');
+await import('./cloud-resume-sync.js?v=5.8.1-normal-signin');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
 await import('./study-history-popup-fix.js?v=5.6.7-completed-course-edit');
 await import('./schedule-gig-labels.js?v=5.6.9-gig-shift-labels');
 await import('./brain-dump-v5.js?v=5.7.2-brain-dump');
 await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
-await import('./cloud-account.js?v=5.8.0-cross-device-sync');
+await import('./cloud-account.js?v=5.8.1-normal-signin');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
