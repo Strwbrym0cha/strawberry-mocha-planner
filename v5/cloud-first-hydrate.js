@@ -2,8 +2,9 @@ const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
 const SESSION_KEYS=['sm_v16_session','sb-sigjwmgekmrwehylvuvu-auth-token'];
 const V5_DATA_KEY='sm_v5_data';
-const HYDRATE_PREFIX='sm_v5_cloud_hydrated_';
-const BACKUP_PREFIX='sm_v5_backup_before_first_cloud_hydrate_';
+const LEGACY_MARKER_PREFIX='sm_v5_cloud_hydrated_';
+const SEEN_PREFIX='sm_v5_cloud_seen_v2_';
+const BACKUP_PREFIX='sm_v5_backup_before_cloud_refresh_';
 
 const isObject=value=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const unwrap=value=>{let current=value;for(let i=0;i<3;i++){if(isObject(current?.data))current=current.data;else break}return isObject(current)?current:null};
@@ -17,7 +18,7 @@ function storedSession(){
 }
 
 async function fetchCloud(session){
-  const response=await fetch(`${CLOUD_URL}/rest/v1/planner_data?user_id=eq.${encodeURIComponent(session.user.id)}&select=data,updated_at`,{headers:{apikey:CLOUD_KEY,Authorization:`Bearer ${session.access_token}`}});
+  const response=await fetch(`${CLOUD_URL}/rest/v1/planner_data?user_id=eq.${encodeURIComponent(session.user.id)}&select=data,updated_at`,{headers:{apikey:CLOUD_KEY,Authorization:`Bearer ${session.access_token}`},cache:'no-store'});
   if(!response.ok)return null;
   const rows=await response.json().catch(()=>null);
   const row=Array.isArray(rows)?rows[0]:null;
@@ -28,16 +29,28 @@ async function fetchCloud(session){
 export async function hydrateCloudBeforePlanner(){
   const session=storedSession();
   if(!session)return{action:'no-session'};
-  const marker=`${HYDRATE_PREFIX}${session.user.id}`;
-  if(localStorage.getItem(marker)==='1')return{action:'already-hydrated'};
+
+  // v1 used a permanent boolean marker, which meant a phone could hydrate once
+  // and then stay frozen on that old snapshot forever. Remove it and track the
+  // actual remote revision instead.
+  try{localStorage.removeItem(`${LEGACY_MARKER_PREFIX}${session.user.id}`)}catch{}
 
   const cloud=await fetchCloud(session);
-  if(!cloud?.state){localStorage.setItem(marker,'1');return{action:'no-cloud'};}
+  if(!cloud?.state)return{action:'no-cloud'};
 
+  const seenKey=`${SEEN_PREFIX}${session.user.id}`;
+  const seenRevision=localStorage.getItem(seenKey)||'';
   const localRaw=localStorage.getItem(V5_DATA_KEY)||'';
-  if(localRaw){try{localStorage.setItem(`${BACKUP_PREFIX}${Date.now()}`,localRaw)}catch{}}
+  const remoteRevision=cloud.updatedAt||cloud.state?.__smUpdatedAt||cloud.state?.meta?.updatedAt||'';
+  const shouldPull=!localRaw||!seenRevision||seenRevision!==remoteRevision;
+
+  if(!shouldPull)return{action:'current',updatedAt:remoteRevision};
+
+  if(localRaw){
+    try{localStorage.setItem(`${BACKUP_PREFIX}${Date.now()}`,localRaw)}catch{}
+  }
   localStorage.setItem(V5_DATA_KEY,JSON.stringify(cloud.state));
-  localStorage.setItem(marker,'1');
-  window.dispatchEvent(new CustomEvent('katos:cloud-sync',{detail:{status:'pulled',reason:'first-device-hydrate'}}));
-  return{action:'pulled',updatedAt:cloud.updatedAt};
+  localStorage.setItem(seenKey,remoteRevision||String(Date.now()));
+  window.dispatchEvent(new CustomEvent('katos:cloud-sync',{detail:{status:'pulled',reason:'cloud-revision-hydrate',updatedAt:remoteRevision}}));
+  return{action:'pulled',updatedAt:remoteRevision};
 }
