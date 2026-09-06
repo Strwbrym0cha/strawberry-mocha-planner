@@ -1,4 +1,4 @@
-import{syncNow}from'./cloud-sync.js?v=5.8.0-cross-device-sync';
+import{syncNow}from'./cloud-sync.js?v=5.7.0-phone-sync';
 
 const V5_DATA_KEY='sm_v5_data';
 let busy=false;
@@ -6,7 +6,7 @@ let lastRun=0;
 let lastSyncedRaw=localStorage.getItem(V5_DATA_KEY)||'';
 
 function markBaseline(){lastSyncedRaw=localStorage.getItem(V5_DATA_KEY)||''}
-window.addEventListener('katos:cloud-sync',event=>{if(event?.detail?.status==='synced')markBaseline()});
+window.addEventListener('katos:cloud-sync',event=>{if(['saved','pulled'].includes(event?.detail?.status))markBaseline()});
 
 async function refreshFromCloud(reason='resume'){
   if(busy||document.visibilityState==='hidden')return;
