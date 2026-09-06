@@ -17,6 +17,7 @@ await import('./routine-player.js?v=6.2.0-routine-player-sync');
 await import('./mochini-avatar.js?v=6.4.0-face-slots');
 await import('./mochini-companion.js?v=6.3.1-context-aware');
 await import('./mochini-face-patch.js?v=6.4.0-face-slots');
+await import('./mochini-approved-art.js?v=6.5.0-approved-art-atlases');
 await import('./mochini-chat.js?v=6.0.0-canonical-rig');
 await import('./mochini-polish.js?v=5.9.5-safari-art-fix');
 await import('./shipt-daily-groups.js?v=5.9.2-shipt-persistent-groups');
