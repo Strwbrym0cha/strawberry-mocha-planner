@@ -1,0 +1,11 @@
+{
+  "version": "6.5.0-approved-art-atlases",
+  "source": "Approved Mochini expression sheets 1/3, 2/3, 3/3 supplied by Kat",
+  "faceCell": {"width":150,"height":110,"columns":6,"rows":5},
+  "moods": ["content","happy","excited","playful","silly","proud","love","cozy","sleepy","drowsy","tired","bored","restless","curious","inquisitive","focused","thinking","confused","surprised","suspicious","grumpy","annoyed","mad","sulky","overwhelmed","determined","chaotic","shy","stuffed","peaceful"],
+  "approvedSources": {
+    "content":"sheet3:28 Content","happy":"sheet1:2 Happy","excited":"sheet1:3 Excited","playful":"sheet1:4 Playful","silly":"sheet2:19 Silly / Gremlin","proud":"sheet1:5 Proud","love":"sheet3:29 In Love / Affectionate","cozy":"sheet1:6 Cozy","sleepy":"sheet1:7 Sleepy","drowsy":"sheet3:22 Sleepy","tired":"sheet3:23 Cozy","bored":"sheet2:12 Side-eye","restless":"sheet2:14 Sassy","curious":"sheet1:9 Curious","inquisitive":"sheet2:18 Inquisitive","focused":"sheet2:17 Focused","thinking":"sheet1:8 Thinking","confused":"sheet1:10 Confused","surprised":"sheet3:24 Excited alt","suspicious":"sheet2:11 Suspicious","grumpy":"sheet2:12 Side-eye","annoyed":"sheet2:13 Annoyed","mad":"sheet3:27 Mad","sulky":"sheet3:26 Sad","overwhelmed":"sheet2:15 Overwhelmed","determined":"sheet2:16 Determined","chaotic":"sheet2:20 Chaotic","shy":"sheet3:28 Content","stuffed":"sheet3:23 Cozy","peaceful":"sheet3:28 Content"
+  },
+  "modeCell": {"width":256,"height":512,"columns":5,"rows":2},
+  "modes": ["home","daily","schedule","work","money","study","pings","gig","career","settings"]
+}
