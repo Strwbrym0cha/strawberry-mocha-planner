@@ -11,10 +11,12 @@ if(!localStorage.getItem('sm_cloud_session')){
   }
 }
 
-await prepareCloudSync();
+const recoveryLocked=localStorage.getItem('sm_recovery_lock')==='1';
+if(!recoveryLocked)await prepareCloudSync();
 await import('./cloud-canonical-bridge.js?v=6.14.1-recovery-freeze');
 await import('./app.js?v=6.0.0-canonical-mochini');
-await import('./cloud-resume-sync.js?v=6.14.1-recovery-freeze');
+await import('./recovery-vault.js?v=6.14.2-local-recovery-vault');
+if(!recoveryLocked)await import('./cloud-resume-sync.js?v=6.14.1-recovery-freeze');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
 await import('./study-history-popup-fix.js?v=5.6.7-completed-course-edit');
