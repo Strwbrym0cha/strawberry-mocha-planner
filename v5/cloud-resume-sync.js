@@ -1,4 +1,4 @@
-import{syncNow}from'./cloud-sync-v3.js?v=6.13.0-canonical-cloud';
+import{syncNow}from'./cloud-sync-v3.js?v=6.14.0-canonical-bridge';
 
 const V5_DATA_KEY='sm_v5_data';
 let busy=false;
