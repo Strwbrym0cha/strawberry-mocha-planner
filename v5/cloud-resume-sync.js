@@ -1,4 +1,4 @@
-import{syncNow}from'./cloud-sync.js?v=6.12.0-ios-container-sync';
+import{syncNow}from'./cloud-sync-v3.js?v=6.13.0-canonical-cloud';
 
 const V5_DATA_KEY='sm_v5_data';
 let busy=false;
@@ -18,6 +18,7 @@ async function refreshFromCloud(reason='resume'){
   busy=true;
   window.dispatchEvent(new CustomEvent('katos:cloud-resume',{detail:{status:'checking',reason,localDirty}}));
   try{
+    if(localDirty){window.dispatchEvent(new CustomEvent('katos:cloud-resume',{detail:{status:'current',reason,action:'local-dirty'}}));return}
     const result=await syncNow();
     const after=localStorage.getItem(V5_DATA_KEY)||'';
     markBaseline();
