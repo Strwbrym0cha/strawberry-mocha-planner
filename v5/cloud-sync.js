@@ -1,374 +1,41 @@
-const SUPABASE_URL = 'https://sigjwmgekmrwehylvuvu.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_MrtltNJt8EufDKM1UqqDCQ_JphJneJt';
-const TABLE = 'planner_data';
+const URL='https://sigjwmgekmrwehylvuvu.supabase.co';
+const KEY='sb_publishable_MrtltNJt8EufDKM1UqqDCQ_JphJneJt';
+const TABLE='planner_data', V5='sm_v5_data', V4='sm_v4_beta';
+const SESSION='sm_cloud_session', LAST='sm_cloud_last_sync';
+const EXTRA={dailyNotes:'sm_v5_detailed_daily_notes',roomDetails:'sm_v5_room_details',ledger:'sm_v5_money_ledger'};
+let busy=false,started=false,pushTimer=null,pollTimer=null,pullTimer=null,lastSnap=null,lastCloud=0;
 
-const V5_DATA_KEY = 'sm_v5_data';
-const V4_DATA_KEY = 'sm_v4_beta';
-const EXTRA_KEYS = Object.freeze({
-  dailyNotes: 'sm_v5_detailed_daily_notes',
-  roomDetails: 'sm_v5_room_details',
-  ledger: 'sm_v5_money_ledger',
-});
+const json=(raw,fallback=null)=>{try{return raw?JSON.parse(raw):fallback}catch{return fallback}};
+const time=v=>{const n=Date.parse(v||'');return Number.isFinite(n)?n:0};
+const stateTime=s=>time(s?.__smUpdatedAt)||time(s?.meta?.updatedAt)||time(s?.meta?.lastSavedAt)||0;
+function score(s){if(!s||typeof s!=='object')return 0;let n=0;for(const v of [s.tasks,s.routines,s.pings,s.dailyNotes,s.schedule?.appointments,s.work?.clients,s.work?.sessions,s.study?.courses,s.money?.ledger,s.money?.bills,s.money?.subscriptions,s.gig?.orders,s.gig?.payouts])if(Array.isArray(v))n+=v.length;return n}
+const local=()=>json(localStorage.getItem(V5));
+const snap=()=>[localStorage.getItem(V5)||'',...Object.values(EXTRA).map(k=>localStorage.getItem(k)||'')];
+const same=(a,b)=>!!a&&!!b&&a.length===b.length&&a.every((v,i)=>v===b[i]);
+function extras(){const out={};for(const [name,key] of Object.entries(EXTRA)){const raw=localStorage.getItem(key);if(raw!=null)out[name]=json(raw)}return out}
+function writeExtras(x){if(!x||typeof x!=='object')return;for(const [name,key] of Object.entries(EXTRA)){if(!(name in x))continue;x[name]==null?localStorage.removeItem(key):localStorage.setItem(key,JSON.stringify(x[name]))}}
+function writeState(s){if(!s||typeof s!=='object')return;localStorage.setItem(V5,JSON.stringify(s));const old=json(localStorage.getItem(V4));const env=old?.data&&typeof old.data==='object'?{...old,data:s}:{data:s};localStorage.setItem(V4,JSON.stringify(env))}
+function outgoing(s){const out=structuredClone(s||{});out.__smUpdatedAt=new Date().toISOString();out.__v5CloudExtras=extras();return out}
+function apply(s){if(!s||typeof s!=='object')return false;writeExtras(s.__v5CloudExtras);writeState(s);lastSnap=snap();return true}
+const session=()=>json(localStorage.getItem(SESSION));
+const saveSession=s=>s?localStorage.setItem(SESSION,JSON.stringify(s)):localStorage.removeItem(SESSION);
+function status(value,detail={}){try{window.dispatchEvent(new CustomEvent('katos:cloud-sync',{detail:{status:value,...detail}}))}catch{}}
 
-const SESSION_KEY = 'sm_cloud_session';
-const LAST_SYNC_KEY = 'sm_cloud_last_sync';
-const CLIENT_ID_KEY = 'sm_cloud_client_id';
+async function auth(path,body){const r=await fetch(`${URL}/auth/v1/${path}`,{method:'POST',headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json'},body:JSON.stringify(body)});const p=await r.json().catch(()=>({}));if(!r.ok)throw Error(p?.msg||p?.error_description||p?.message||'Cloud sign-in failed.');return p}
+async function refresh(s){if(!s?.refresh_token)return null;try{const next=await auth('token?grant_type=refresh_token',{refresh_token:s.refresh_token});saveSession(next);return next}catch{saveSession(null);return null}}
+async function valid(){let s=session();if(!s?.access_token)return null;const exp=Number(s.expires_at||0)*1000;if(exp&&exp<Date.now()+60000)s=await refresh(s);return s?.access_token?s:null}
+async function rest(path,{method='GET',body=null,prefer=''}={}){let s=await valid();if(!s)throw Error('Not signed in.');const run=t=>fetch(`${URL}/rest/v1/${path}`,{method,headers:{apikey:KEY,Authorization:`Bearer ${t}`,'Content-Type':'application/json',...(prefer?{Prefer:prefer}:{})},body:body==null?null:JSON.stringify(body)});let r=await run(s.access_token);if(r.status===401){s=await refresh(s);if(!s)throw Error('Cloud session expired.');r=await run(s.access_token)}if(!r.ok)throw Error((await r.text().catch(()=>''))||`Cloud request failed (${r.status}).`);if(r.status===204)return null;return r.json().catch(()=>null)}
+async function cloud(){const rows=await rest(`${TABLE}?select=data,updated_at&limit=1`);const row=Array.isArray(rows)?rows[0]:null;return row?{state:row.data,updatedAt:row.updated_at}:null}
+async function push(s){const authSession=await valid(),uid=authSession?.user?.id;if(!uid)throw Error('Cloud account is missing a user id.');const out=outgoing(s);const rows=await rest(`${TABLE}?on_conflict=user_id`,{method:'POST',prefer:'resolution=merge-duplicates,return=representation',body:[{user_id:uid,data:out}]});writeState(out);lastSnap=snap();const row=Array.isArray(rows)?rows[0]:null;const server=time(row?.updated_at)||stateTime(out)||Date.now();lastCloud=Math.max(lastCloud,server);localStorage.setItem(LAST,new Date(server).toISOString());status('synced',{direction:'push',at:server});return{state:out,serverTime:server}}
 
-let syncBusy = false;
-let autoSyncStarted = false;
-let pushTimer = null;
-let pollTimer = null;
-let pullTimer = null;
-let lastLocalSnapshot = null;
-let lastCloudTime = 0;
+async function reconcile(){if(busy)return{ok:false,action:'busy'};busy=true;status('syncing');try{const l=local(),c=await cloud();if(!c?.state){if(l&&score(l)>0){await push(l);return{ok:true,action:'pushed-initial'}}status('synced');return{ok:true,action:'empty'}}const ct=time(c.updatedAt)||stateTime(c.state),lt=stateTime(l);lastCloud=ct;if(!l||ct>lt||(ct===lt&&score(c.state)>score(l))){apply(c.state);localStorage.setItem(LAST,new Date(ct||Date.now()).toISOString());status('synced',{direction:'pull',at:ct});return{ok:true,action:'pulled'}}if(lt>ct){await push(l);return{ok:true,action:'pushed-newer-local'}}status('synced',{direction:'none',at:ct});return{ok:true,action:'already-current'}}catch(error){console.warn('[KatOS V5] cloud sync skipped:',error);status('offline',{error:String(error?.message||error)});return{ok:false,action:'offline',error}}finally{busy=false}}
+function schedulePush(){clearTimeout(pushTimer);pushTimer=setTimeout(async()=>{if(busy)return schedulePush();const s=await valid(),l=local();if(!s||!l||score(l)<=0)return;busy=true;status('syncing');try{await push(l)}catch(error){console.warn('[KatOS V5] auto-push failed:',error);status('offline',{error:String(error?.message||error)})}finally{busy=false}},800)}
+function start(){if(started)return;started=true;lastSnap=snap();pollTimer=setInterval(()=>{const now=snap();if(!same(now,lastSnap)){lastSnap=now;schedulePush()}},900);pullTimer=setInterval(async()=>{if(busy||document.visibilityState==='hidden'||!(await valid()))return;busy=true;try{const c=await cloud(),ct=time(c?.updatedAt)||stateTime(c?.state),lt=stateTime(local());if(c?.state&&ct>lt&&ct>lastCloud){apply(c.state);lastCloud=ct;localStorage.setItem(LAST,new Date(ct||Date.now()).toISOString());status('synced',{direction:'pull',at:ct});location.reload()}}catch(error){console.warn('[KatOS V5] periodic pull failed:',error)}finally{busy=false}},15000)}
+function stop(){clearTimeout(pushTimer);clearInterval(pollTimer);clearInterval(pullTimer);pushTimer=pollTimer=pullTimer=null;started=false}
 
-function parseJson(raw, fallback = null) {
-  try { return raw ? JSON.parse(raw) : fallback; } catch { return fallback; }
-}
+function gate(){return new Promise(resolve=>{const el=document.createElement('div');el.style.cssText='position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#fff7fb,#f7f5ff,#f5fbf6);font-family:system-ui;color:#5b3f4a';el.innerHTML=`<div style="width:min(480px,100%);padding:26px;border:1px solid #e7cbd7;border-radius:26px;background:#fff;box-shadow:0 24px 70px #65405322"><h1 style="font-family:Georgia,serif;margin:0 0 8px">KatOS Cloud 🍓</h1><p>Sign in on this device so your iPad and phone use the same planner.</p><label>Email<input data-email type="email" autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:6px 0 12px;padding:12px;border:1px solid #dec6d0;border-radius:12px"></label><label>Password<input data-pass type="password" autocomplete="current-password" style="display:block;width:100%;box-sizing:border-box;margin:6px 0 14px;padding:12px;border:1px solid #dec6d0;border-radius:12px"></label><div><button data-in>Sign in</button> <button data-up>Create account</button> <button data-off>Continue offline</button></div><p data-msg style="min-height:20px;font-size:13px"></p></div>`;document.body.appendChild(el);const email=el.querySelector('[data-email]'),pass=el.querySelector('[data-pass]'),msg=el.querySelector('[data-msg]');const finish=v=>{el.remove();resolve(v)};const submit=async mode=>{const e=email.value.trim(),p=pass.value;if(!e||!p){msg.textContent='Enter your email and password.';return}msg.textContent=mode==='signup'?'Creating account…':'Signing in…';try{let s;if(mode==='signup'){s=await auth('signup',{email:e,password:p});if(!s?.access_token){msg.textContent='Account created. Check your email if confirmation is required, then sign in.';return}}else s=await auth('token?grant_type=password',{email:e,password:p});saveSession(s);finish('signed-in')}catch(err){msg.textContent=err?.message||'Could not sign in.'}};el.querySelector('[data-in]').onclick=()=>submit('signin');el.querySelector('[data-up]').onclick=()=>submit('signup');el.querySelector('[data-off]').onclick=()=>finish('offline')})}
 
-function isoTime(value) {
-  const t = Date.parse(value || '');
-  return Number.isFinite(t) ? t : 0;
-}
-
-function stateTime(state) {
-  return isoTime(state?.__smUpdatedAt)
-    || isoTime(state?.meta?.updatedAt)
-    || isoTime(state?.meta?.lastSavedAt)
-    || 0;
-}
-
-function contentScore(state) {
-  if (!state || typeof state !== 'object') return 0;
-  let score = 0;
-  const add = (value) => { if (Array.isArray(value)) score += value.length; };
-  add(state.tasks);
-  add(state.routines);
-  add(state.pings);
-  add(state.dailyNotes);
-  add(state.schedule?.appointments);
-  add(state.work?.clients);
-  add(state.work?.sessions);
-  add(state.study?.courses);
-  add(state.money?.ledger);
-  add(state.money?.bills);
-  add(state.money?.subscriptions);
-  add(state.gig?.orders);
-  add(state.gig?.payouts);
-  return score;
-}
-
-function readLocalState() {
-  return parseJson(localStorage.getItem(V5_DATA_KEY), null);
-}
-
-function captureLocalSnapshot() {
-  return [
-    localStorage.getItem(V5_DATA_KEY) || '',
-    localStorage.getItem(EXTRA_KEYS.dailyNotes) || '',
-    localStorage.getItem(EXTRA_KEYS.roomDetails) || '',
-    localStorage.getItem(EXTRA_KEYS.ledger) || '',
-  ];
-}
-
-function snapshotsEqual(a, b) {
-  return !!a && !!b && a.length === b.length && a.every((value, i) => value === b[i]);
-}
-
-function readExtras() {
-  const extras = {};
-  for (const [name, key] of Object.entries(EXTRA_KEYS)) {
-    const raw = localStorage.getItem(key);
-    if (raw != null) extras[name] = parseJson(raw, null);
-  }
-  return extras;
-}
-
-function writeExtras(extras) {
-  if (!extras || typeof extras !== 'object') return;
-  for (const [name, key] of Object.entries(EXTRA_KEYS)) {
-    if (!Object.prototype.hasOwnProperty.call(extras, name)) continue;
-    const value = extras[name];
-    if (value == null) localStorage.removeItem(key);
-    else localStorage.setItem(key, JSON.stringify(value));
-  }
-}
-
-function writeCanonicalLocalState(state) {
-  if (!state || typeof state !== 'object') return;
-  localStorage.setItem(V5_DATA_KEY, JSON.stringify(state));
-
-  // V5 data.js still reads the legacy envelope as a recovery source. Keep it
-  // aligned with the cloud pull so a fresh phone does not immediately replace
-  // the downloaded V5 state with an older device-local V4 copy.
-  const existing = parseJson(localStorage.getItem(V4_DATA_KEY), null);
-  const envelope = existing && typeof existing === 'object' && existing.data && typeof existing.data === 'object'
-    ? { ...existing, data: state }
-    : { data: state };
-  localStorage.setItem(V4_DATA_KEY, JSON.stringify(envelope));
-}
-
-function buildOutgoingState(state) {
-  const now = new Date().toISOString();
-  const outgoing = structuredClone(state || {});
-  outgoing.__smUpdatedAt = now;
-  outgoing.__v5CloudExtras = readExtras();
-  return outgoing;
-}
-
-function applyCloudState(state) {
-  if (!state || typeof state !== 'object') return false;
-  writeExtras(state.__v5CloudExtras);
-  writeCanonicalLocalState(state);
-  lastLocalSnapshot = captureLocalSnapshot();
-  return true;
-}
-
-function getSession() {
-  return parseJson(localStorage.getItem(SESSION_KEY), null);
-}
-
-function setSession(session) {
-  if (!session) localStorage.removeItem(SESSION_KEY);
-  else localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-}
-
-function getClientId() {
-  let id = localStorage.getItem(CLIENT_ID_KEY);
-  if (!id) {
-    id = globalThis.crypto?.randomUUID?.() || `device-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    localStorage.setItem(CLIENT_ID_KEY, id);
-  }
-  return id;
-}
-
-async function authRequest(path, body) {
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
-    method: 'POST',
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  });
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(payload?.msg || payload?.error_description || payload?.message || 'Cloud sign-in failed.');
-  return payload;
-}
-
-async function refreshSession(session) {
-  if (!session?.refresh_token) return null;
-  try {
-    const next = await authRequest('token?grant_type=refresh_token', { refresh_token: session.refresh_token });
-    setSession(next);
-    return next;
-  } catch {
-    setSession(null);
-    return null;
-  }
-}
-
-async function validSession() {
-  let session = getSession();
-  if (!session?.access_token) return null;
-  const expiresAt = Number(session.expires_at || 0) * 1000;
-  if (expiresAt && expiresAt < Date.now() + 60_000) session = await refreshSession(session);
-  return session?.access_token ? session : null;
-}
-
-async function rest(path, { method = 'GET', body = null, prefer = '' } = {}) {
-  let session = await validSession();
-  if (!session) throw new Error('Not signed in.');
-
-  const doFetch = (token) => fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...(prefer ? { Prefer: prefer } : {}),
-    },
-    body: body == null ? null : JSON.stringify(body),
-  });
-
-  let response = await doFetch(session.access_token);
-  if (response.status === 401) {
-    session = await refreshSession(session);
-    if (!session) throw new Error('Cloud session expired.');
-    response = await doFetch(session.access_token);
-  }
-  if (!response.ok) throw new Error((await response.text().catch(() => '')) || `Cloud request failed (${response.status}).`);
-  if (response.status === 204) return null;
-  return response.json().catch(() => null);
-}
-
-async function fetchCloudState() {
-  const rows = await rest(`${TABLE}?select=data,updated_at&limit=1`);
-  const row = Array.isArray(rows) ? rows[0] : null;
-  return row ? { state: row.data, updatedAt: row.updated_at } : null;
-}
-
-async function pushCloud(state) {
-  const session = await validSession();
-  const userId = session?.user?.id;
-  if (!userId) throw new Error('Cloud account is missing a user id.');
-
-  const outgoing = buildOutgoingState(state);
-  const rows = await rest(`${TABLE}?on_conflict=user_id`, {
-    method: 'POST',
-    prefer: 'resolution=merge-duplicates,return=representation',
-    body: [{ user_id: userId, data: outgoing }],
-  });
-
-  // Stamp both local canonical copies with exactly what was accepted by cloud.
-  // This prevents the same device from pulling/reloading its own write later.
-  writeCanonicalLocalState(outgoing);
-  lastLocalSnapshot = captureLocalSnapshot();
-
-  const row = Array.isArray(rows) ? rows[0] : null;
-  const serverTime = isoTime(row?.updated_at) || stateTime(outgoing) || Date.now();
-  lastCloudTime = Math.max(lastCloudTime, serverTime);
-  localStorage.setItem(LAST_SYNC_KEY, new Date(serverTime).toISOString());
-  dispatchSyncStatus('synced', { direction: 'push', at: serverTime });
-  return { state: outgoing, serverTime };
-}
-
-function dispatchSyncStatus(status, detail = {}) {
-  try {
-    window.dispatchEvent(new CustomEvent('katos:cloud-sync', { detail: { status, ...detail } }));
-  } catch { /* no-op */ }
-}
-
-async function syncOnOpen() {
-  if (syncBusy) return { ok: false, action: 'busy' };
-  syncBusy = true;
-  dispatchSyncStatus('syncing');
-  try {
-    const local = readLocalState();
-    const cloud = await fetchCloudState();
-
-    if (!cloud?.state) {
-      if (local && contentScore(local) > 0) {
-        await pushCloud(local);
-        return { ok: true, action: 'pushed-initial' };
-      }
-      dispatchSyncStatus('synced', { direction: 'none' });
-      return { ok: true, action: 'empty' };
-    }
-
-    const cloudTime = isoTime(cloud.updatedAt) || stateTime(cloud.state);
-    const localTime = stateTime(local);
-    lastCloudTime = cloudTime;
-
-    if (!local || cloudTime > localTime) {
-      applyCloudState(cloud.state);
-      localStorage.setItem(LAST_SYNC_KEY, new Date(cloudTime || Date.now()).toISOString());
-      dispatchSyncStatus('synced', { direction: 'pull', at: cloudTime });
-      return { ok: true, action: 'pulled' };
-    }
-
-    if (localTime > cloudTime) {
-      await pushCloud(local);
-      return { ok: true, action: 'pushed-newer-local' };
-    }
-
-    // Equal/unknown timestamps: preserve the richer copy rather than silently
-    // replacing a populated device with a sparse one.
-    if (contentScore(cloud.state) > contentScore(local)) {
-      applyCloudState(cloud.state);
-      localStorage.setItem(LAST_SYNC_KEY, new Date(cloudTime || Date.now()).toISOString());
-      dispatchSyncStatus('synced', { direction: 'pull', at: cloudTime });
-      return { ok: true, action: 'pulled-richer' };
-    }
-
-    dispatchSyncStatus('synced', { direction: 'none', at: cloudTime });
-    return { ok: true, action: 'already-current' };
-  } catch (error) {
-    console.warn('[KatOS V5] cloud sync skipped:', error);
-    dispatchSyncStatus('offline', { error: String(error?.message || error) });
-    return { ok: false, action: 'offline', error };
-  } finally {
-    syncBusy = false;
-  }
-}
-
-function schedulePush() {
-  clearTimeout(pushTimer);
-  pushTimer = setTimeout(async () => {
-    if (syncBusy) return schedulePush();
-    const session = await validSession();
-    const local = readLocalState();
-    if (!session || !local || contentScore(local) <= 0) return;
-
-    syncBusy = true;
-    dispatchSyncStatus('syncing');
-    try {
-      await pushCloud(local);
-    } catch (error) {
-      console.warn('[KatOS V5] auto-push failed:', error);
-      dispatchSyncStatus('offline', { error: String(error?.message || error) });
-    } finally {
-      syncBusy = false;
-    }
-  }, 800);
-}
-
-function startAutoSync() {
-  if (autoSyncStarted) return;
-  autoSyncStarted = true;
-  lastLocalSnapshot = captureLocalSnapshot();
-
-  // Watch the canonical planner plus V5 data that historically lived in
-  // separate localStorage keys. This makes notes, room details and ledger
-  // changes travel to the phone too, not just the main planner object.
-  pollTimer = setInterval(() => {
-    const current = captureLocalSnapshot();
-    if (!snapshotsEqual(current, lastLocalSnapshot)) {
-      lastLocalSnapshot = current;
-      schedulePush();
-    }
-  }, 900);
-
-  pullTimer = setInterval(async () => {
-    if (syncBusy || document.visibilityState === 'hidden') return;
-    const session = await validSession();
-    if (!session) return;
-
-    syncBusy = true;
-    try {
-      const cloud = await fetchCloudState();
-      const cloudTime = isoTime(cloud?.updatedAt) || stateTime(cloud?.state);
-      const localTime = stateTime(readLocalState());
-      if (cloud?.state && cloudTime > localTime && cloudTime > lastCloudTime) {
-        applyCloudState(cloud.state);
-        lastCloudTime = cloudTime;
-        localStorage.setItem(LAST_SYNC_KEY, new Date(cloudTime || Date.now()).toISOString());
-        dispatchSyncStatus('synced', { direction: 'pull', at: cloudTime });
-        location.reload();
-      }
-    } catch (error) {
-      console.warn('[KatOS V5] periodic pull failed:', error);
-    } finally {
-      syncBusy = false;
-    }
-  }, 15_000);
-}
-
-function stopAutoSync() {
-  clearTimeout(pushTimer);
-  clearInterval(pollTimer);
-  clearInterval(pullTimer);
-  pushTimer = pollTimer = pullTimer = null;
-  autoSyncStarted = false;
-}
-
-function showSignInGate() {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.className = 'cloud-gate';
-    overlay.innerHTML = `
-      <style>
-        .cloud-gate{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:20px;background:linear-gradient(135deg,#fff7fb,#f7f5ff 55%,#f5fbf6);font-family:Inter,system-ui,sans-serif;color:#5b3f4a}
-        .cloud-card{width:min(520px,100%);padding:28px;border:1px solid #e7cbd7;border-radius:28px;background:rgba(255,255,255,.94);box-shadow:0 24px 70px rgba(101,63,83,.14)}
-        .cloud-card h1{font-family:Georgia,serif;margin:0 0 8px;font-size:34px;color:#4d3440}.cloud-card p{line-height:1.55;color:#795d68}.cloud-card label{display:block;margin-top:13px;font-size:13px;font-weight:700}.cloud-card input{width:100%;box-sizing:border-box;margin-top:6px;padding:12px 14px;border:1px solid #dec6d0;border-radius:14px;background:#fff;font:inherit}.cloud-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.cloud-card button{border:1px solid #d9bdca;border-radius:999px;padding:11px 17px;background:#fff7fb;color:#6b4255;font
+export async function prepareCloudSync(){let s=await valid();if(!s){const choice=await gate();if(choice==='offline')return{ready:true,offline:true};s=await valid()}if(!s)return{ready:true,offline:true};const result=await reconcile();start();return{ready:true,signedIn:true,result}}
+export async function syncNow(){const before=snap();const result=await reconcile();const changed=result?.action==='pulled'&&!same(before,snap());if(changed)setTimeout(()=>location.reload(),0);return result}
+export function cloudSignedIn(){return!!session()?.access_token}
+export function cloudSignOut(){stop();saveSession(null);localStorage.removeItem(LAST);status('offline')}
