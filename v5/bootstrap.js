@@ -12,7 +12,7 @@ if(!localStorage.getItem('sm_cloud_session')){
 }
 
 const recoveryLocked=localStorage.getItem('sm_recovery_lock')==='1';
-if(recoveryLocked)await import('./recovery-storage-guard.js?v=6.14.5-quota-guard');
+if(recoveryLocked)await import('./recovery-storage-guard.js?v=6.15.0-normal-save-space');
 if(!recoveryLocked){
   await prepareCloudSync();
   await import('./cloud-canonical-bridge.js?v=6.14.1-recovery-freeze');
