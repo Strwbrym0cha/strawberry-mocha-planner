@@ -17,7 +17,7 @@ if(!recoveryLocked){
   await prepareCloudSync();
   await import('./cloud-canonical-bridge.js?v=6.14.1-recovery-freeze');
 }
-await import('./app.js?v=6.0.0-canonical-mochini');
+await import('./app.js?v=6.8.0-routine-builder');
 await import('./recovery-settings-status.js?v=6.14.9-settings-only-sync-status');
 if(!recoveryLocked)await import('./cloud-resume-sync.js?v=6.14.1-recovery-freeze');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
@@ -29,7 +29,7 @@ await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
-await import('./routine-player.js?v=6.2.0-routine-player-sync');
+await import('./routine-player.js?v=6.8.0-routine-builder');
 await import('./mochini-avatar.js?v=6.6.0-approved-atlas-final');
 await import('./mochini-companion.js?v=6.3.1-context-aware');
 await import('./mochini-face-patch.js?v=6.4.0-face-slots');

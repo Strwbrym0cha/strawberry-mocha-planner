@@ -1,4 +1,4 @@
-import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=5.3.0-study-nook';
+import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=6.8.0-routine-builder';
 import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.3.0-study-nook';
 import{applyStudyAction,initializeStudyNook,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
 import{applyMoneyGigAction,initializeMoneyGig,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
