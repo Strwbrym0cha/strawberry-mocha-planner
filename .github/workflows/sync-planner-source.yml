@@ -17,18 +17,50 @@ jobs:
           fetch-depth: 0
       - name: Copy latest planner into the live iframe source
         run: cp docs/planner-app.html planner-app.html
-      - name: Assemble approved Mochini atlases
+      - name: Assemble and verify approved Mochini atlases
         shell: bash
         run: |
           set -euo pipefail
-          if compgen -G 'v5/assets/mochini/encoded-v1/face-*.b64' > /dev/null && compgen -G 'v5/assets/mochini/encoded-v1/mode-*.b64' > /dev/null; then
-            cat v5/assets/mochini/encoded-v1/face-*.b64 | base64 --decode > v5/assets/mochini/mochini-face-atlas-v1.webp
-            cat v5/assets/mochini/encoded-v1/mode-*.b64 | base64 --decode > v5/assets/mochini/mochini-mode-atlas-v1.webp
-            test "$(stat -c%s v5/assets/mochini/mochini-face-atlas-v1.webp)" -eq 150226
-            test "$(stat -c%s v5/assets/mochini/mochini-mode-atlas-v1.webp)" -eq 366852
-            echo "e9b0a74150778e3a6beba67cfec46fd7fef645144a16f5fde67832317f1f9b01  v5/assets/mochini/mochini-face-atlas-v1.webp" | sha256sum -c -
-            echo "67865092a2206e42a64c44c3048646e2a60a6da01d149c56f08b25f3087aba97  v5/assets/mochini/mochini-mode-atlas-v1.webp" | sha256sum -c -
-          fi
+          python - <<'PY'
+          from pathlib import Path
+          import base64, hashlib
+
+          specs = {
+              'face': (Path('v5/assets/mochini/mochini-face-atlas-v1.webp'), 150226, 'e9b0a74150778e3a6beba67cfec46fd7fef645144a16f5fde67832317f1f9b01'),
+              'mode': (Path('v5/assets/mochini/mochini-mode-atlas-v1.webp'), 366852, '67865092a2206e42a64c44c3048646e2a60a6da01d149c56f08b25f3087aba97'),
+          }
+          root = Path('v5/assets/mochini/encoded-v1')
+
+          for prefix, (out, expected_size, expected_sha) in specs.items():
+              parts = sorted(root.glob(f'{prefix}-*.b64'))
+              if not parts:
+                  raise SystemExit(f'No {prefix} chunks found')
+              texts = [p.read_text().strip() for p in parts]
+              print(prefix, [(p.name, len(t)) for p, t in zip(parts, texts)])
+
+              candidates = []
+              try:
+                  candidates.append(('continuous', base64.b64decode(''.join(texts), validate=True)))
+              except Exception as e:
+                  print(prefix, 'continuous decode failed:', repr(e))
+
+              try:
+                  candidates.append(('per-chunk', b''.join(base64.b64decode(t, validate=True) for t in texts)))
+              except Exception as e:
+                  print(prefix, 'per-chunk decode failed:', repr(e))
+
+              matched = False
+              for strategy, data in candidates:
+                  sha = hashlib.sha256(data).hexdigest()
+                  print(prefix, strategy, 'size=', len(data), 'sha256=', sha)
+                  if len(data) == expected_size and sha == expected_sha:
+                      out.write_bytes(data)
+                      print(prefix, 'matched with', strategy)
+                      matched = True
+                      break
+              if not matched:
+                  raise SystemExit(f'{prefix} chunks do not reconstruct the approved atlas')
+          PY
       - name: Commit live source and Mochini atlases
         run: |
           git config user.name "github-actions[bot]"
