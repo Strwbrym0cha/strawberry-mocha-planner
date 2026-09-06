@@ -18,6 +18,7 @@ if(!recoveryLocked){
 }
 await import('./app.js?v=6.0.0-canonical-mochini');
 await import('./recovery-vault.js?v=6.14.3-forensic-union');
+await import('./recovery-loaded-status.js?v=6.14.4-recovery-display');
 if(!recoveryLocked)await import('./cloud-resume-sync.js?v=6.14.1-recovery-freeze');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
