@@ -1,4 +1,4 @@
-import{syncNow}from'./cloud-sync.js?v=5.7.0-phone-sync';
+import{syncNow}from'./cloud-sync.js?v=6.11.0-cross-device-sync';
 
 const V5_DATA_KEY='sm_v5_data';
 let busy=false;
