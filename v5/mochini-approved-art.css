@@ -1,17 +1,18 @@
-/* Kat-approved Mochini sheets: optional atlas upgrade. It activates only after both atlas files load. */
+/* Kat-approved Mochini sheets: optional atlas upgrade. */
 .mochini-live.has-approved-art .mochini-approved-face{position:absolute;z-index:4;left:54%;top:41%;width:44%;aspect-ratio:15/11;transform:translate(-50%,-50%);background-repeat:no-repeat;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(80,38,43,.05))}
 .mochini-live.has-approved-art[data-blinking="true"] .mochini-approved-face{filter:saturate(.88) brightness(.98)}
 
-/* The mode atlas is 1280x1024, arranged 5x2. Every approved pose is therefore
-   256x512, exactly 1:2. Keep the companion rig at that ratio so the selected
-   frame is a full character silhouette instead of being squeezed into a card. */
-.mc-approved-rig{position:absolute;z-index:1;display:none;pointer-events:none;left:50%;bottom:0;width:112px;height:224px;transform:translateX(-50%);overflow:visible;border-radius:0;transform-origin:50% 100%}
-.mochini-companion.has-approved-art .mc-approved-rig{display:block}
-.mochini-companion.has-approved-art .mc-art{visibility:hidden}
-.mochini-companion.has-approved-art .mc-body{width:118px;height:228px;overflow:visible;place-items:end center}
+/* IMPORTANT: the approved mode atlas frames contain their original card/background art.
+   They are not valid floating-companion silhouettes. Keep the atlas rig disabled for the
+   corner companion until true transparent pose assets exist. This prevents the pink card,
+   text, furniture, and scenery from being displayed over KatOS. */
+.mc-approved-rig{position:absolute;z-index:1;display:none!important;pointer-events:none;left:50%;bottom:0;width:112px;height:224px;transform:translateX(-50%);overflow:visible;border-radius:0;transform-origin:50% 100%}
+.mochini-companion.has-approved-art .mc-approved-rig{display:none!important}
+.mochini-companion.has-approved-art .mc-art{visibility:visible!important;display:block!important;width:112px;height:150px;object-fit:contain;object-position:center bottom;background:transparent!important}
+.mochini-companion.has-approved-art .mc-body{width:124px;height:158px;overflow:visible;place-items:end center;background:transparent!important;border:0!important;box-shadow:none!important}
 .mc-approved-mode{position:absolute;inset:0;background-repeat:no-repeat;background-color:transparent}
 .mc-approved-face{position:absolute;z-index:2;left:var(--mc-face-x,60%);top:var(--mc-face-y,33%);width:59%;aspect-ratio:15/11;transform:translate(-50%,-50%);background-repeat:no-repeat;pointer-events:none}
-.mochini-companion.has-approved-art .mc-approved-rig{filter:drop-shadow(0 8px 10px rgba(82,48,48,.15))}
+.mochini-companion.has-approved-art{background:transparent!important;box-shadow:none!important}
 .mochini-companion.has-approved-art .mc-scene-prop{z-index:4;top:8px;right:-2px}
 .mochini-companion.has-approved-art .mc-mood-chip{z-index:5;bottom:3px}
 .mc-approved-rig.is-mode-switching{animation:mc-pose-swap .24s ease-out}
@@ -19,7 +20,8 @@
 
 @media(max-width:680px){
   .mc-approved-rig{width:88px;height:176px;border-radius:0}
-  .mochini-companion.has-approved-art .mc-body{width:94px;height:180px}
+  .mochini-companion.has-approved-art .mc-art{width:92px;height:126px}
+  .mochini-companion.has-approved-art .mc-body{width:100px;height:132px}
   .mochini-companion.has-approved-art .mc-scene-prop{top:4px;right:-1px}
 }
 @media(prefers-reduced-motion:reduce){.mc-approved-rig.is-mode-switching{animation:none}}
