@@ -1,5 +1,22 @@
 import{prepareCloudSync}from'./cloud-sync.js?v=5.8.0-cross-device-sync';
 
+// Older V5 account UI stored the same Supabase session under legacy keys.
+// Adopt it once so existing iPad/phone installs do not look signed in while
+// the actual cross-device sync module is offline.
+if(!localStorage.getItem('sm_cloud_session')){
+  for(const key of['sm_v16_session','sb-sigjwmgekmrwehylvuvu-auth-token']){
+    try{
+      const raw=localStorage.getItem(key);
+      const parsed=raw?JSON.parse(raw):null;
+      const session=parsed?.currentSession||parsed?.session||parsed;
+      if(session?.access_token&&session?.user?.id){
+        localStorage.setItem('sm_cloud_session',JSON.stringify(session));
+        break;
+      }
+    }catch{}
+  }
+}
+
 await prepareCloudSync();
 await import('./app.js?v=6.0.0-canonical-mochini');
 await import('./cloud-resume-sync.js?v=5.8.0-cross-device-sync');
