@@ -1,4 +1,4 @@
-import{cloudSignedIn,cloudSignOut,syncNow}from'./cloud-sync.js?v=6.11.0-cross-device-sync';
+import{cloudSignedIn,cloudSignOut,syncNow}from'./cloud-sync.js?v=6.12.0-ios-container-sync';
 
 const CLOUD_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
 const CLOUD_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
@@ -35,8 +35,8 @@ function setMessage(message){const node=document.querySelector('[data-cloud-acco
 app?.addEventListener('click',async event=>{
  if(event.target.closest?.('[data-cloud-account-open]')){if(signedIn()){document.querySelector('[data-view="settings"]')?.click()}else openLogin();return}
  if(event.target.closest?.('[data-cloud-login-close]')||event.target.matches?.('[data-cloud-login-modal]')){closeLogin();return}
- if(event.target.closest?.('[data-cloud-sync-now]')){const button=event.target.closest('[data-cloud-sync-now]');button.disabled=true;button.textContent='Syncing…';setMessage('Checking the cloud…');try{const result=await syncNow();setMessage(result?.action==='pulled'?'Pulled the newer cloud copy. Reloading…':result?.action==='pushed'?'Saved this device to the cloud.':'Everything is already in sync.');if(result?.action==='pulled')setTimeout(()=>location.reload(),350)}catch(error){setMessage(error?.message||'Sync did not finish.')}finally{button.disabled=false;button.textContent='☁️ Sync now'}return}
- if(event.target.closest?.('[data-cloud-sign-out]')){if(!confirm('Sign out of cloud sync on this device? Your local KatOS data will stay here.'))return;cloudSignOut();try{localStorage.removeItem(SESSION_KEY);localStorage.removeItem(SUPABASE_SESSION_KEY)}catch{}location.reload();return}
+ if(event.target.closest?.('[data-cloud-sync-now]')){const button=event.target.closest('[data-cloud-sync-now]');button.disabled=true;button.textContent='Syncing…';setMessage('Checking the cloud…');try{const result=await syncNow();setMessage(result?.action==='pulled'?'Pulled the shared cloud copy. Reloading…':result?.action==='pushed'?'Saved this device to the shared cloud.':'Everything is already in sync.');if(result?.action==='pulled')setTimeout(()=>location.reload(),350)}catch(error){setMessage(error?.message||'Sync did not finish.')}finally{button.disabled=false;button.textContent='☁️ Sync now'}return}
+ if(event.target.closest?.('[data-cloud-sign-out]')){if(!confirm('Sign out of cloud sync on this copy? Your local KatOS data will stay here.'))return;cloudSignOut();try{localStorage.removeItem(SESSION_KEY);localStorage.removeItem(SUPABASE_SESSION_KEY)}catch{}location.reload();return}
 });
 
 app?.addEventListener('submit',async event=>{
