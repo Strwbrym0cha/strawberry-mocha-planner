@@ -17,7 +17,7 @@ if(!recoveryLocked){
   await prepareCloudSync();
   await import('./cloud-canonical-bridge.js?v=6.14.1-recovery-freeze');
 }
-await import('./app.js?v=6.16.0-home-ritual');
+await import('./app.js?v=6.17.0-doordash-planner');
 await import('./recovery-settings-status.js?v=6.14.9-settings-only-sync-status');
 if(!recoveryLocked)await import('./cloud-resume-sync.js?v=6.14.1-recovery-freeze');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
@@ -27,7 +27,7 @@ await import('./schedule-gig-labels.js?v=5.6.9-gig-shift-labels');
 await import('./brain-dump-v5.js?v=5.7.2-brain-dump');
 await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
-await import('./doordash-shift-modal.js?v=5.8.3-doordash-modal');
+await import('./doordash-shift-modal.js?v=6.17.0-doordash-planner');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
 await import('./routine-player.js?v=6.8.0-routine-builder');
 await import('./routine-builder-layout-fix.js?v=6.15.1-routine-builder-layout');

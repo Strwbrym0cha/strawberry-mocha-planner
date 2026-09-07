@@ -1,9 +1,9 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,restoreV5Record,runV5DailyAction,selectV5DailyShit,runV5WorkAction,selectV5WorkHQ,runV5StudyAction,selectV5StudyNook,runV5MoneyGigAction,selectV5MoneyGig,runV5LifestyleAction,selectV5Lifestyle,runV5MochiniAction,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=6.8.0-routine-builder';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,restoreV5Record,runV5DailyAction,selectV5DailyShit,runV5WorkAction,selectV5WorkHQ,runV5StudyAction,selectV5StudyNook,runV5MoneyGigAction,selectV5MoneyGig,runV5LifestyleAction,selectV5Lifestyle,runV5MochiniAction,snapshotV4,migrateV4ToV5,restoreCloudV4Data,importV4Export}from'./data.js?v=6.17.0-doordash-planner';
 import{renderBoss}from'./boss.js?v=5.6.0-final-integration';
 import{renderStudy}from'./study.js?v=5.3.0-study-nook';
 import{renderMoney,renderGigWork}from'./money.js?v=5.6.2-gig-work-home';
 import{renderMovement,renderHobbies,renderGrowth}from'./lifestyle-render.js?v=5.6.0-final-integration';
-import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=6.16.0-home-ritual';
+import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=6.17.0-doordash-planner';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
