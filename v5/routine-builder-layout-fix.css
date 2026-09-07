@@ -1,0 +1,35 @@
+/* iPad-safe Routine Builder layout. The day fieldset and toggle labels are grid children,
+   but are not .daily-field elements, so they need explicit grid spans. */
+.room-detail-fields > .routine-day-field{
+  grid-column:span 8;
+  min-width:0;
+  align-self:stretch;
+  padding:8px 10px 10px;
+  border:1px solid #ead7e0;
+  border-radius:13px;
+  background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(255,247,251,.95) 65%,rgba(244,250,240,.92));
+  box-sizing:border-box;
+}
+.room-detail-fields > .routine-day-field[hidden]{display:none!important}
+.routine-day-field legend{padding:0 2px;color:#9c5b78;font-size:10px;font-weight:700;letter-spacing:.04em}
+.routine-day-checks{width:100%;min-width:0}
+.routine-day-checks label,.routine-day-checks span{min-width:0}
+.routine-day-checks span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room-detail-fields > .routine-toggle{
+  grid-column:span 4;
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
+  justify-content:flex-start;
+}
+.room-detail-fields > .routine-toggle input{flex:0 0 auto;width:auto;height:auto;margin:0}
+.room-detail-fields > .routine-toggle span{min-width:0;line-height:1.2}
+@media(max-width:900px){
+  .room-detail-fields > .routine-day-field{grid-column:1/-1}
+  .room-detail-fields > .routine-toggle{grid-column:span 6}
+  .routine-day-checks{grid-template-columns:repeat(7,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .room-detail-fields > .routine-toggle{grid-column:1/-1}
+  .routine-day-checks{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
