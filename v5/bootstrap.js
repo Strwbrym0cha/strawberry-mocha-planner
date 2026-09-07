@@ -17,7 +17,7 @@ if(!recoveryLocked){
   await prepareCloudSync();
   await import('./cloud-canonical-bridge.js?v=6.14.1-recovery-freeze');
 }
-await import('./app.js?v=6.8.0-routine-builder');
+await import('./app.js?v=6.16.0-home-ritual');
 await import('./recovery-settings-status.js?v=6.14.9-settings-only-sync-status');
 if(!recoveryLocked)await import('./cloud-resume-sync.js?v=6.14.1-recovery-freeze');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');

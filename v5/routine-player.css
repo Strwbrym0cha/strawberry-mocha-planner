@@ -7,3 +7,18 @@
 .routine-edit-step b{cursor:pointer}.routine-edit-step b::after{content:' · tap to rename';font-size:8px;font-weight:500;color:#ae8795}
 @media(max-width:780px){.routine-player-card{padding:14px;border-radius:20px}.rp-card-head{align-items:flex-start}.rp-status{display:none}.rp-card-actions{display:grid;grid-template-columns:1fr 1fr}.rp-card-actions .rp-start{grid-column:1/-1;width:100%}.rp-modal,.routine-detail-modal{width:calc(100vw - 16px);padding:16px;border-radius:23px}.rp-top h2{font-size:25px}.rp-tiny-gate,.rp-spotlight{padding:22px 13px}.rp-tiny-gate h3,.rp-spotlight h3{font-size:23px}.rp-step-actions{display:grid}.rp-step-actions .btn{width:100%}.rp-footer{display:grid}.rp-footer .btn{width:100%}.rp-progress-copy{align-items:flex-start;flex-direction:column}.rp-all-step{grid-template-columns:34px minmax(0,1fr) auto}.routine-builder-intro{grid-template-columns:1fr}.routine-builder-intro b,.routine-builder-intro span,.routine-builder-intro .btn{grid-column:1;grid-row:auto}.routine-day-checks{grid-template-columns:repeat(4,1fr)}.routine-edit-step{grid-template-columns:28px minmax(0,1fr)}.routine-edit-step .button-row{grid-column:2;justify-content:flex-start}.routine-tracker-row{grid-template-columns:28px 1fr;grid-template-areas:"icon title" "icon sub" "stat stat"}.routine-tracker-row>em{justify-self:start}.routine-step-add{display:grid;grid-template-columns:1fr auto}}
 @media(prefers-reduced-motion:reduce){.rp-modal,.routine-player-card{scroll-behavior:auto}}
+
+/* Home mirror ritual: one live routine step, backed by the canonical routine instance. */
+.home-ritual-card{border-color:#e8c5d3;background:linear-gradient(145deg,rgba(255,248,251,.98),rgba(244,249,238,.96))}
+.home-ritual{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;min-width:0}
+.home-ritual-main{display:grid;gap:10px;min-width:0}
+.home-ritual-name{display:flex;align-items:center;gap:10px;min-width:0}
+.home-ritual-name>span{width:42px;height:42px;flex:0 0 42px;display:grid;place-items:center;border:1px solid #edccd8;border-radius:15px;background:linear-gradient(135deg,#ffe8f0,#eff6e8);font-size:22px}
+.home-ritual-name>div{display:grid;gap:2px;min-width:0}
+.home-ritual-name b{font-family:Georgia,"Times New Roman",serif;color:#68434f;font-size:18px;overflow-wrap:anywhere}
+.home-ritual-name small{color:#987481;font-size:10px}
+.home-ritual-step{padding:12px 14px;border:1px solid #edcbd7;border-radius:17px;background:#fff;color:#704a58;font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.home-ritual-step.complete{background:#f1f7e9;color:#657a4c}.home-ritual-step.skipped{background:#f8f3ef;color:#927970}
+.home-ritual-actions{display:grid;gap:8px;min-width:170px}.home-ritual-actions .btn{width:100%}
+.mode-tiny .home-ritual{grid-template-columns:1fr}.mode-tiny .home-ritual-actions{min-width:0}
+@media(max-width:780px){.home-ritual{grid-template-columns:1fr}.home-ritual-actions{min-width:0}.home-ritual-step{font-size:12px}}
