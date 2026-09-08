@@ -27,7 +27,7 @@ const normalized=value=>text(value).toLowerCase().replace(/[^a-z0-9]+/g,' ').tri
 const recordLabel=record=>text(record?.title||record?.name||record?.label||record?.text||record?.date||record?.id)||'(unlabelled)';
 const timestamp=record=>text(record?.updatedAt||record?.lastInteractionAt||record?.completedAt||record?.archivedAt||record?.createdAt||record?.date);
 const timestampMs=record=>{const value=Date.parse(timestamp(record));return Number.isFinite(value)?value:0};
-const inactive=record=>!!record?.archivedAt||record?.active===false||['archived','deleted','cancelled','canceled','superseded'].includes(normalized(record?.status));
+const inactive=record=>!!record?.archivedAt||record?.archived===true||record?.active===false||['archived','deleted','cancelled','canceled','superseded'].includes(normalized(record?.status));
 const sourceNames=item=>Object.entries(item.sources).filter(([,present])=>present).map(([name])=>name);
 const same=(left,right)=>stableSerialize(left)===stableSerialize(right);
 
@@ -38,12 +38,64 @@ function sourceRows(envelopes){
 function rowFor(rows,source,collectionKey,canonicalId){return rows[source][collectionKey].matched.get(canonicalId)}
 function records(rows,source,collectionKey){return[...rows[source][collectionKey].matched.values()].map(row=>row.record)}
 
+const ARCHIVE_ID_FIELDS=new Set(['originalId','sourceId','recordId','externalId','legacyId','migrationId','entityId','itemId']);
+const ARCHIVE_PAYLOAD_KEYS=new Set(['data','payload','record','item','original','entity','archived','snapshot','value','entry','source']);
+const ARCHIVE_DOMAIN_FIELDS=new Set(['kind','type','sourceCollection','collection','path','sourceType','domain']);
+const archiveLikeId=value=>/^(archive|archived-record)(?:[-:])/i.test(text(value));
+const routineDomain=value=>{const token=normalized(value);return token==='routine'||token==='routines'||token==='life routine'||token==='life routines'||token.endsWith(' routines')};
+const directTombstoneDomain=value=>{const token=normalized(value);return !!token&&!['archive','archived','tombstone','memory box'].includes(token)};
+
+function walkObject(value,visit,path='',depth=0,seen=new Set()){
+  if(!value||typeof value!=='object'||depth>8||seen.has(value))return;seen.add(value);
+  for(const[key,child]of Object.entries(value)){
+    const childPath=path?`${path}.${key}`:key;visit({key,value:child,path:childPath,parentPath:path,depth});
+    if(child&&typeof child==='object')walkObject(child,visit,childPath,depth+1,seen);
+  }
+}
+
+function structureOf(record){
+  const rows=[];walkObject(record,({path,value})=>{if(rows.length>=160)return;const kind=Array.isArray(value)?`array(${value.length})`:value&&typeof value==='object'?'object':typeof value;rows.push(`${path}: ${kind}`)});return rows;
+}
+
+export function inspectArchiveRecord(record){
+  const archive=object(record),metadata=[],identities=[],payloads=[],migrationFields=[];
+  walkObject(archive,({key,value,path,parentPath})=>{
+    if(ARCHIVE_DOMAIN_FIELDS.has(key)&&['string','number'].includes(typeof value))metadata.push({path,value:text(value)});
+    if(ARCHIVE_ID_FIELDS.has(key)&&['string','number'].includes(typeof value)&&text(value)){
+      const entry={path,value:text(value),role:key};identities.push(entry);if(/legacy|migration/i.test(key))migrationFields.push(entry);
+    }
+    if(key==='id'&&parentPath&&parentPath.split('.').some(part=>ARCHIVE_PAYLOAD_KEYS.has(part))&&['string','number'].includes(typeof value)&&text(value))identities.push({path,value:text(value),role:'payloadId'});
+    if(key==='id'&&parentPath&&['string','number'].includes(typeof value)&&text(value)){
+      const parent=get(archive,parentPath);if(parent&&typeof parent==='object')payloads.push({path:parentPath,id:text(value),name:recordLabel(parent)});
+    }
+  });
+  const topDomain=text(archive.sourceCollection||archive.collection||archive.kind||archive.type||archive.path||archive.sourceType||archive.domain),domainMetadata=metadata.filter(row=>routineDomain(row.value));
+  const isRoutineDomain=routineDomain(topDomain)||domainMetadata.length>0;
+  if(directTombstoneDomain(topDomain)&&identities.length===0&&!archiveLikeId(archive.id)&&text(archive.id))identities.push({path:'id',value:text(archive.id),role:'legacyDirectTombstoneId'});
+  const uniqueIdentities=[...new Map(identities.map(row=>[`${row.path}\u0000${row.value}`,row])).values()];
+  const payload=payloads.find(row=>uniqueIdentities.some(identity=>identity.role==='payloadId'&&identity.path.startsWith(`${row.path}.`)))||null;
+  return{
+    archiveRecord:clone(archive),
+    archiveRecordId:text(archive.id)||null,archiveType:text(archive.type)||null,archiveKind:text(archive.kind)||null,
+    originalSourceIds:[...new Set(uniqueIdentities.map(row=>row.value))],
+    sourceCollection:text(archive.sourceCollection||archive.collection||archive.path||archive.sourceType||archive.kind)||null,
+    archivedPayloadLocation:payload?.path||null,archivedPayloadId:payload?.id||null,archivedPayloadName:payload?.name||null,
+    archivedAt:text(archive.archivedAt)||null,isRoutineDomain,identities:uniqueIdentities,domainMetadata,migrationFields,
+    wrapperStructure:structureOf(archive)
+  };
+}
+
+function archiveIdentityValues(record){return new Set(inspectArchiveRecord(record).identities.map(row=>row.value).filter(Boolean))}
+
+function resolveArchivedRoutineParent(archiveRows,routineId,activeRoutineIds=new Set()){
+  const id=text(routineId);if(!id||activeRoutineIds.has(id))return null;
+  for(const archive of archiveRows){const inspection=inspectArchiveRecord(archive);if(inspection.isRoutineDomain&&inspection.identities.some(row=>row.value===id))return{archive,inspection}}
+  return null;
+}
+
 function archiveReferences(rows,recordId){
   const id=text(recordId);if(!id)return[];
-  return records(rows,'local','other.archive').filter(row=>{
-    const candidates=[row?.originalId,row?.recordId,row?.sourceId,row?.externalId,row?.data?.id,row?.data?.sourceId,row?.data?.externalId];
-    return candidates.some(value=>text(value)===id);
-  });
+  return records(rows,'local','other.archive').filter(row=>archiveIdentityValues(row).has(id));
 }
 
 const LINK_FIELDS=['plannedShiftId','shiftId','sourceShiftId','gigShiftId','sourceId','externalId','legacyId','originalId','transactionId','ledgerId','billInstanceId','paymentTransactionId'];
@@ -62,12 +114,19 @@ function routineSuccessor(rows,record,id){
   return match?.id||null;
 }
 
+export function extractRoutineSteps(routine){
+  const sources=[['steps',routine?.steps],['routine.steps',routine?.routine?.steps],['routineSteps',routine?.routineSteps],['checklist',routine?.checklist]];
+  for(const[sectionIndex,section]of list(routine?.sections).entries())sources.push([`sections.${sectionIndex}.steps`,section?.steps]);
+  const output=[];for(const[path,value]of sources)for(const[stepIndex,step]of list(value).entries()){
+    const exact=typeof step==='string'?text(step):text(step?.label||step?.text||step?.title||step?.name);if(!exact)continue;
+    output.push({parentRoutineId:text(routine?.id),parentRoutineName:recordLabel(routine),stepId:typeof step==='object'&&step?text(step.id)||null:null,exactLabel:exact,normalizedLabel:normalized(exact),position:Number(step?.position??step?.order??stepIndex),sourcePath:`${path}.${stepIndex}`});
+  }
+  return output;
+}
+
 function routineStepSuccessor(rows,record,id){
   const label=normalized(recordLabel(record));if(!label)return null;
-  for(const routine of records(rows,'local','dailyShit.routines'))for(const step of list(routine?.steps)){
-    const stepLabel=normalized(typeof step==='string'?step:step?.label||step?.text||step?.title);
-    if(stepLabel===label)return{routineId:text(routine.id),stepId:text(step?.id)||null,label:recordLabel(routine)};
-  }
+  for(const routine of records(rows,'local','dailyShit.routines'))for(const step of extractRoutineSteps(routine))if(step.normalizedLabel===label)return{routineId:step.parentRoutineId,stepId:step.stepId,label:step.parentRoutineName,step};
   return null;
 }
 
@@ -116,8 +175,7 @@ function snapshotLegacy(collectionKey,record,id,rows){
 }
 
 function provenanceValues(record){
-  const values=[record?.originalId,record?.sourceId,record?.externalId,record?.legacyId,record?.migrationId,record?.data?.id,record?.data?.originalId,record?.data?.sourceId,record?.data?.externalId,record?.data?.legacyId,record?.data?.migrationId];
-  return new Set(values.map(text).filter(Boolean));
+  return archiveIdentityValues(record);
 }
 
 function equivalentLocalArchives(rows,record){
@@ -175,6 +233,8 @@ function decideItem(collectionKey,item,rows){
   if(item.status==='CLOUD ONLY')return{...base,action:'ADD_CLOUD_TO_RECOVERED',winningSource:'cloud',evidence:['No local archive, successor, conversion, or duplicate linkage was found.'],rationale:'Cloud contains a distinct stable-ID record that is not represented in the local baseline.'};
   if(item.status==='SNAPSHOT ONLY'){
     if(snapshotLegacy(collectionKey,snapshot,item.recordId,rows))return{...base,action:'SUPPRESS_SNAPSHOT_LEGACY',winningSource:'local',evidence:['Legacy/helper/migrated or already archived representation detected.'],rationale:'Snapshot history is forensic evidence, not a reason to resurrect an obsolete representation.'};
+    if(collectionKey==='dailyShit.routines')return{...base,action:'MANUAL_REVIEW',winningSource:null,evidence:['No exact normalized match was found in persisted steps of any current active routine.','Movement plans are a different domain and were not considered routine successors.'],rationale:'No stable provenance or exact routine-step successor proves that this standalone routine was migrated; keep it excluded for a human decision.'};
+    if(collectionKey==='dailyShit.events')return{...base,action:'MANUAL_REVIEW',winningSource:null,evidence:['No active, archive, tombstone, successor, or migration provenance found.','A past event date or matching title alone is not deletion evidence.'],rationale:'The snapshot event remains excluded until a human decides whether it should stay excluded or be restored.'};
     return{...base,action:'MANUAL_REVIEW',winningSource:null,evidence:['Unique only to snapshot revision 4; no strong live-source or tombstone evidence.'],rationale:'Snapshot-only records require human review and are never restored merely because they existed historically.'};
   }
   if(local){
@@ -214,8 +274,8 @@ function checkIntegrity(preview,plan,rows){
   const missing=Object.values(extracted).flatMap(value=>value.missing.filter(row=>row.reason!=='DUPLICATE ID').map(row=>`${value.spec.key}: ${row.label||'unlabelled'}`));
   const duplicateIds=Object.values(extracted).flatMap(value=>value.missing.filter(row=>row.reason==='DUPLICATE ID').map(row=>`${value.spec.key}: ${row.duplicateId}`));
   add('Duplicate stable IDs',duplicateIds);add('Missing required IDs',missing);
-  const routineIds=new Set(byKey('dailyShit.routines').map(row=>text(row.id))),archive=byKey('other.archive'),archivedRecordIds=new Set(archive.flatMap(row=>[...provenanceValues(row)]));
-  const unresolvedRoutineParents=[],acceptedRoutineParents=[];for(const row of byKey('dailyShit.routineInstances')){const parent=text(row.routineId);if(!parent||routineIds.has(parent))continue;if(archivedRecordIds.has(parent)){acceptedRoutineParents.push(`${row.id} → archived historical routine ${parent}`);continue}unresolvedRoutineParents.push(`${row.id} → ${parent}`)}
+  const routineIds=new Set(byKey('dailyShit.routines').filter(row=>!inactive(row)).map(row=>text(row.id))),archive=byKey('other.archive'),archivedRecordIds=new Set(archive.flatMap(row=>[...provenanceValues(row)]));
+  const unresolvedRoutineParents=[],acceptedRoutineParents=[];for(const row of byKey('dailyShit.routineInstances')){const parent=text(row.routineId);if(!parent||routineIds.has(parent))continue;const resolved=resolveArchivedRoutineParent(archive,parent,routineIds);if(resolved){acceptedRoutineParents.push(`Accepted historical archived parent: ${row.id} → ${parent} · archive ${resolved.inspection.archiveRecordId||'legacy wrapper'} · payload ${resolved.inspection.archivedPayloadLocation||'direct tombstone'}`);continue}unresolvedRoutineParents.push(`${row.id} → ${parent}`)}
   add('routineInstance → routine or valid archived historical parent',unresolvedRoutineParents,acceptedRoutineParents);
   const billIds=new Set(byKey('money.bills').map(row=>text(row.id))),billInstanceIds=new Set(byKey('money.billInstances').map(row=>text(row.id))),accountIds=new Set(byKey('money.accounts').map(row=>text(row.id)));
   add('billInstance → bill links',byKey('money.billInstances').filter(row=>row.billId&&!billIds.has(text(row.billId))).map(row=>`${row.id} → ${row.billId}`));
@@ -270,8 +330,14 @@ export async function buildRecoveryPlan({local,cloud,snapshot,snapshotRevision=4
   const content=canonicalContent(preview.plannerState,preview.auxiliaryStores);preview.contentHash=await hashCanonicalState(content);preview.format=local.format;preview.schemaVersion=local.schemaVersion;const verificationHash=await hashCanonicalState(content);
   const previewDiagnostics=diagnoseCanonicalState(preview),counts={local:countCanonicalCollections(local),cloud:countCanonicalCollections(cloud),snapshot:countCanonicalCollections(snapshot),recovered:countCanonicalCollections(preview)};
   const mirrors=savingsMirrorDiagnostics(preview),applications={localBaselineRecordsRetained:totalMatched(rows.local),cloudDonorActiveRecordsAdded:decisions.filter(item=>item.action==='ADD_CLOUD_TO_RECOVERED').length,cloudArchivedTombstonedRecordsSuppressed:decisions.filter(item=>item.action==='PRESERVE_ARCHIVED'&&item.sources.includes('cloud')&&!item.sources.includes('local')).length,snapshotDonorRecordsAdded:decisions.filter(item=>item.action==='RESTORE_SNAPSHOT_CANDIDATE').length,snapshotLegacyRecordsSuppressed:decisions.filter(item=>item.sources.includes('snapshot')&&['SUPPRESS_SNAPSHOT_LEGACY','SUPERSEDED_BY_RECORD','DERIVED_OR_CONVERTED','PRESERVE_ARCHIVED'].includes(item.action)&&!item.sources.includes('local')).length,manualReviewDonorsExcluded:decisions.filter(item=>item.action==='MANUAL_REVIEW').length,compatibilityMirrorsRecognized:mirrors.recognized.length,historicalArchivedParentReferencesAccepted:0};
+  const routineStepForensics=records(rows,'local','dailyShit.routines').filter(row=>!inactive(row)).flatMap(extractRoutineSteps);
+  const archiveForensics=records(rows,'local','other.archive').map(inspectArchiveRecord);
+  const manualDecisions=decisions.filter(item=>item.action==='MANUAL_REVIEW').map(item=>{
+    const source=item.sources.includes('snapshot')?'snapshot':item.sources.includes('cloud')?'cloud':'local',row=rowFor(rows,source,item.collection,item.id)?.record;
+    return{id:item.id,label:item.label,collection:item.collection,originalSource:source,date:text(row?.date||row?.createdAt||row?.archivedAt)||null,forensicEvidence:item.evidence,why:item.rationale,possibleFutureActions:['KEEP EXCLUDED','RESTORE FROM SNAPSHOT']};
+  });
   const countChanges=[];for(const[group,values]of Object.entries(counts.recovered))for(const[name,value]of Object.entries(values)){const before=counts.local[group][name];if(value!==before){const key=`${group}.${name}`,related=decisions.filter(item=>item.collection===key&&['ADD_CLOUD_TO_RECOVERED','RESTORE_SNAPSHOT_CANDIDATE'].includes(item.action));countChanges.push({collection:key,local:before,recovered:value,delta:value-before,explanation:related.length?related.map(item=>`${item.action} ${item.id}`).join('; '):'No donor action explains this difference; structural integrity must block recovery.'})}}
-  const plan={buildVersion,baseline:'Local iPad',snapshotRevision,readOnly:true,sourceFingerprintsVerified,sources:{local:{revision:local.revision,contentHash:local.contentHash},cloud:{revision:cloud.revision,contentHash:cloud.contentHash},snapshot:{revision:snapshot.revision,contentHash:snapshot.contentHash}},summary,applications,compatibilityMirrors:mirrors.recognized,decisions,preview:{contentHash:preview.contentHash,serializedBytes:previewDiagnostics.serializedBytes,counts:counts.recovered,deterministic:verificationHash===preview.contentHash},sourceCounts:counts,countChanges,integrity:[]};
+  const plan={buildVersion,baseline:'Local iPad',snapshotRevision,readOnly:true,sourceFingerprintsVerified,sources:{local:{revision:local.revision,contentHash:local.contentHash},cloud:{revision:cloud.revision,contentHash:cloud.contentHash},snapshot:{revision:snapshot.revision,contentHash:snapshot.contentHash}},summary,applications,compatibilityMirrors:mirrors.recognized,routineStepForensics,archiveForensics,manualDecisions,decisions,preview:{contentHash:preview.contentHash,serializedBytes:previewDiagnostics.serializedBytes,counts:counts.recovered,deterministic:verificationHash===preview.contentHash},sourceCounts:counts,countChanges,integrity:[]};
   plan.integrity=validateRecoveryPreview({preview,local,cloud,snapshot,decisions});plan.applications.historicalArchivedParentReferencesAccepted=plan.integrity.find(check=>check.name.startsWith('routineInstance'))?.accepted.length||0;
   const structuralFailure=plan.integrity.some(check=>!check.pass)||!plan.preview.deterministic||!sourceFingerprintsVerified||countChanges.some(change=>change.explanation.startsWith('No donor action'));
   plan.readiness=structuralFailure?'BLOCKED':plan.summary.MANUAL_REVIEW?'STRUCTURALLY READY — AWAITING MANUAL REVIEW':'READY FOR WRITE-PASS DESIGN';
@@ -288,6 +354,10 @@ export function buildRecoveryPlanText(plan){
   for(const[group,values]of Object.entries(plan.preview.counts)){lines.push(`${human(group).toUpperCase()}: ${Object.entries(values).map(([name,value])=>`${human(name)} ${value} (local ${plan.sourceCounts.local[group][name]} · cloud ${plan.sourceCounts.cloud[group][name]} · snapshot ${plan.sourceCounts.snapshot[group][name]})`).join(' · ')}`)}
   lines.push('','COUNT DIFFERENCES FROM LOCAL');if(!plan.countChanges.length)lines.push('None. Every proposed collection count matches the current local baseline.');for(const change of plan.countChanges)lines.push(`${change.collection}: local ${change.local} → proposed ${change.recovered} (${change.delta>0?'+':''}${change.delta}) · ${change.explanation}`);
   lines.push('','INTEGRITY CHECKS');for(const check of plan.integrity){lines.push(`${check.pass?'PASS':'FAIL'} · ${check.name}`);for(const accepted of check.accepted.slice(0,30))lines.push(`  Accepted: ${accepted}`);for(const finding of check.findings.slice(0,30))lines.push(`  ${finding}`)}
+  const archivedParentEvidence=plan.archiveForensics.filter(row=>row.isRoutineDomain);
+  if(archivedParentEvidence.length){lines.push('','ARCHIVED ROUTINE PROVENANCE');for(const row of archivedParentEvidence){lines.push(`Archive record ID: ${row.archiveRecordId||'none'}`,`Archive type/kind: ${row.archiveType||'none'} / ${row.archiveKind||'none'}`,`Original/source IDs: ${row.originalSourceIds.join(', ')||'none'}`,`Source collection: ${row.sourceCollection||'unknown'}`,`Archived payload location: ${row.archivedPayloadLocation||'direct tombstone'}`,`Archived payload ID: ${row.archivedPayloadId||'none'}`,`Archived payload name: ${row.archivedPayloadName||'none'}`,`Archived at: ${row.archivedAt||'unknown'}`,`Identity paths: ${row.identities.map(item=>`${item.path}=${item.value}`).join(' · ')||'none'}`,`Migration fields: ${row.migrationFields.map(item=>`${item.path}=${item.value}`).join(' · ')||'none'}`,`Wrapper structure: ${row.wrapperStructure.join(' · ')}`,`Archive wrapper JSON: ${stableSerialize(row.archiveRecord)}`)}}
+  if(plan.routineStepForensics.length){lines.push('','CURRENT PERSISTED ROUTINE STEPS');for(const step of plan.routineStepForensics)lines.push(`${step.parentRoutineId} · ${step.parentRoutineName} · ${step.stepId||'no step ID'} · ${step.exactLabel} · normalized "${step.normalizedLabel}" · position ${step.position} · ${step.sourcePath}`)}
+  lines.push('','MANUAL DECISIONS NEEDED');if(!plan.manualDecisions.length)lines.push('None.');for(const item of plan.manualDecisions){lines.push(`ID: ${item.id}`,`Label: ${item.label}`,`Original source: ${item.originalSource}`,`Collection: ${item.collection}`,`Date: ${item.date||'unknown'}`);for(const evidence of item.forensicEvidence)lines.push(`Forensic evidence: ${evidence}`);lines.push(`Why automation cannot safely decide: ${item.why}`,`Possible future actions: ${item.possibleFutureActions.join(' / ')}`)}
   let current='';for(const decision of plan.decisions){if(decision.collection!==current){current=decision.collection;lines.push('',current.toUpperCase())}lines.push(`ID: ${decision.id}`,`Label: ${recordLabel({label:decision.label})}`,`Sources: ${decision.sources.join(', ')||'unmatched'}`,`Action: ${decision.action}`,`Winning source: ${decision.winningSource||'none'}`,`Timestamps: local ${decision.timestamps.local||'none'} · cloud ${decision.timestamps.cloud||'none'} · snapshot ${decision.timestamps.snapshot||'none'}`);if(decision.successorIds.length)lines.push(`Successor/link IDs: ${decision.successorIds.join(', ')}`);for(const evidence of decision.evidence)lines.push(`Evidence: ${evidence}`);for(const field of decision.fieldDecisions.slice(0,80))lines.push(`Field: ${field}`);lines.push(`Reason: ${decision.rationale}`)}
   lines.push('','READ-ONLY SAFETY','No planner, recovery backup, cloud planner, snapshot, tombstone, or archive data was written.','Sync engine remains PAUSED. Recovery Mode remains ON.');
   return redactReportText(lines.join('\n'));

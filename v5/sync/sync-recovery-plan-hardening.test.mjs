@@ -59,7 +59,7 @@ assert.equal(plan.preview.counts.money.savingsGoals,2,'intentional canonical + p
 assert.equal(plan.preview.counts.money.accounts,1);assert.equal(plan.preview.counts.money.transactions,1,'local finance records remain exact');
 assert.equal(plan.previewEnvelope.plannerState.v4.mochiniLife.lastInteractionAt,'2026-09-07T21:00:00Z','current local Mochini state survives');
 assert.equal(plan.integrity.length,18);assert.equal(plan.integrity.every(check=>check.pass),true,plan.integrity.filter(check=>!check.pass).map(check=>`${check.name}: ${check.findings.join(', ')}`).join('\n'));
-const routineIntegrity=plan.integrity.find(check=>check.name.startsWith('routineInstance'));assert.match(routineIntegrity.accepted.join('\n'),/historical-shower-instance → archived historical routine/);
+const routineIntegrity=plan.integrity.find(check=>check.name.startsWith('routineInstance'));assert.match(routineIntegrity.accepted.join('\n'),/Accepted historical archived parent: historical-shower-instance → msxx950a731b42/);
 const shiftIntegrity=plan.integrity.find(check=>check.name.startsWith('Invalid planned shift'));assert.match(shiftIntegrity.accepted.join('\n'),/valid completed shift history/);
 const goalIntegrity=plan.integrity.find(check=>check.name.startsWith('Invalid savings'));assert.match(goalIntegrity.accepted.join('\n'),/Recognized|mirrors/i);
 assert.equal(plan.readiness,'STRUCTURALLY READY — AWAITING MANUAL REVIEW');assert.ok(plan.summary.MANUAL_REVIEW>=2);assert.equal(plan.applications.manualReviewDonorsExcluded,plan.summary.MANUAL_REVIEW);
