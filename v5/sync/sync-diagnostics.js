@@ -70,8 +70,9 @@ export function buildDiagnosticsText(report){
     `Cloud revision: ${report.cloud.revision??'unknown'}`,
     `Cloud updated: ${report.cloud.updatedAt||'unknown'}`,
     `Cloud hash: ${report.cloud.contentHash||'unknown'}`,
+    `Cloud canonical size: ${report.cloud.serializedBytes==null?'unknown':formatBytes(report.cloud.serializedBytes)}`,
     `Cloud device: ${report.cloud.updatedByDevice||'unknown'}`,
-    `Server snapshots: ${report.cloud.snapshotCount??'unknown'}${report.cloud.latestSnapshotRevision==null?'':` (latest revision ${report.cloud.latestSnapshotRevision})`}`,
+    `Server snapshots: ${report.cloud.snapshotCount??'unknown'}${report.cloud.latestSnapshotRevision==null?'':` (latest revision ${report.cloud.latestSnapshotRevision}${report.cloud.latestSnapshotAt?` · ${report.cloud.latestSnapshotAt}`:''})`}`,
     `Local vs cloud: ${report.comparison}`,
     `localStorage estimate: ${formatBytes(report.storage.approximateBytes)}`,
     `Storage usage/quota: ${report.storage.usage==null?'unknown':formatBytes(report.storage.usage)} / ${report.storage.quota==null?'unknown':formatBytes(report.storage.quota)}`,
@@ -79,11 +80,11 @@ export function buildDiagnosticsText(report){
     'IndexedDB use: none',
     `Recovery backup keys: ${report.recovery.count}`,
     '',
-    'PER-COLLECTION COUNTS'
+    'PER-COLLECTION COUNTS (LOCAL / CLOUD)'
   ];
   for(const[group,values]of Object.entries(report.counts)){
     lines.push('',group.replace(/([A-Z])/g,' $1').toUpperCase());
-    for(const[name,value]of Object.entries(values))lines.push(`${name.replace(/([A-Z])/g,' $1')}: ${value}`);
+    for(const[name,value]of Object.entries(values))lines.push(`${name.replace(/([A-Z])/g,' $1')}: ${value} / ${report.cloudCounts?.[group]?.[name]??'unknown'}`);
   }
   if(report.cloud.error)lines.push('',`Cloud diagnostic note: ${report.cloud.error}`);
   return lines.join('\n');
@@ -98,9 +99,10 @@ export async function collectSyncDiagnostics({storage=localStorage,navigatorObje
   const storageReport=await storageUsage(storage,navigatorObject);
   const cloudResult=engine?await engine.fetchCloudDiagnostics():{ok:false,state:'PAUSED',auth:{state:'UNKNOWN',signedIn:false},error:'Sync engine not provided.'};
   const cloudEnvelope=cloudResult.envelope;
-  const cloud={revision:cloudEnvelope?.revision??null,updatedAt:cloudEnvelope?.updatedAt||null,contentHash:cloudEnvelope?.contentHash||null,updatedByDevice:cloudEnvelope?.updatedByDevice||null,snapshotCount:cloudResult.snapshots?.count??null,latestSnapshotRevision:cloudResult.snapshots?.latestRevision??null,latestSnapshotAt:cloudResult.snapshots?.latestAt||null,error:cloudResult.error||null};
+  const cloudDiagnostics=cloudEnvelope?diagnoseCanonicalState(cloudEnvelope):null;
+  const cloud={revision:cloudEnvelope?.revision??null,updatedAt:cloudEnvelope?.updatedAt||null,contentHash:cloudEnvelope?.contentHash||null,serializedBytes:cloudDiagnostics?.serializedBytes??null,updatedByDevice:cloudEnvelope?.updatedByDevice||null,snapshotCount:cloudResult.snapshots?.count??null,latestSnapshotRevision:cloudResult.snapshots?.latestRevision??null,latestSnapshotAt:cloudResult.snapshots?.latestAt||null,error:cloudResult.error||cloudResult.snapshots?.error||null};
   const comparison=local.contentHash&&cloud.contentHash?(local.contentHash===cloud.contentHash?'SAME':'DIFFERENT'):'UNKNOWN';
-  const report={buildVersion,recoveryMode:device.recoveryMode,syncState:'PAUSED',device,auth:cloudResult.auth||{state:'UNKNOWN',signedIn:false},local,cloud,comparison,storage:{...storageReport,approximateBytes:approximateLocalStorageBytes(storage)},recovery:{count:recovery.count,approximateBytes:recovery.approximateBytes},counts:countCanonicalCollections(envelope),indexedDbUse:'none'};
+  const report={buildVersion,recoveryMode:device.recoveryMode,syncState:'PAUSED',device,auth:cloudResult.auth||{state:'UNKNOWN',signedIn:false},local,cloud,comparison,storage:{...storageReport,approximateBytes:approximateLocalStorageBytes(storage)},recovery:{count:recovery.count,approximateBytes:recovery.approximateBytes},counts:countCanonicalCollections(envelope),cloudCounts:cloudEnvelope?countCanonicalCollections(cloudEnvelope):null,indexedDbUse:'none'};
   report.text=buildDiagnosticsText(report);
   report.json=stableSerialize({...report,text:undefined});
   return report;

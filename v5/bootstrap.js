@@ -1,7 +1,7 @@
 const recoveryLocked=localStorage.getItem('sm_recovery_lock')==='1';
 if(recoveryLocked)await import('./recovery-storage-guard.js?v=7.0.0-safe-sync-foundation');
 await import('./app.js?v=7.0.0-safe-sync-foundation');
-await import('./sync/sync-lab.js?v=7.0.0-safe-sync-foundation');
+await import('./sync/sync-lab.js?v=7.0.1-safe-sync-diagnostics');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
 await import('./gig-goals-fix.js?v=6.18.0-gig-goals-fix');

@@ -81,9 +81,12 @@ const diagnosticStorage=new MemoryStorage({
   [STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:fixture}),
   ...Object.fromEntries(Object.entries(aux).map(([key,value])=>[key,JSON.stringify(value)]))
 });
-const report=await collectSyncDiagnostics({storage:diagnosticStorage,navigatorObject:{userAgent:'iPad',platform:'iPad',maxTouchPoints:5,standalone:true,storage:{estimate:async()=>({usage:5000,quota:100000})}},matchMediaFunction:()=>({matches:true}),engine:{fetchCloudDiagnostics:async()=>({auth:{state:'AUTHENTICATED',signedIn:true,account:'kat@example.test'},envelope:null,error:null})},buildVersion:'test-build'});
+const cloudEnvelope={...structuredClone(envelope),revision:12,updatedAt:'2026-09-08T14:00:00.000Z',updatedByDevice:'legacy-ipad'};
+const report=await collectSyncDiagnostics({storage:diagnosticStorage,navigatorObject:{userAgent:'iPad',platform:'iPad',maxTouchPoints:5,standalone:true,storage:{estimate:async()=>({usage:5000,quota:100000})}},matchMediaFunction:()=>({matches:true}),engine:{fetchCloudDiagnostics:async()=>({auth:{state:'AUTHENTICATED',signedIn:true,account:'kat@example.test'},envelope:cloudEnvelope,snapshots:{count:4,latestRevision:11,latestAt:'2026-09-08T13:00:00.000Z'},error:null})},buildVersion:'test-build'});
 assert.equal(report.device.label,'iPad Home Screen');assert.equal(report.local.revision,null);assert.equal(report.syncState,'PAUSED');
 assert.match(report.text,/Daily Shit/i);assert.match(report.text,/spending budgets: 1/i);
+assert.equal(report.cloud.serializedBytes>0,true);assert.equal(report.cloudCounts.dailyShit.tasks,1);
+assert.match(report.text,/Cloud canonical size:/);assert.match(report.text,/latest revision 11/);assert.match(report.text,/tasks: 1 \/ 1/i);
 assert.equal(/access_token|refresh_token|new-access|new-refresh/.test(report.text+report.json),false,'diagnostic exports contain no credentials');
 
 let networkCalls=0;
@@ -134,7 +137,7 @@ const bootstrap=await readFile(resolve(root,'v5/bootstrap.js'),'utf8');
 for(const legacy of['cloud-sync-v3.js','cloud-resume-sync.js','cloud-canonical-bridge.js','cloud-sync.js','cloud-first-hydrate.js','recovery-loaded-status.js','recovery-vault.js'])assert.equal(bootstrap.includes(legacy),false,`${legacy} is not bootstrapped`);
 assert.match(bootstrap,/sync\/sync-lab\.js/);
 const indexSource=await readFile(resolve(root,'v5/index.html'),'utf8');
-assert.match(indexSource,/bootstrap\.js\?v=7\.0\.0-safe-sync-foundation/,'iOS containers receive the safe bootstrap instead of a cached legacy sync bootstrap');
+assert.match(indexSource,/bootstrap\.js\?v=7\.0\.1-safe-sync-diagnostics/,'iOS containers receive the updated safe diagnostics bootstrap instead of a cached build');
 const appSource=await readFile(resolve(root,'v5/app.js'),'utf8');
 assert.equal(appSource.includes('restoreCloudV4Data'),false,'startup and Settings do not invoke legacy planner_data hydration');
 assert.match(appSource,/data\.js\?v=7\.0\.0-safe-sync-foundation/);assert.match(appSource,/rooms\.js\?v=7\.0\.0-safe-sync-foundation/);

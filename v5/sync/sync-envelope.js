@@ -62,7 +62,7 @@ export async function envelopeFromCloudRow(row){
   const auxiliaryStores=auxiliaryDefaults();
   for(const key of AUXILIARY_STORE_KEYS)if(Object.prototype.hasOwnProperty.call(legacyAux,key))auxiliaryStores[key]=legacyAux[key];
   const content=canonicalContent(plannerState,auxiliaryStores);
-  return{format:SYNC_ENVELOPE_FORMAT,schemaVersion:SYNC_SCHEMA_VERSION,revision:Number(row.revision||0)||null,updatedAt:row.updated_at||null,updatedByDevice:row.last_device_id||null,contentHash:row.content_hash||await hashCanonicalState(content),...content};
+  return{format:SYNC_ENVELOPE_FORMAT,schemaVersion:SYNC_SCHEMA_VERSION,revision:Number(row.revision||0)||null,updatedAt:row.updated_at||null,updatedByDevice:row.last_device_id||null,contentHash:await hashCanonicalState(content),...content};
 }
 
 export function deserializeCanonicalState(envelope){

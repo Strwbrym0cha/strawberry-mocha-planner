@@ -1,3 +1,5 @@
+import{browserFetch,resolveFetch}from'./sync-fetch.js';
+
 export const SYNC_SESSION_KEY='sm_v5_sync_session';
 export const LEGACY_SESSION_KEYS=Object.freeze([
   'sm_v16_session',
@@ -52,10 +54,11 @@ export const sessionNeedsRefresh=(session,now=Date.now(),leewayMs=120000)=>{
   return expiresAt>0&&expiresAt-now<=leewayMs;
 };
 
-export async function refreshSession(session,{fetchFunction=globalThis.fetch,storage=localStorage}={}){
+export async function refreshSession(session,{fetchFunction=browserFetch,storage=localStorage}={}){
   if(!session?.refresh_token)return{state:'REAUTH_REQUIRED',session:null,error:'The saved sign-in cannot be refreshed.'};
   try{
-    const response=await fetchFunction(`${CLOUD_URL}/auth/v1/token?grant_type=refresh_token`,{
+    const request=resolveFetch(fetchFunction);
+    const response=await request(`${CLOUD_URL}/auth/v1/token?grant_type=refresh_token`,{
       method:'POST',headers:{apikey:CLOUD_PUBLISHABLE_KEY,'Content-Type':'application/json'},
       body:JSON.stringify({refresh_token:session.refresh_token})
     });
@@ -66,7 +69,7 @@ export async function refreshSession(session,{fetchFunction=globalThis.fetch,sto
   }catch(error){return{state:'OFFLINE',session:null,error:error?.message||'Cloud authentication is unavailable.'}}
 }
 
-export async function getAuthenticatedSession({storage=localStorage,fetchFunction=globalThis.fetch,now=Date.now()}={}){
+export async function getAuthenticatedSession({storage=localStorage,fetchFunction=browserFetch,now=Date.now()}={}){
   const found=readSession(storage);
   if(!found.session)return{state:'SIGNED_OUT',session:null,sourceKey:null};
   if(sessionNeedsRefresh(found.session,now)){
