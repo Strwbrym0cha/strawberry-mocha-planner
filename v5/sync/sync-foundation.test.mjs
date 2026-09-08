@@ -140,8 +140,10 @@ assert.equal(appSource.includes('restoreCloudV4Data'),false,'startup and Setting
 assert.match(appSource,/data\.js\?v=7\.0\.0-safe-sync-foundation/);assert.match(appSource,/rooms\.js\?v=7\.0\.0-safe-sync-foundation/);
 const dataSource=await readFile(resolve(root,'v5/data.js'),'utf8');
 assert.match(dataSource,/Legacy cloud restore is disabled/);
-assert.match(dataSource,/Recovery mode renders only the current live planner stores/);
-assert.match(dataSource,/candidateFromKey\(V4_KEY\)\?\.state\|\|candidateFromKey\(V5_DATA_KEY\)\?\.state/);
+assert.match(dataSource,/Rendering is a pure read/);
+assert.match(dataSource,/const rendered=candidateFromKey\(V4_KEY\)\?\.state/);
+assert.match(dataSource,/return candidateFromKey\(V5_DATA_KEY\)\?\.state\|\|null/);
+for(const reason of['v5-work-hq-initialize','v5-study-nook-initialize','v5-money-gig-initialize','v5-lifestyle-initialize'])assert.equal(dataSource.includes(reason),false,`${reason} is not persisted by a selector`);
 const guardSource=await readFile(resolve(root,'v5/recovery-storage-guard.js'),'utf8');
 assert.equal(guardSource.includes('removeItem'),false,'recovery storage guard never deletes recovery keys');
 assert.equal(guardSource.includes('prune'),false,'recovery storage guard never prunes recovery keys');
