@@ -132,7 +132,7 @@ function statusFor(local,cloud,snapshot){
 function changedPaths(values,path='',output=[]){
   if(output.length>=80||values.every(value=>equal(value,values[0])))return output;
   const present=values.filter(value=>value!==undefined);
-  if(present.length===values.length&&present.every(value=>value&&typeof value==='object'&&!Array.isArray(value))){
+  if(present.length>=2&&present.every(value=>value&&typeof value==='object'&&!Array.isArray(value))){
     const keys=[...new Set(present.flatMap(value=>Object.keys(value)))].sort();
     for(const key of keys){
       if(output.length>=80)break;

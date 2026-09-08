@@ -137,7 +137,7 @@ const bootstrap=await readFile(resolve(root,'v5/bootstrap.js'),'utf8');
 for(const legacy of['cloud-sync-v3.js','cloud-resume-sync.js','cloud-canonical-bridge.js','cloud-sync.js','cloud-first-hydrate.js','recovery-loaded-status.js','recovery-vault.js'])assert.equal(bootstrap.includes(legacy),false,`${legacy} is not bootstrapped`);
 assert.match(bootstrap,/sync\/sync-lab\.js/);
 const indexSource=await readFile(resolve(root,'v5/index.html'),'utf8');
-assert.match(indexSource,/bootstrap\.js\?v=7\.0\.2-read-only-reconciliation/,'iOS containers receive the updated read-only reconciliation bootstrap instead of a cached build');
+assert.match(indexSource,/bootstrap\.js\?v=7\.0\.3-recovery-plan-preview/,'iOS containers receive the updated read-only recovery-plan bootstrap instead of a cached build');
 const appSource=await readFile(resolve(root,'v5/app.js'),'utf8');
 assert.equal(appSource.includes('restoreCloudV4Data'),false,'startup and Settings do not invoke legacy planner_data hydration');
 assert.match(appSource,/data\.js\?v=7\.0\.0-safe-sync-foundation/);assert.match(appSource,/rooms\.js\?v=7\.0\.0-safe-sync-foundation/);

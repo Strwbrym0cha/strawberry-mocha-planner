@@ -1,11 +1,14 @@
 import{createSafeSyncEngine}from'./sync-engine.js';
 import{collectSyncDiagnostics}from'./sync-diagnostics.js';
 import{collectReadOnlyReconciliation}from'./sync-reconciliation.js';
+import{collectReadOnlyRecoveryPlan,RECOVERY_ACTIONS}from'./sync-recovery-plan.js';
 
 const engine=createSafeSyncEngine();
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const shortHash=value=>value?`${value.slice(0,12)}…`:'unknown';
 const buildVersion=()=>document.querySelector('meta[name="sm-build"]')?.content||'unknown';
+const APPROVED_LOCAL_HASH='b67b18371ee35accee0b5f5d8aee39f4651429ee5c0322dfe83528abac1b9504';
+const APPROVED_CLOUD_REVISION=5;
 
 function downloadDiagnostics(report){
   const blob=new Blob([JSON.stringify(JSON.parse(report.json),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
@@ -28,7 +31,24 @@ function reconciliationSummary(report){
     ...collection.items.filter(item=>!item.status.includes('IDENTICAL')).map(item=>`<div><b>${escapeHtml(item.status)}</b><br>${escapeHtml(collection.name)} · ${escapeHtml(item.recordId)} · ${escapeHtml(item.label)}</div>`),
     ...collection.missing.map(item=>`<div><b>UNMATCHED / ${escapeHtml(item.reason)}</b><br>${escapeHtml(collection.name)} · ${escapeHtml(item.source)} · ${escapeHtml(item.label)}</div>`)
   ]).join('');
-  return`<div style="margin-top:14px"><div class="ey">READ-ONLY RECONCILIATION</div><p><b>Local only ${totals.localOnly}</b> · Cloud only ${totals.cloudOnly} · Snapshot only ${totals.snapshotOnly} · Conflicting IDs ${totals.conflictingIds} · Missing IDs ${totals.missingIds}</p><div class="chip-row">${rows||'<span class="chip">No item-level differences found.</span>'}</div><details style="margin-top:10px"><summary>Show item-level differences</summary><div class="room-list" style="margin-top:8px">${differences||'<div>No item-level differences found.</div>'}</div></details><div class="button-row" style="margin-top:10px"><button type="button" class="btn soft" data-copy-reconciliation>Copy reconciliation report</button></div></div>`;
+  return`<div style="margin-top:14px"><div class="ey">READ-ONLY RECONCILIATION</div><p><b>Local only ${totals.localOnly}</b> · Cloud only ${totals.cloudOnly} · Snapshot only ${totals.snapshotOnly} · Conflicting IDs ${totals.conflictingIds} · Missing IDs ${totals.missingIds}</p><div class="chip-row">${rows||'<span class="chip">No item-level differences found.</span>'}</div><details style="margin-top:10px"><summary>Show item-level differences</summary><div class="room-list" style="margin-top:8px">${differences||'<div>No item-level differences found.</div>'}</div></details><div class="button-row" style="margin-top:10px"><button type="button" class="btn soft" data-copy-reconciliation>Copy reconciliation report</button><button type="button" class="btn soft" data-build-recovery-plan>Build recovery plan</button></div><div data-recovery-plan-output></div></div>`;
+}
+
+function recoveryPlanSummary(report){
+  const actions=RECOVERY_ACTIONS.map(action=>`<span class="chip"><b>${escapeHtml(action.replaceAll('_',' '))}</b>: ${report.summary[action]||0}</span>`).join('');
+  const failed=report.integrity.filter(check=>!check.pass),integrity=report.integrity.map(check=>`<div><b>${check.pass?'PASS':'FAIL'} · ${escapeHtml(check.name)}</b>${check.findings.length?`<br>${escapeHtml(check.findings.slice(0,5).join(' · '))}`:''}</div>`).join('');
+  return`<div style="margin-top:14px"><div class="ey">RECOVERY PLAN PREVIEW · READ ONLY</div><p><b>Baseline: Local iPad</b> · ${report.decisions.length} non-identical/unmatched records classified · ${failed.length} integrity categories need review.</p><div class="chip-row">${actions}</div><div class="room-list" style="margin-top:10px"><div><b>Proposed recovered dataset</b><br>${escapeHtml(shortHash(report.preview.contentHash))} · ${escapeHtml(report.preview.serializedBytes)} bytes</div>${integrity}</div><div class="button-row" style="margin-top:10px"><button type="button" class="btn soft" data-copy-recovery-plan>Copy recovery plan</button></div><p>No recovery has occurred. Sync remains paused and Recovery Mode remains on.</p></div>`;
+}
+
+async function runRecoveryPlan(card){
+  const button=card.querySelector('[data-build-recovery-plan]'),output=card.querySelector('[data-recovery-plan-output]');if(!button||!output)return;
+  button.disabled=true;button.textContent='Building preview…';output.innerHTML='<p>Classifying records and validating an in-memory local-baseline preview. Nothing will be written.</p>';
+  try{
+    const report=await collectReadOnlyRecoveryPlan({engine,snapshotRevision:4,expectedCloudRevision:APPROVED_CLOUD_REVISION,expectedLocalHash:APPROVED_LOCAL_HASH,buildVersion:buildVersion()});if(!card.isConnected)return;
+    output.innerHTML=recoveryPlanSummary(report);
+    output.querySelector('[data-copy-recovery-plan]').onclick=async event=>{const copyButton=event.currentTarget;try{await copyText(report.text);copyButton.textContent='Copied'}catch{copyButton.textContent='Copy failed'}setTimeout(()=>{if(copyButton.isConnected)copyButton.textContent='Copy recovery plan'},1200)};
+  }catch(error){output.innerHTML=`<p><b>Recovery plan preview could not be built:</b> ${escapeHtml(error?.message||error)}</p><p>No planner, recovery, snapshot, or cloud data was changed.</p>`}
+  finally{if(button.isConnected){button.disabled=false;button.textContent='Build recovery plan'}}
 }
 
 async function runReconciliation(card){
@@ -40,6 +60,7 @@ async function runReconciliation(card){
     if(!card.isConnected)return;
     output.innerHTML=reconciliationSummary(report);
     output.querySelector('[data-copy-reconciliation]').onclick=async event=>{const copyButton=event.currentTarget;try{await copyText(report.text);copyButton.textContent='Copied'}catch{copyButton.textContent='Copy failed'}setTimeout(()=>{if(copyButton.isConnected)copyButton.textContent='Copy reconciliation report'},1200)};
+    output.querySelector('[data-build-recovery-plan]').onclick=()=>runRecoveryPlan(card);
   }catch(error){output.innerHTML=`<p><b>Reconciliation could not be completed:</b> ${escapeHtml(error?.message||error)}</p><p>No planner, recovery, snapshot, or cloud data was changed.</p>`}
   finally{if(button.isConnected){button.disabled=false;button.textContent='Compare local + cloud + snapshot'}}
 }
