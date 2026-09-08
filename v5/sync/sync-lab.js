@@ -1,5 +1,6 @@
 import{createSafeSyncEngine}from'./sync-engine.js';
 import{collectSyncDiagnostics}from'./sync-diagnostics.js';
+import{collectReadOnlyReconciliation}from'./sync-reconciliation.js';
 
 const engine=createSafeSyncEngine();
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -20,6 +21,29 @@ function countRows(report){
   return `<div style="margin-top:10px"><b>COLLECTION COUNTS · LOCAL / CLOUD</b></div>${Object.entries(report.counts).map(([group,values])=>`<div style="margin-top:10px"><b>${escapeHtml(group.replace(/([A-Z])/g,' $1').toUpperCase())}</b><div class="chip-row">${Object.entries(values).map(([name,value])=>`<span class="chip">${escapeHtml(name.replace(/([A-Z])/g,' $1'))}: ${value} / ${escapeHtml(report.cloudCounts?.[group]?.[name]??'unknown')}</span>`).join('')}</div></div>`).join('')}`;
 }
 
+function reconciliationSummary(report){
+  const totals=report.reconciliation.totals;
+  const rows=Object.values(report.reconciliation.collections).filter(collection=>collection.totals.localOnly||collection.totals.cloudOnly||collection.totals.snapshotOnly||collection.totals.conflictingIds||collection.totals.missingIds).map(collection=>`<span class="chip"><b>${escapeHtml(collection.name)}</b>: local ${collection.totals.localOnly} · cloud ${collection.totals.cloudOnly} · snapshot ${collection.totals.snapshotOnly} · conflicts ${collection.totals.conflictingIds}</span>`).join('');
+  const differences=Object.values(report.reconciliation.collections).flatMap(collection=>[
+    ...collection.items.filter(item=>!item.status.includes('IDENTICAL')).map(item=>`<div><b>${escapeHtml(item.status)}</b><br>${escapeHtml(collection.name)} · ${escapeHtml(item.recordId)} · ${escapeHtml(item.label)}</div>`),
+    ...collection.missing.map(item=>`<div><b>UNMATCHED / ${escapeHtml(item.reason)}</b><br>${escapeHtml(collection.name)} · ${escapeHtml(item.source)} · ${escapeHtml(item.label)}</div>`)
+  ]).join('');
+  return`<div style="margin-top:14px"><div class="ey">READ-ONLY RECONCILIATION</div><p><b>Local only ${totals.localOnly}</b> · Cloud only ${totals.cloudOnly} · Snapshot only ${totals.snapshotOnly} · Conflicting IDs ${totals.conflictingIds} · Missing IDs ${totals.missingIds}</p><div class="chip-row">${rows||'<span class="chip">No item-level differences found.</span>'}</div><details style="margin-top:10px"><summary>Show item-level differences</summary><div class="room-list" style="margin-top:8px">${differences||'<div>No item-level differences found.</div>'}</div></details><div class="button-row" style="margin-top:10px"><button type="button" class="btn soft" data-copy-reconciliation>Copy reconciliation report</button></div></div>`;
+}
+
+async function runReconciliation(card){
+  const button=card.querySelector('[data-reconcile-sync]'),output=card.querySelector('[data-reconciliation-output]');
+  if(!button||!output)return;
+  button.disabled=true;button.textContent='Comparing…';output.innerHTML='<p>Reading current local, cloud, and server snapshot revision 4. Nothing will be changed.</p>';
+  try{
+    const report=await collectReadOnlyReconciliation({engine,snapshotRevision:4,buildVersion:buildVersion()});
+    if(!card.isConnected)return;
+    output.innerHTML=reconciliationSummary(report);
+    output.querySelector('[data-copy-reconciliation]').onclick=async event=>{const copyButton=event.currentTarget;try{await copyText(report.text);copyButton.textContent='Copied'}catch{copyButton.textContent='Copy failed'}setTimeout(()=>{if(copyButton.isConnected)copyButton.textContent='Copy reconciliation report'},1200)};
+  }catch(error){output.innerHTML=`<p><b>Reconciliation could not be completed:</b> ${escapeHtml(error?.message||error)}</p><p>No planner, recovery, snapshot, or cloud data was changed.</p>`}
+  finally{if(button.isConnected){button.disabled=false;button.textContent='Compare local + cloud + snapshot'}}
+}
+
 async function mount(force=false){
   const title=document.querySelector('.top-title'),page=document.querySelector('.main .page')||document.querySelector('.main');
   if(!page||String(title?.textContent||'').trim()!=='Settings')return;
@@ -31,11 +55,12 @@ async function mount(force=false){
   try{
     const report=await collectSyncDiagnostics({engine,buildVersion:buildVersion()});
     if(!card.isConnected)return;
-    card.innerHTML=`<div class="card-head"><div><div class="ey">☁️ KATOS SYNC LAB</div><h2>Recovery protected</h2><p>This phase is read-only. KatOS will not pull over, upload, seed, or prune planner data.</p></div><span class="cloud-account-state offline">Paused</span></div><div class="room-list"><div><b>Device</b><br>${escapeHtml(report.device.label)} · <code>${escapeHtml(report.device.deviceId)}</code></div><div><b>Local</b><br>${escapeHtml(report.local.sourceKey||'none')} · revision ${escapeHtml(report.local.revision??'unseeded')} · ${escapeHtml(shortHash(report.local.contentHash))} · ${escapeHtml(report.local.serializedBytes)} bytes</div><div><b>Cloud</b><br>revision ${escapeHtml(report.cloud.revision??'unknown')} · ${escapeHtml(report.cloud.updatedAt||'unknown')} · ${escapeHtml(shortHash(report.cloud.contentHash))} · ${escapeHtml(report.cloud.serializedBytes==null?'unknown':`${report.cloud.serializedBytes} bytes`)} · server snapshots ${escapeHtml(report.cloud.snapshotCount??'unknown')}${report.cloud.latestSnapshotRevision==null?'':` · latest r${escapeHtml(report.cloud.latestSnapshotRevision)}${report.cloud.latestSnapshotAt?` at ${escapeHtml(report.cloud.latestSnapshotAt)}`:''}`}</div><div><b>Comparison</b><br>${escapeHtml(report.comparison)} · Recovery mode ${report.recoveryMode?'ON':'OFF'} · Auth ${escapeHtml(report.auth.state)}</div><div><b>Storage safety</b><br>${report.recovery.count} recovery backup keys · quota warning ${report.storage.warning?'YES':'NO'} · IndexedDB use: none</div></div>${countRows(report)}<div class="button-row" style="margin-top:14px"><button type="button" class="btn soft" data-copy-sync>Copy sync diagnostics</button><button type="button" class="btn soft" data-download-sync>Download sync diagnostics JSON</button><button type="button" class="btn soft" data-refresh-sync>Refresh diagnostics</button></div>`;
+    card.innerHTML=`<div class="card-head"><div><div class="ey">☁️ KATOS SYNC LAB</div><h2>Recovery protected</h2><p>This phase is read-only. KatOS will not pull over, upload, seed, or prune planner data.</p></div><span class="cloud-account-state offline">Paused</span></div><div class="room-list"><div><b>Device</b><br>${escapeHtml(report.device.label)} · <code>${escapeHtml(report.device.deviceId)}</code></div><div><b>Local</b><br>${escapeHtml(report.local.sourceKey||'none')} · revision ${escapeHtml(report.local.revision??'unseeded')} · ${escapeHtml(shortHash(report.local.contentHash))} · ${escapeHtml(report.local.serializedBytes)} bytes</div><div><b>Cloud</b><br>revision ${escapeHtml(report.cloud.revision??'unknown')} · ${escapeHtml(report.cloud.updatedAt||'unknown')} · ${escapeHtml(shortHash(report.cloud.contentHash))} · ${escapeHtml(report.cloud.serializedBytes==null?'unknown':`${report.cloud.serializedBytes} bytes`)} · server snapshots ${escapeHtml(report.cloud.snapshotCount??'unknown')}${report.cloud.latestSnapshotRevision==null?'':` · latest r${escapeHtml(report.cloud.latestSnapshotRevision)}${report.cloud.latestSnapshotAt?` at ${escapeHtml(report.cloud.latestSnapshotAt)}`:''}`}</div><div><b>Comparison</b><br>${escapeHtml(report.comparison)} · Recovery mode ${report.recoveryMode?'ON':'OFF'} · Auth ${escapeHtml(report.auth.state)}</div><div><b>Storage safety</b><br>${report.recovery.count} recovery backup keys · quota warning ${report.storage.warning?'YES':'NO'} · IndexedDB use: none</div></div>${countRows(report)}<div class="button-row" style="margin-top:14px"><button type="button" class="btn soft" data-copy-sync>Copy sync diagnostics</button><button type="button" class="btn soft" data-download-sync>Download sync diagnostics JSON</button><button type="button" class="btn soft" data-refresh-sync>Refresh diagnostics</button><button type="button" class="btn soft" data-reconcile-sync>Compare local + cloud + snapshot</button></div><div data-reconciliation-output></div>`;
     card.dataset.syncStatus='ready';
     card.querySelector('[data-copy-sync]').onclick=async event=>{const button=event.currentTarget;try{await copyText(report.text);button.textContent='Copied'}catch{button.textContent='Copy failed'}setTimeout(()=>{if(button.isConnected)button.textContent='Copy sync diagnostics'},1200)};
     card.querySelector('[data-download-sync]').onclick=()=>downloadDiagnostics(report);
     card.querySelector('[data-refresh-sync]').onclick=()=>mount(true);
+    card.querySelector('[data-reconcile-sync]').onclick=()=>runReconciliation(card);
   }catch(error){card.dataset.syncStatus='error';card.innerHTML+=`<p><b>Diagnostics could not be completed:</b> ${escapeHtml(error?.message||error)}</p><p>No planner or cloud data was changed.</p>`}
 }
 
