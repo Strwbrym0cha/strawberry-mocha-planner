@@ -1,16 +1,12 @@
 import{createSafeSyncEngine}from'./sync-engine.js';
 import{collectSyncDiagnostics}from'./sync-diagnostics.js';
 import{collectReadOnlyReconciliation}from'./sync-reconciliation.js';
-import{collectReadOnlyRecoveryPlan,RECOVERY_ACTIONS}from'./sync-recovery-plan.js';
+import{APPROVED_MANUAL_RECOVERY_DECISIONS,APPROVED_RECOVERY_SESSION,collectReadOnlyRecoveryPlan,RECOVERY_ACTIONS}from'./sync-recovery-plan.js';
 
 const engine=createSafeSyncEngine();
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const shortHash=value=>value?`${value.slice(0,12)}…`:'unknown';
 const buildVersion=()=>document.querySelector('meta[name="sm-build"]')?.content||'unknown';
-const APPROVED_LOCAL_HASH='b67b18371ee35accee0b5f5d8aee39f4651429ee5c0322dfe83528abac1b9504';
-const APPROVED_CLOUD_REVISION=5;
-const APPROVED_CLOUD_HASH='aff2bdcbcd5d184130dee75d417c2fa85ab0db0d65ba15ee24ebcc835692958f';
-const APPROVED_SNAPSHOT_HASH='6fab51172a3c11b6ac1ddfa5e187e49b602e033375d5f96ec1d4a319335047f7';
 
 function downloadDiagnostics(report){
   const blob=new Blob([JSON.stringify(JSON.parse(report.json),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');
@@ -39,14 +35,14 @@ function reconciliationSummary(report){
 function recoveryPlanSummary(report){
   const actions=RECOVERY_ACTIONS.map(action=>`<span class="chip"><b>${escapeHtml(action.replaceAll('_',' '))}</b>: ${report.summary[action]||0}</span>`).join('');
   const failed=report.integrity.filter(check=>!check.pass),integrity=report.integrity.map(check=>`<div><b>${check.pass?'PASS':'FAIL'} · ${escapeHtml(check.name)}</b>${check.accepted?.length?`<br>${escapeHtml(check.accepted.slice(0,3).map(value=>`Accepted: ${value}`).join(' · '))}`:''}${check.findings.length?`<br>${escapeHtml(check.findings.slice(0,5).join(' · '))}`:''}</div>`).join('');
-  return`<div style="margin-top:14px"><div class="ey">RECOVERY PLAN PREVIEW · READ ONLY</div><p><b>Baseline: Local iPad</b> · ${report.decisions.length} non-identical/unmatched records classified · ${failed.length} integrity categories need review.</p><p><b>Recovery readiness:</b> ${escapeHtml(report.readiness)}</p><p><b>Historical archived parents accepted:</b> ${report.applications.historicalArchivedParentReferencesAccepted} · <b>Manual decisions:</b> ${report.manualDecisions.length}</p><div class="chip-row">${actions}</div><div class="room-list" style="margin-top:10px"><div><b>Proposed recovered dataset</b><br>${escapeHtml(shortHash(report.preview.contentHash))} · ${escapeHtml(report.preview.serializedBytes)} bytes · ${report.countChanges.length?`${report.countChanges.length} explained count changes`:'all collection counts match local'}</div>${integrity}</div><div class="button-row" style="margin-top:10px"><button type="button" class="btn soft" data-copy-recovery-plan>Copy recovery plan</button></div><p>No recovery has occurred. Sync remains paused and Recovery Mode remains on.</p></div>`;
+  return`<div style="margin-top:14px"><div class="ey">RECOVERY PLAN PREVIEW · READ ONLY</div><p><b>Baseline: Local iPad</b> · ${report.decisions.length} non-identical/unmatched records classified · ${failed.length} integrity categories need review.</p><p><b>Recovery readiness:</b> ${escapeHtml(report.readiness)}</p><p><b>Historical archived parents accepted:</b> ${report.applications.historicalArchivedParentReferencesAccepted} · <b>Human decisions locked:</b> ${report.humanRecoveryDecisions.length} · <b>Manual unresolved:</b> ${report.manualDecisions.length}</p><div class="chip-row">${actions}</div><div class="room-list" style="margin-top:10px"><div><b>Proposed recovered dataset</b><br>${escapeHtml(shortHash(report.preview.contentHash))} · ${escapeHtml(report.preview.serializedBytes)} bytes · ${report.countChanges.length?`${report.countChanges.length} explained count changes`:'all collection counts match local'}</div>${integrity}</div><div class="button-row" style="margin-top:10px"><button type="button" class="btn soft" data-copy-recovery-plan>Copy recovery plan</button></div><p>No recovery has occurred. Sync remains paused and Recovery Mode remains on.</p></div>`;
 }
 
 async function runRecoveryPlan(card){
   const button=card.querySelector('[data-build-recovery-plan]'),output=card.querySelector('[data-recovery-plan-output]');if(!button||!output)return;
   button.disabled=true;button.textContent='Building preview…';output.innerHTML='<p>Classifying records and validating an in-memory local-baseline preview. Nothing will be written.</p>';
   try{
-    const report=await collectReadOnlyRecoveryPlan({engine,snapshotRevision:4,expectedCloudRevision:APPROVED_CLOUD_REVISION,expectedLocalHash:APPROVED_LOCAL_HASH,expectedCloudHash:APPROVED_CLOUD_HASH,expectedSnapshotHash:APPROVED_SNAPSHOT_HASH,buildVersion:buildVersion()});if(!card.isConnected)return;
+    const report=await collectReadOnlyRecoveryPlan({engine,snapshotRevision:APPROVED_RECOVERY_SESSION.snapshotRevision,expectedCloudRevision:APPROVED_RECOVERY_SESSION.cloudRevision,expectedLocalHash:APPROVED_RECOVERY_SESSION.localHash,expectedCloudHash:APPROVED_RECOVERY_SESSION.cloudHash,expectedSnapshotHash:APPROVED_RECOVERY_SESSION.snapshotHash,manualDecisionManifest:APPROVED_MANUAL_RECOVERY_DECISIONS,requireApprovedManualDecisions:true,buildVersion:buildVersion()});if(!card.isConnected)return;
     output.innerHTML=recoveryPlanSummary(report);
     output.querySelector('[data-copy-recovery-plan]').onclick=async event=>{const copyButton=event.currentTarget;try{await copyText(report.text);copyButton.textContent='Copied'}catch{copyButton.textContent='Copy failed'}setTimeout(()=>{if(copyButton.isConnected)copyButton.textContent='Copy recovery plan'},1200)};
   }catch(error){output.innerHTML=`<p><b>Recovery plan preview could not be built:</b> ${escapeHtml(error?.message||error)}</p><p>No planner, recovery, snapshot, or cloud data was changed.</p>`}
