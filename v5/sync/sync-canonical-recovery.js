@@ -130,7 +130,7 @@ export class CanonicalRecoveryCloudClient{
 function recordsByCollection(envelope){return extractReconciliationCollections(envelope)}
 function hasRecord(collections,key,id){return[...(collections[key]?.matched?.values?.()||[])].some(row=>row.recordId===id)}
 
-function verifyPostWrite({envelope,row,local,plan,config}){
+export function verifyCanonicalRecoveryIntegrity({envelope,row,local,plan,config}){
   stop(envelope?.contentHash===config.localHash,RECOVERY_FAILURE_CODES.SERVER_HASH_MISMATCH,'Cloud read-back hash does not match the approved iPad.','POST_WRITE_VERIFY');
   stop(row?.content_hash===config.localHash,RECOVERY_FAILURE_CODES.SERVER_HASH_MISMATCH,'Stored cloud hash metadata does not match the approved iPad.','POST_WRITE_VERIFY');
   stop(same(canonicalContent(envelope.plannerState,envelope.auxiliaryStores),canonicalContent(local.plannerState,local.auxiliaryStores)),RECOVERY_FAILURE_CODES.SERVER_HASH_MISMATCH,'Cloud canonical content differs from the approved iPad.','POST_WRITE_VERIFY');
@@ -185,7 +185,7 @@ export function createOneTimeCanonicalRecovery({storage=localStorage,engine=crea
       stage='CLOUD_IDEMPOTENCY_CHECK';const firstCloud=await client.current();userId=firstCloud.userId;
       stop(!!userId,RECOVERY_FAILURE_CODES.AUTH_FAILED,'The signed-in account could not be verified.','AUTH');
       if(Number(firstCloud.envelope.revision)>config.cloudRevision&&firstCloud.envelope.contentHash===config.localHash){
-        const post=verifyPostWrite({envelope:firstCloud.envelope,row:firstCloud.row,local,plan:{decisions:[]},config});
+        const post=verifyCanonicalRecoveryIntegrity({envelope:firstCloud.envelope,row:firstCloud.row,local,plan:{decisions:[]},config});
         const result={ok:true,status:'CLOUD ALREADY MATCHES APPROVED IPAD CANONICAL STATE',idempotent:true,buildVersion,localHash:local.contentHash,preWriteCloud:{revision:firstCloud.envelope.revision,hash:firstCloud.envelope.contentHash},postWriteCloud:{revision:firstCloud.envelope.revision,hash:firstCloud.envelope.contentHash,source:firstCloud.envelope.updatedByDevice,matchesLocal:true},counts:post.counts,integrityPassed:post.integrity.filter(check=>check.pass).length,verifiedAt:iso(now),recoveryMode:true,syncState:'PAUSED',cloudMutated:false};result.text=recoveryResultText(result);return result;
       }
       stop(Number(firstCloud.envelope.revision)===config.cloudRevision,RECOVERY_FAILURE_CODES.CLOUD_REVISION_CHANGED,'Cloud revision changed before recovery.','CLOUD_PREFLIGHT');
@@ -221,7 +221,7 @@ export function createOneTimeCanonicalRecovery({storage=localStorage,engine=crea
       cloudMutated=true;promotion={revision:Number(write.row.new_revision),hash:write.row.stored_hash};
 
       stage='POST_WRITE_READBACK';const postCloud=await client.current();stop(postCloud.userId===userId&&Number(postCloud.envelope.revision)===promotion.revision,RECOVERY_FAILURE_CODES.SERVER_READBACK_FAILED,'Fresh cloud read-back did not return the promoted revision.','POST_WRITE_READBACK');
-      const post=verifyPostWrite({envelope:postCloud.envelope,row:postCloud.row,local:finalLocal,plan,config});
+      const post=verifyCanonicalRecoveryIntegrity({envelope:postCloud.envelope,row:postCloud.row,local:finalLocal,plan,config});
       const result={ok:true,status:'RECOVERY COMPLETE — CLOUD MATCHES IPAD',buildVersion,localHash:finalLocal.contentHash,preWriteCloud:{revision:config.cloudRevision,hash:config.cloudHash},rollbackSnapshot,localBackup,postWriteCloud:{revision:postCloud.envelope.revision,hash:postCloud.envelope.contentHash,source:postCloud.envelope.updatedByDevice,matchesLocal:true},counts:post.counts,integrityPassed:post.integrity.filter(check=>check.pass).length,verifiedAt:iso(now),recoveryMode:recoveryModeOn(storage),syncState:engine.state,cloudMutated:true};
       stop(result.recoveryMode&&result.syncState===SYNC_STATES.PAUSED,RECOVERY_FAILURE_CODES.POST_WRITE_INTEGRITY_FAILED,'Recovery protection changed unexpectedly.','POST_WRITE_VERIFY');
       result.text=recoveryResultText(result);return result;

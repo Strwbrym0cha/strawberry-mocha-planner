@@ -4,14 +4,14 @@ import{browserFetch,resolveFetch}from'./sync-fetch.js';
 import{recoveryModeOn}from'./sync-storage.js';
 
 export const SYNC_STATES=Object.freeze({
-  PAUSED:'PAUSED',LOCAL_MASTER_UNSEEDED:'LOCAL_MASTER_UNSEEDED',UP_TO_DATE:'UP_TO_DATE',REMOTE_NEWER:'REMOTE_NEWER',
+  PAUSED:'PAUSED',DEVICE_BOOTSTRAP_REQUIRED:'DEVICE_BOOTSTRAP_REQUIRED',LOCAL_MASTER_UNSEEDED:'LOCAL_MASTER_UNSEEDED',UP_TO_DATE:'UP_TO_DATE',REMOTE_NEWER:'REMOTE_NEWER',
   LOCAL_DIRTY:'LOCAL_DIRTY',UPLOADING:'UPLOADING',DOWNLOADING:'DOWNLOADING',CONFLICT:'CONFLICT',OFFLINE:'OFFLINE',
   REAUTH_REQUIRED:'REAUTH_REQUIRED',ERROR:'ERROR'
 });
 
 export class SafeSyncEngine{
   constructor({storage=localStorage,fetchFunction=browserFetch}={}){
-    this.storage=storage;this.fetchFunction=resolveFetch(fetchFunction);this.state=SYNC_STATES.PAUSED;
+    this.storage=storage;this.fetchFunction=resolveFetch(fetchFunction);this.state=recoveryModeOn(storage)?SYNC_STATES.PAUSED:SYNC_STATES.DEVICE_BOOTSTRAP_REQUIRED;
   }
 
   isRecoveryProtected(){return recoveryModeOn(this.storage)}

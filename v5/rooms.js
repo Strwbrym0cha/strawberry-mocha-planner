@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit}from'./data.js?v=6.17.0-doordash-planner';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};

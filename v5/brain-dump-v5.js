@@ -1,4 +1,4 @@
-import{snapshotV4,saveV5Workspace,updateV5Record,archiveV5Record}from'./data.js?v=5.6.0-final-integration';
+import{snapshotV4,saveV5Workspace,updateV5Record,archiveV5Record}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const app=document.getElementById('app');
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

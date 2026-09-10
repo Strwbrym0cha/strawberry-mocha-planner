@@ -1,4 +1,4 @@
-import{archiveV5Record,localDateKey,runV5MoneyGigAction,saveV5GigShift,selectV5MoneyGig,snapshotV4,updateV5Record}from'./data.js?v=6.17.0-doordash-planner';
+import{archiveV5Record,localDateKey,runV5MoneyGigAction,saveV5GigShift,selectV5MoneyGig,snapshotV4,updateV5Record}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();

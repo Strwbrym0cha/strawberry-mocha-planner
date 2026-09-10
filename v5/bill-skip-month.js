@@ -1,4 +1,4 @@
-import{runV5MoneyGigAction,selectV5MoneyGig,localDateKey}from'./data.js?v=5.8.0-bill-skip-month';
+import{runV5MoneyGigAction,selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();
