@@ -154,6 +154,8 @@ assert.equal(guardSource.includes('prune'),false,'recovery storage guard never p
 const migration=await readFile(resolve(root,'supabase/migrations/20260908_safe_katos_planner_foundation.sql'),'utf8');
 assert.match(migration,/explicit guarded confirmation/);assert.match(migration,/p_expected_revision/);assert.match(migration,/for update/);
 assert.match(migration,/prepare_katos_recovery_snapshot/);assert.match(migration,/promote_katos_canonical_recovery/);assert.match(migration,/rollback_katos_canonical_recovery/);
-assert.match(migration,/planner_data_v3_snapshots/);assert.match(migration,/CONFLICT/);assert.match(migration,/to authenticated/);
+assert.match(migration,/planner_data_v3_snapshots/);assert.match(migration,/CONFLICT/);assert.match(migration,/security definer/i);
+assert.match(migration,/revoke all on table public\.planner_data_v3 from public, anon, authenticated/);
+assert.match(migration,/grant select on table public\.planner_data_v3 to authenticated/);
 
 console.log('V5 safe sync envelope, device, auth, diagnostics, and recovery protections passed');

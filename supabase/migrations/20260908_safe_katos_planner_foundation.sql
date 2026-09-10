@@ -19,7 +19,7 @@ create or replace function public.prepare_katos_recovery_snapshot(
   p_reason text default 'pre-canonical-ipad-recovery'
 )
 returns table(status text, snapshot_id uuid, protected_revision bigint, protected_hash text, created_at timestamptz)
-language plpgsql security invoker set search_path = public, pg_temp
+language plpgsql security definer set search_path = public, pg_temp
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -67,7 +67,7 @@ create or replace function public.promote_katos_canonical_recovery(
   p_reason text default 'one-time-ipad-canonical-recovery'
 )
 returns table(status text, new_revision bigint, stored_hash text, stored_at timestamptz)
-language plpgsql security invoker set search_path = public, pg_temp
+language plpgsql security definer set search_path = public, pg_temp
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -134,7 +134,7 @@ create or replace function public.rollback_katos_canonical_recovery(
   p_reason text default 'automatic-canonical-recovery-rollback'
 )
 returns table(status text, new_revision bigint, stored_hash text, stored_at timestamptz)
-language plpgsql security invoker set search_path = public, pg_temp
+language plpgsql security definer set search_path = public, pg_temp
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -201,19 +201,13 @@ drop policy if exists "katos_v3_snapshots_authenticated_insert" on public.planne
 
 create policy "katos_v3_authenticated_select" on public.planner_data_v3
   for select to authenticated using ((select auth.uid()) = user_id);
-create policy "katos_v3_authenticated_insert" on public.planner_data_v3
-  for insert to authenticated with check ((select auth.uid()) = user_id);
-create policy "katos_v3_authenticated_update" on public.planner_data_v3
-  for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 create policy "katos_v3_snapshots_authenticated_select" on public.planner_data_v3_snapshots
   for select to authenticated using ((select auth.uid()) = user_id);
-create policy "katos_v3_snapshots_authenticated_insert" on public.planner_data_v3_snapshots
-  for insert to authenticated with check ((select auth.uid()) = user_id);
 
-revoke all on table public.planner_data_v3 from public, anon;
-revoke all on table public.planner_data_v3_snapshots from public, anon;
-grant select, insert, update on table public.planner_data_v3 to authenticated;
-grant select, insert on table public.planner_data_v3_snapshots to authenticated;
+revoke all on table public.planner_data_v3 from public, anon, authenticated;
+revoke all on table public.planner_data_v3_snapshots from public, anon, authenticated;
+grant select on table public.planner_data_v3 to authenticated;
+grant select on table public.planner_data_v3_snapshots to authenticated;
 
 revoke all on function public.prepare_katos_recovery_snapshot(bigint,jsonb,text,text,text) from public, anon;
 revoke all on function public.promote_katos_canonical_recovery(bigint,jsonb,text,uuid,jsonb,text,text,text) from public, anon;
