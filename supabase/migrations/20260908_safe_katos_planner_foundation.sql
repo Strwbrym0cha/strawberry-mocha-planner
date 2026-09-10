@@ -19,7 +19,7 @@ create or replace function public.prepare_katos_recovery_snapshot(
   p_reason text default 'pre-canonical-ipad-recovery'
 )
 returns table(status text, snapshot_id uuid, protected_revision bigint, protected_hash text, created_at timestamptz)
-language plpgsql security definer set search_path = public, pg_temp
+language plpgsql security definer set search_path = ''
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -67,7 +67,7 @@ create or replace function public.promote_katos_canonical_recovery(
   p_reason text default 'one-time-ipad-canonical-recovery'
 )
 returns table(status text, new_revision bigint, stored_hash text, stored_at timestamptz)
-language plpgsql security definer set search_path = public, pg_temp
+language plpgsql security definer set search_path = ''
 as $$
 declare
   v_user_id uuid := auth.uid();
@@ -134,7 +134,7 @@ create or replace function public.rollback_katos_canonical_recovery(
   p_reason text default 'automatic-canonical-recovery-rollback'
 )
 returns table(status text, new_revision bigint, stored_hash text, stored_at timestamptz)
-language plpgsql security definer set search_path = public, pg_temp
+language plpgsql security definer set search_path = ''
 as $$
 declare
   v_user_id uuid := auth.uid();

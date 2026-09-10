@@ -155,6 +155,7 @@ const migration=await readFile(resolve(root,'supabase/migrations/20260908_safe_k
 assert.match(migration,/explicit guarded confirmation/);assert.match(migration,/p_expected_revision/);assert.match(migration,/for update/);
 assert.match(migration,/prepare_katos_recovery_snapshot/);assert.match(migration,/promote_katos_canonical_recovery/);assert.match(migration,/rollback_katos_canonical_recovery/);
 assert.match(migration,/planner_data_v3_snapshots/);assert.match(migration,/CONFLICT/);assert.match(migration,/security definer/i);
+assert.equal((migration.match(/set search_path = ''/g)||[]).length,3);
 assert.match(migration,/revoke all on table public\.planner_data_v3 from public, anon, authenticated/);
 assert.match(migration,/grant select on table public\.planner_data_v3 to authenticated/);
 
