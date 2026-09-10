@@ -131,7 +131,7 @@ export function mochiniAutonomy(value={},context='home',now=new Date()){
   else mood=weighted(CONTEXT_MOODS[context]||CONTEXT_MOODS.home);
   if(mood===life.mood&&Math.random()>.35){const alternatives=(CONTEXT_MOODS[context]||CONTEXT_MOODS.home).filter(([name])=>name!==mood);if(alternatives.length)mood=weighted(alternatives)}
   const [activityId,currentActivity]=activityFor(life,context,mood,now),line=lineFor(mood,activityId),night=hour<6||hour>=23,energyDrift=night?-3:(Math.random()<.45?-1:1);
-  life={...life,mood,moodIntensity:Math.round(35+Math.random()*45),energy:clamp(life.energy+energyDrift),curiosity:clamp(life.curiosity+(Math.random()<.5?-2:2)),playfulness:clamp(life.playfulness+(Math.random()<.5?-2:2)),patience:clamp(life.patience+(since(life.lastPokeAt,now)>2*MINUTE?6:0)),currentActivityId,currentActivity,currentContext:context,currentLine:line,lastMoodAt:nowIso,lastAutonomyAt:nowIso,dialogueHistory:history(life,line)};
+  life={...life,mood,moodIntensity:Math.round(35+Math.random()*45),energy:clamp(life.energy+energyDrift),curiosity:clamp(life.curiosity+(Math.random()<.5?-2:2)),playfulness:clamp(life.playfulness+(Math.random()<.5?-2:2)),patience:clamp(life.patience+(since(life.lastPokeAt,now)>2*MINUTE?6:0)),currentActivityId:activityId,currentActivity,currentContext:context,currentLine:line,lastMoodAt:nowIso,lastAutonomyAt:nowIso,dialogueHistory:history(life,line)};
   const checkIn=['study','work','gig','daily'].includes(context)&&Math.random()<.28;
   return{life,line,expression:expressionForMood(mood),mood,accepted:true,autonomous:true,context,activityId,checkIn};
 }

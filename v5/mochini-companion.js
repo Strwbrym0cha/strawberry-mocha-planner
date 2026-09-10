@@ -4,7 +4,7 @@ const V4_KEY='sm_v4_beta';
 const V5_KEY='sm_v5_data';
 const ROOT_ID='katos-mochini-companion';
 const app=document.getElementById('app');
-let root=null,tickTimer=null,checkInTimer=null,open=false,lastContext=null;
+let root=null,tickTimer=null,checkInTimer=null,open=false,lastContext=null,displayLife=null;
 
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -63,12 +63,13 @@ function contextActivity(life,context){
   return['princessing','being a tiny strawberry princess',life.currentLine];
 }
 function applyContext(force=false){
-  const context=currentContext(),life=currentLife();if(!force&&context===lastContext&&life.currentContext===context)return life;lastContext=context;
-  if(context==='mochini')return life;
+  const context=currentContext(),life=displayLife||currentLife();if(!force&&context===lastContext&&life.currentContext===context)return life;lastContext=context;
+  if(context==='mochini'){displayLife=life;return life}
   const [currentActivityId,currentActivity,contextLine]=contextActivity(life,context),protectReaction=since(life.lastInteractionAt)<30_000;
   const next={...life,currentContext:context,currentActivityId,currentActivity,currentLine:protectReaction?life.currentLine:contextLine};
-  if(next.currentContext!==life.currentContext||next.currentActivityId!==life.currentActivityId||next.currentActivity!==life.currentActivity||next.currentLine!==life.currentLine)writeLife(next,'context');
-  return next;
+  // Context is presentation state. Keep it in memory so rendering, focusing,
+  // reconnecting, and room navigation never rewrite the planner.
+  displayLife=next;return next;
 }
 
 function markup(life){const [prop,sceneClass]=scene(life),hidden=currentView()==='mochini';return `<aside id="${ROOT_ID}" class="mochini-companion scene-${escape(sceneClass)} ${hidden?'is-hidden':''}" data-mc-root data-mood="${escape(life.mood)}">
@@ -100,14 +101,14 @@ function syncUi(life=currentLife()){
 function showCheckIn(ms=8500){open=true;syncUi();clearTimeout(checkInTimer);checkInTimer=setTimeout(()=>{open=false;syncUi()},ms)}
 
 function applyDirect(type){
-  const life=currentLife(),result=type==='berry'?mochiniBerry(life):mochiniPoke(life);writeLife(result.life,type);syncUi(result.life);window.dispatchEvent(new CustomEvent('katos:mochini',{detail:result}));open=true;syncUi(result.life);
+  const life=currentLife(),result=type==='berry'?mochiniBerry(life):mochiniPoke(life);writeLife(result.life,type);displayLife=result.life;syncUi(result.life);window.dispatchEvent(new CustomEvent('katos:mochini',{detail:result}));open=true;syncUi(result.life);
   if(currentView()==='mochini')setTimeout(()=>document.querySelector('.nav-btn.active[data-view="mochini"]')?.click(),40);
   return result;
 }
 function tick(force=false){
-  const life=currentLife();if(!force&&since(life.lastAutonomyAt)<90_000){scheduleTick();return}
+  const life=displayLife||currentLife();if(!force&&since(life.lastAutonomyAt)<90_000){scheduleTick();return}
   const result=mochiniAutonomy(life,currentContext());
-  if(result.accepted){writeLife(result.life,'autonomy');syncUi(result.life);window.dispatchEvent(new CustomEvent('katos:mochini',{detail:result}));if(result.checkIn)showCheckIn()}
+  if(result.accepted){displayLife=result.life;syncUi(result.life);window.dispatchEvent(new CustomEvent('katos:mochini',{detail:result}));if(result.checkIn)showCheckIn()}
   else syncUi(result.life);
   scheduleTick();
 }

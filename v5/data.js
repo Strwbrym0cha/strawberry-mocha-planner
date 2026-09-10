@@ -1,8 +1,8 @@
 import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=6.8.0-routine-builder';
-import{applyWorkAction,initializeWorkHQ,selectWorkHQ}from'./work-hq.js?v=5.3.0-study-nook';
-import{applyStudyAction,initializeStudyNook,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
-import{applyMoneyGigAction,initializeMoneyGig,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
-import{applyLifestyleAction,initializeLifestyle,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
+import{applyWorkAction,selectWorkHQ}from'./work-hq.js?v=5.3.0-study-nook';
+import{applyStudyAction,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
+import{applyMoneyGigAction,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
+import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
 import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
 
 export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep};
@@ -16,9 +16,6 @@ const V5_UI_KEY='sm_v5_preview_ui';
 const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
 const V5_LEDGER_KEY='sm_v5_money_ledger';
-const CLOUD_PROJECT_URL='https://sigjwmgekmrwehylvuvu.supabase.co';
-const CLOUD_PUBLISHABLE_KEY='sb_publishable_CTqamiGR3_lXNW2mBx9wMA_ObemQMAC';
-const CLOUD_SESSION_KEYS=['sb-sigjwmgekmrwehylvuvu-auth-token','sm_v16_session'];
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -74,47 +71,13 @@ function stateCounts(state){
 }
 function hasUserContent(state){return stateCounts(state).total>0}
 function hasRecoverableV5Content(state){return hasUserContent(state)||list(pathValue(state,'v4.archive')).length>0}
-function shouldRefreshFromV4(migrated,v4){
-  if(!v4)return false;
-  if(!migrated)return true;
-  const incoming=stateCounts(v4),existing=stateCounts(migrated);
-  if(incoming.total>existing.total)return true;
-  const incomingDate=Date.parse(sourceDate(v4)),existingDate=Date.parse(sourceDate(migrated));
-  return Number.isFinite(incomingDate)&&Number.isFinite(existingDate)&&incomingDate>existingDate&&incoming.total>=existing.total;
-}
 function parseStored(raw){try{return raw?unwrapState(JSON.parse(raw)):null}catch{return null}}
 function readReceipt(){try{const value=JSON.parse(localStorage.getItem(V5_MIGRATION_KEY)||'null');return value&&typeof value==='object'?value:null}catch{return null}}
 function writeReceipt(receipt){try{localStorage.setItem(V5_MIGRATION_KEY,JSON.stringify(receipt))}catch{}}
 function sourceDate(state){return text(state?.meta?.updatedAt)||text(state?.meta?.createdAt)||text(state?.__smUpdatedAt)}
 
-function cloudSession(){
-  for(const key of CLOUD_SESSION_KEYS){
-    try{
-      const parsed=JSON.parse(localStorage.getItem(key)||'null');
-      const value=parsed?.currentSession||parsed?.session||parsed;
-      if(value?.access_token&&value?.user?.id)return value;
-    }catch{}
-  }
-  return null;
-}
-
 export async function restoreCloudV4Data(){
-  const session=cloudSession();
-  if(!session)return{ok:false,error:'Sign in to your KatOS account in V4 first, then try cloud restore again.'};
-  try{
-    const endpoint=`${CLOUD_PROJECT_URL}/rest/v1/planner_data?user_id=eq.${encodeURIComponent(session.user.id)}&select=data,updated_at`;
-    const response=await fetch(endpoint,{headers:{apikey:CLOUD_PUBLISHABLE_KEY,Authorization:`Bearer ${session.access_token}`} });
-    const payload=await response.json().catch(()=>null);
-    if(!response.ok)throw new Error(text(payload?.message)||text(payload?.hint)||'The cloud backup could not be read.');
-    const row=list(payload)[0];
-    if(!row?.data||typeof row.data!=='object')return{ok:false,error:'No saved planner backup was found for this account.'};
-    const source=unwrapState(row.data);
-    const normalized=Number(source?.schemaVersion)===4?source:legacyFlatState(source);
-    if(!hasUserContent(normalized))return{ok:false,error:'The cloud backup loaded, but it did not contain planner records.'};
-    const raw=JSON.stringify({data:source,updatedAt:row.updated_at||''});
-    const receipt=saveImportedState(normalized,raw,'supabase','cloud');
-    return{ok:!!receipt,counts:receipt?.counts||stateCounts(normalized),sourceUpdatedAt:row.updated_at||''};
-  }catch(error){return{ok:false,error:error?.message||'Cloud restore did not finish.'}}
+  return{ok:false,paused:true,error:'Legacy cloud restore is disabled while the safe sync rebuild is recovery protected.'};
 }
 
 function legacyFlatState(state){
@@ -196,23 +159,13 @@ export function localDateKey(date=new Date()){
 
 export function readV4State(){
   try{
-    const migrated=candidateFromKey(V5_DATA_KEY);
-    const current=bestLegacyCandidate();
-    const v4=current?.state;
-    if(v4&&hasUserContent(v4)){
-      if(!migrated?.state||shouldRefreshFromV4(migrated.state,v4)){
-        if(migrated?.raw){try{localStorage.setItem(`${V5_PREIMPORT_BACKUP_PREFIX}${Date.now()}`,migrated.raw)}catch{}}
-        saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,migrated?.state?'refresh':'repair');
-      }
-      return v4;
-    }
-    if(migrated?.state){
-      const ledgerImported=mergeImportedLedger(migrated.state),dailyNotesImported=mergeImportedDailyNotes(migrated.state);
-      if(!readReceipt())writeReceipt({version:2,sourceKey:V5_DATA_KEY,reason:'repair',importedAt:new Date().toISOString(),sourceUpdatedAt:sourceDate(migrated.state),counts:stateCounts(migrated.state),ledgerImported,dailyNotesImported,backupKey:V4_BACKUP_KEY});
-      return migrated.state;
-    }
-    if(v4){saveImportedState(v4,current?.raw||'',current?.key||V4_KEY,'initial');return v4}
-    return null;
+    // Rendering is a pure read. Missing defaults and legacy shapes are
+    // normalized only in memory by selectors. Cross-store copying remains an
+    // explicit action (migrateV4ToV5/importV4Export) and never happens because
+    // a room, Settings, or diagnostics was opened.
+    const rendered=candidateFromKey(V4_KEY)?.state;
+    if(rendered)return rendered;
+    return candidateFromKey(V5_DATA_KEY)?.state||null;
   }catch(error){
     console.warn('KatOS V5 could not read the local V4 snapshot.',error);
     return null;
@@ -372,9 +325,7 @@ export function runV5MochiniAction(action={}){
 export function selectV5WorkHQ(date=localDateKey()){
   const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
   if(!source)return selectWorkHQ({},date);
-  const initialized=initializeWorkHQ(source,date);
-  if(initialized.changed)persistPlannerState(initialized.state,'v5-work-hq-initialize');
-  return selectWorkHQ(initialized.state,date);
+  return selectWorkHQ(source,date);
 }
 
 export function runV5WorkAction(action={}){
@@ -389,9 +340,7 @@ export function runV5WorkAction(action={}){
 export function selectV5StudyNook(date=localDateKey()){
   const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
   if(!source)return selectStudyNook({},date);
-  const initialized=initializeStudyNook(source,date);
-  if(initialized.changed)persistPlannerState(initialized.state,'v5-study-nook-initialize');
-  return selectStudyNook(initialized.state,date);
+  return selectStudyNook(source,date);
 }
 
 export function runV5StudyAction(action={}){
@@ -408,9 +357,7 @@ export function runV5StudyAction(action={}){
 export function selectV5MoneyGig(date=localDateKey()){
   const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
   if(!source)return selectMoneyGig({},date,{v5Ledger:loadV5Ledger().entries});
-  const initialized=initializeMoneyGig(source,date,{v5Ledger:loadV5Ledger().entries});
-  if(initialized.changed)persistPlannerState(initialized.state,'v5-money-gig-initialize');
-  return selectMoneyGig(initialized.state,date);
+  return selectMoneyGig(source,date,{v5Ledger:loadV5Ledger().entries});
 }
 
 export function runV5MoneyGigAction(action={}){
@@ -425,9 +372,7 @@ export function runV5MoneyGigAction(action={}){
 export function selectV5Lifestyle(date=localDateKey()){
   const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
   if(!source)return selectLifestyle({},date);
-  const initialized=initializeLifestyle(source,date);
-  if(initialized.changed)persistPlannerState(initialized.state,'v5-lifestyle-initialize');
-  return selectLifestyle(initialized.state,date);
+  return selectLifestyle(source,date);
 }
 
 export function runV5LifestyleAction(action={}){
