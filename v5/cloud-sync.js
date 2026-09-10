@@ -72,6 +72,7 @@ function primaryLocalState(){
 
 function backupLocal(candidate,reason='cloud-pull'){if(!candidate?.raw||contentScore(candidate.state)<=0)return;try{localStorage.setItem(`${PRE_SYNC_PREFIX}${reason}_${Date.now()}`,candidate.raw)}catch{}}
 function applyCloudState(state){
+  console.warn('Legacy cloud installation is retired. Use the guarded V5 Device Bootstrap control.');return false;
   if(!isObject(state))return false;
   const current=primaryLocalState();if(current&&contentScore(current.state)>0)backupLocal(current,'cloud-pull');
   try{localStorage.setItem(V5_DATA_KEY,JSON.stringify(state));lastLocalRaw=localStorage.getItem(V5_DATA_KEY)||'';window.dispatchEvent(new CustomEvent('katos:cloud-sync',{detail:{status:'pulled'}}));return true}catch{return false}
@@ -86,6 +87,7 @@ async function fetchCloud(session){
 }
 
 async function pushCloud(session,state){
+  throw new Error('Legacy cloud writes are retired. Normal sync requires the guarded revision-CAS engine.');
   if(!isObject(state)||contentScore(state)<=0)return{ok:false,reason:'empty-local'};
   const now=new Date().toISOString();const outgoing={...state,__smUpdatedAt:now};
   const response=await fetch(`${CLOUD_URL}/rest/v1/planner_data?on_conflict=user_id`,{method:'POST',headers:{apikey:CLOUD_KEY,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify({user_id:session.user.id,data:outgoing})});

@@ -1,4 +1,4 @@
-import{selectV5MoneyGig,localDateKey}from'./data.js?v=5.8.5-gig-archive-filter';
+import{selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const app=document.getElementById('app');
 const list=value=>Array.isArray(value)?value:[];

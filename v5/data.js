@@ -4,6 +4,7 @@ import{applyStudyAction,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook'
 import{applyMoneyGigAction,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
 import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
 import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
+import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.8-phone-canonical-bootstrap';
 
 export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep};
 
@@ -16,6 +17,9 @@ const V5_UI_KEY='sm_v5_preview_ui';
 const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
 const V5_LEDGER_KEY='sm_v5_money_ledger';
+const BOOTSTRAP_WRITE_ERROR='This device is awaiting canonical-cloud bootstrap. Local planner changes are locked until verification completes.';
+const plannerWritesBlocked=()=>['DEVICE_BOOTSTRAP_REQUIRED','RECOVERY_MODE_PAUSED'].includes(deviceBootstrapStatus(localStorage).state);
+const bootstrapBlocked=()=>({ok:false,error:BOOTSTRAP_WRITE_ERROR,code:'DEVICE_BOOTSTRAP_REQUIRED'});
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -173,6 +177,7 @@ export function readV4State(){
 }
 
 export function migrateV4ToV5(){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const current=bestLegacyCandidate();
     if(!current?.state)return{ok:false,source:'No V4 data found'};
@@ -185,6 +190,7 @@ export function migrateV4ToV5(){
 
 // This runs only in the browser. It does not upload the chosen export anywhere.
 export function importV4Export(raw){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const state=legacyFlatState(parseStored(raw));
     if(!state||!hasUserContent(state))return{ok:false,error:'That file did not contain a KatOS V4 planner export.'};
@@ -233,6 +239,7 @@ export function loadV5DailyNote(day=localDateKey()){
 }
 
 export function saveV5DailyNote(fields){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   const entry={...fields,date:/^\d{4}-\d{2}-\d{2}$/.test(text(fields?.date))?text(fields.date):localDateKey(),updatedAt:new Date().toISOString()};
   try{
     const entries=list(JSON.parse(localStorage.getItem(V5_DAILY_NOTES_KEY)||'[]')).filter(item=>text(item?.date)!==entry.date);
@@ -251,6 +258,7 @@ export function loadV5RoomDetail(room){
 }
 
 export function saveV5RoomDetail(room,fields){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   const entry={...fields,updatedAt:new Date().toISOString()};
   try{
     const details=JSON.parse(localStorage.getItem(V5_ROOM_DETAILS_KEY)||'{}');
@@ -268,6 +276,7 @@ export function selectV5DailyShit(date=localDateKey(),options={}){
 }
 
 export function runV5DailyAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so Daily Shit has a planner to update.'};
@@ -287,6 +296,7 @@ function persistPlannerState(state,reason){
 }
 
 export function saveV5GigShift(fields={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your planner data first so the shift can be saved.'};
@@ -309,6 +319,7 @@ export function selectV5MochiniLife(){
 }
 
 export function runV5MochiniAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so Mochini can remember this.'};
@@ -329,6 +340,7 @@ export function selectV5WorkHQ(date=localDateKey()){
 }
 
 export function runV5WorkAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so Work HQ has a planner to update.'};
@@ -344,6 +356,7 @@ export function selectV5StudyNook(date=localDateKey()){
 }
 
 export function runV5StudyAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so Study Nook has a planner to update.'};
@@ -361,6 +374,7 @@ export function selectV5MoneyGig(date=localDateKey()){
 }
 
 export function runV5MoneyGigAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so Money Café has a planner to update.'};
@@ -376,6 +390,7 @@ export function selectV5Lifestyle(date=localDateKey()){
 }
 
 export function runV5LifestyleAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so the lifestyle rooms have a planner to update.'};
@@ -393,6 +408,7 @@ const minutesFrom=value=>({"5 minutes":5,"15 minutes":15,"30 minutes":30,"45 min
 // V5's pop-ups update the planner data itself, not just a display card.  The
 // original V4 envelope is retained so V4 remains a safe recovery copy.
 export function saveV5Workspace(view,fields={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so V5 has a planner to update.'};
@@ -437,6 +453,7 @@ export function loadV5Ledger(){
 }
 
 export function saveV5LedgerEntry(fields){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   const label=text(fields?.label||fields?.name),amount=Math.abs(Number(fields?.amount));
   if(!label||!Number.isFinite(amount)||amount<=0)return{ok:false,error:'Add a name and an amount first.'};
   const kind=['income','expense','transfer'].includes(text(fields?.kind))?text(fields.kind):'expense';
@@ -452,6 +469,7 @@ export function removeV5LedgerEntry(id){
 }
 
 export function updateV5LedgerEntry(id,fields={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   const current=loadV5Ledger(),index=current.entries.findIndex(entry=>String(entry?.id)===String(id));
   if(index<0)return{ok:false,error:'That ledger entry is no longer here.'};
   const old=current.entries[index],label=text(fields.label)||old.label,amount=Math.abs(Number(fields.amount));
@@ -465,6 +483,7 @@ export function updateV5LedgerEntry(id,fields={}){
 
 const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary','money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets','work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals','lifestyle.movement.plans','lifestyle.movement.activities','lifestyle.movement.goals','lifestyle.hobbies.items','lifestyle.hobbies.projects','lifestyle.hobbies.resources','lifestyle.growth.areas','lifestyle.growth.goals','lifestyle.growth.milestones','lifestyle.growth.wins','lifestyle.growth.reflections']);
 export function updateV5Record(path,id,fields={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     if(path==='v5.ledger')return updateV5LedgerEntry(id,fields);
     if(!EDITABLE_RECORD_PATHS.has(path))return{ok:false,error:'This type of record is not editable yet.'};
@@ -482,6 +501,7 @@ export function updateV5Record(path,id,fields={}){
 }
 
 export function archiveV5Record(path,id){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so V5 has a planner to update.'};
@@ -513,6 +533,7 @@ export function archiveV5Record(path,id){
 // Archive is the reversible replacement for delete in V5. Restoring returns the
 // original record to its recorded collection and removes only that archive copy.
 export function restoreV5Record(archiveId){
+  if(plannerWritesBlocked())return bootstrapBlocked();
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so V5 has a planner to restore into.'};

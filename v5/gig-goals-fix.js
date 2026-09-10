@@ -1,4 +1,4 @@
-import{snapshotV4,selectV5MoneyGig,runV5MoneyGigAction,getGigGoalProgress}from'./data.js?v=6.18.0-gig-goals-fix';
+import{snapshotV4,selectV5MoneyGig,runV5MoneyGigAction,getGigGoalProgress}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();

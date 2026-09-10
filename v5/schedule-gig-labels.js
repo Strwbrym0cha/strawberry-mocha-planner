@@ -1,4 +1,4 @@
-import { snapshotV4 } from './data.js?v=5.6.0-final-integration';
+import { snapshotV4 } from './data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();

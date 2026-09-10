@@ -1,4 +1,4 @@
-import{selectV5MoneyGig}from'./data.js?v=5.6.0-final-integration';
+import{selectV5MoneyGig}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const STORAGE_KEY='katos-v5-spending-budgets';
 const DEFAULT_CATEGORIES=['Food','Groceries','Eating Out','Gas','Transportation','Fun','Shopping','Bills','Subscriptions','Work','Other'];

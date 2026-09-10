@@ -1,4 +1,4 @@
-import{snapshotV4,selectV5DailyShit,runV5DailyAction,runV5MochiniAction}from'./data.js?v=6.8.0-routine-builder';
+import{snapshotV4,selectV5DailyShit,runV5DailyAction,runV5MochiniAction}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
 
 const app=document.getElementById('app');
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

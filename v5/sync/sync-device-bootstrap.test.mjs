@@ -1,0 +1,23 @@
+import assert from'node:assert/strict';
+import{webcrypto}from'node:crypto';
+import{CANONICAL_CLOUD,DEVICE_STATUS_KEY,PHONE_BACKUP_PREFIX,createVerifiedPhoneBackup,installCanonicalCloudCopy}from'./sync-device-bootstrap.js';
+import{STORAGE_KEYS,auxiliaryDefaults}from'./sync-storage.js';
+globalThis.crypto??=webcrypto;
+class Storage{constructor(values={}){this.values=new Map(Object.entries(values));this.setCalls=[]}get length(){return this.values.size}key(i){return[...this.values.keys()][i]??null}getItem(key){return this.values.has(key)?this.values.get(key):null}setItem(key,value){this.setCalls.push(key);this.values.set(key,String(value))}removeItem(key){this.values.delete(key)}}
+const state={schemaVersion:4,life:{tasks:[{id:'stale',updatedAt:'2099-01-01'}]},money:{hq:{}},work:{gig:{},hq:{}},education:{},v4:{archive:[]}},storage=new Storage({[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:state}),[STORAGE_KEYS.ledger]:JSON.stringify(auxiliaryDefaults()[STORAGE_KEYS.ledger])});
+const before=JSON.stringify([...storage.values]);
+const staleCloud={ok:true,auth:{state:'AUTHENTICATED',userId:'owner'},row:{content_hash:'0'.repeat(64)},envelope:{format:'katos-sync-envelope',schemaVersion:1,revision:7,contentHash:'0'.repeat(64),plannerState:{},auxiliaryStores:auxiliaryDefaults()}};
+const aborted=await installCanonicalCloudCopy({confirmed:true,storage,engine:{fetchCloudDiagnostics:async()=>staleCloud}});
+assert.equal(aborted.ok,false);assert.equal(aborted.failureCode,'CLOUD_REVISION_CHANGED');assert.equal(JSON.stringify([...storage.values]),before,'stale, timestamp-newer local data never uploads or changes cloud/local state');
+const emptyStorage=new Storage(),emptyBefore=JSON.stringify([...emptyStorage.values]);
+const empty=await installCanonicalCloudCopy({confirmed:true,storage:emptyStorage,engine:{fetchCloudDiagnostics:async()=>staleCloud}});
+assert.equal(empty.ok,false);assert.equal(JSON.stringify([...emptyStorage.values]),emptyBefore,'an empty phone cannot seed or alter cloud before canonical verification');
+const localOnlyStorage=new Storage({[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:{...state,life:{tasks:[...state.life.tasks,{id:'phone-only',updatedAt:'2100-01-01'}]}}})}),localOnlyBefore=JSON.stringify([...localOnlyStorage.values]);
+const localOnly=await installCanonicalCloudCopy({confirmed:true,storage:localOnlyStorage,engine:{fetchCloudDiagnostics:async()=>({...staleCloud,envelope:{...staleCloud.envelope,revision:6},row:{content_hash:'f'.repeat(64)}})}});
+assert.equal(localOnly.ok,false);assert.equal(localOnly.failureCode,'CLOUD_HASH_CHANGED');assert.equal(JSON.stringify([...localOnlyStorage.values]),localOnlyBefore,'local-only records and later timestamps cannot override or inject into canonical cloud');
+const backup=await createVerifiedPhoneBackup({storage,deviceId:'phone-1',now:()=>123});assert.equal(backup.verified,true);assert.match(backup.key,new RegExp(`^${PHONE_BACKUP_PREFIX}`));const storedBackup=JSON.parse(storage.getItem(backup.key));assert.equal(storedBackup.payloadHash,backup.hash);assert.equal(storedBackup.localHash,backup.localHash);
+const failedBackupStorage=new Storage({[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:state})});failedBackupStorage.setItem=()=>{throw new Error('quota')};await assert.rejects(()=>createVerifiedPhoneBackup({storage:failedBackupStorage}),/quota/);
+globalThis.localStorage=storage;storage.setItem(DEVICE_STATUS_KEY,JSON.stringify({state:'DEVICE_BOOTSTRAP_REQUIRED'}));
+const{saveV5Workspace}=await import('../data.js?device-bootstrap-write-guard');
+assert.equal(saveV5Workspace('tasks',{task:'Blocked phone task'}).code,'DEVICE_BOOTSTRAP_REQUIRED','local planner write paths are guarded below the UI');
+assert.equal(CANONICAL_CLOUD.revision,6);assert.equal(CANONICAL_CLOUD.hash.length,64);console.log('Phone bootstrap blocks stale/empty/local-only clients before cloud mutation and verifies the local precautionary backup.');
