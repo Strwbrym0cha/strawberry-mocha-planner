@@ -98,5 +98,5 @@ await assert.rejects(()=>collectReadOnlyRecoveryPlan({storage,engine,snapshotRev
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..','..'),lab=await readFile(resolve(root,'v5/sync/sync-lab.js'),'utf8'),index=await readFile(resolve(root,'v5/index.html'),'utf8');
 assert.match(lab,/Build recovery plan/);assert.match(lab,/Copy recovery plan/);assert.doesNotMatch(lab,/data-(?:seed|upload|restore|merge|replace|install)-/);
-assert.match(index,/7\.0\.6-manual-decisions-locked/);
+assert.match(index,/7\.0\.7-one-time-canonical-recovery/);
 console.log('V5 local-baseline recovery decisions, donor/suppression/collision guards, deterministic preview, integrity, and no-write tests passed');

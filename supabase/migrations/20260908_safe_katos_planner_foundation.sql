@@ -1,5 +1,5 @@
--- REVIEW ONLY: do not apply until the iPad master diagnostics are approved.
--- Additive metadata and a revision-checked, snapshot-before-overwrite write path.
+-- Additive KatOS V5 canonical recovery foundation.
+-- These functions are invoked only after explicit guarded confirmation in Sync Lab.
 
 alter table public.planner_data_v3
   add column if not exists content_hash text,
@@ -8,93 +8,181 @@ alter table public.planner_data_v3
 alter table public.planner_data_v3_snapshots
   add column if not exists content_hash text;
 
-create or replace function public.safe_write_katos_planner(
+create index if not exists planner_data_v3_snapshots_user_revision_idx
+  on public.planner_data_v3_snapshots(user_id, revision, created_at desc);
+
+create or replace function public.prepare_katos_recovery_snapshot(
   p_expected_revision bigint,
-  p_new_data jsonb,
-  p_new_content_hash text,
+  p_expected_data jsonb,
+  p_expected_content_hash text,
   p_device_id text,
-  p_reason text default 'sync'
+  p_reason text default 'pre-canonical-ipad-recovery'
 )
-returns table(status text, new_revision bigint, stored_hash text, stored_at timestamptz)
-language plpgsql
-security invoker
-set search_path = public, pg_temp
+returns table(status text, snapshot_id uuid, protected_revision bigint, protected_hash text, created_at timestamptz)
+language plpgsql security invoker set search_path = public, pg_temp
 as $$
 declare
   v_user_id uuid := auth.uid();
   v_current public.planner_data_v3%rowtype;
+  v_snapshot public.planner_data_v3_snapshots%rowtype;
+begin
+  if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '28000'; end if;
+  if p_expected_revision is null or p_expected_revision < 1 then raise exception 'EXPECTED_REVISION_REQUIRED' using errcode = '22023'; end if;
+  if jsonb_typeof(p_expected_data) <> 'object' then raise exception 'INVALID_EXPECTED_DATA' using errcode = '22023'; end if;
+  if p_expected_content_hash !~ '^[0-9a-f]{64}$' then raise exception 'INVALID_CONTENT_HASH' using errcode = '22023'; end if;
+  if coalesce(trim(p_device_id), '') = '' then raise exception 'DEVICE_ID_REQUIRED' using errcode = '22023'; end if;
+
+  perform pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0));
+  select * into v_current from public.planner_data_v3 where user_id = v_user_id for update;
+  if not found then
+    return query select 'MISSING'::text, null::uuid, null::bigint, null::text, null::timestamptz; return;
+  end if;
+  if v_current.revision <> p_expected_revision then
+    return query select 'REVISION_CONFLICT'::text, null::uuid, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
+  if v_current.data is distinct from p_expected_data then
+    return query select 'CONTENT_CONFLICT'::text, null::uuid, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
+  if v_current.content_hash is not null and v_current.content_hash <> p_expected_content_hash then
+    return query select 'HASH_CONFLICT'::text, null::uuid, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
+
+  insert into public.planner_data_v3_snapshots(user_id, data, schema_version, revision, reason, device_id, content_hash)
+  values(v_user_id, v_current.data, v_current.schema_version, v_current.revision,
+    coalesce(nullif(trim(p_reason), ''), 'pre-canonical-ipad-recovery'), p_device_id, p_expected_content_hash)
+  returning * into v_snapshot;
+
+  return query select 'OK'::text, v_snapshot.id, v_snapshot.revision, v_snapshot.content_hash, v_snapshot.created_at;
+end;
+$$;
+
+create or replace function public.promote_katos_canonical_recovery(
+  p_expected_revision bigint,
+  p_expected_data jsonb,
+  p_expected_content_hash text,
+  p_rollback_snapshot_id uuid,
+  p_new_data jsonb,
+  p_new_content_hash text,
+  p_device_id text,
+  p_reason text default 'one-time-ipad-canonical-recovery'
+)
+returns table(status text, new_revision bigint, stored_hash text, stored_at timestamptz)
+language plpgsql security invoker set search_path = public, pg_temp
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_current public.planner_data_v3%rowtype;
+  v_snapshot public.planner_data_v3_snapshots%rowtype;
   v_next_revision bigint;
   v_now timestamptz := clock_timestamp();
-  v_stored_data jsonb;
 begin
-  if v_user_id is null then
-    raise exception 'AUTH_REQUIRED' using errcode = '28000';
-  end if;
-  if p_expected_revision is null or p_expected_revision < 0 then
-    raise exception 'EXPECTED_REVISION_REQUIRED' using errcode = '22023';
-  end if;
-  if jsonb_typeof(p_new_data) <> 'object' then
-    raise exception 'INVALID_CANONICAL_DATA' using errcode = '22023';
-  end if;
-  if p_new_content_hash !~ '^[0-9a-f]{64}$' then
-    raise exception 'INVALID_CONTENT_HASH' using errcode = '22023';
-  end if;
-  if coalesce(trim(p_device_id), '') = '' then
-    raise exception 'DEVICE_ID_REQUIRED' using errcode = '22023';
+  if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '28000'; end if;
+  if p_expected_revision is null or p_expected_revision < 1 then raise exception 'EXPECTED_REVISION_REQUIRED' using errcode = '22023'; end if;
+  if jsonb_typeof(p_expected_data) <> 'object' or jsonb_typeof(p_new_data) <> 'object' then raise exception 'INVALID_CANONICAL_DATA' using errcode = '22023'; end if;
+  if p_expected_content_hash !~ '^[0-9a-f]{64}$' or p_new_content_hash !~ '^[0-9a-f]{64}$' then raise exception 'INVALID_CONTENT_HASH' using errcode = '22023'; end if;
+  if p_rollback_snapshot_id is null then raise exception 'ROLLBACK_SNAPSHOT_REQUIRED' using errcode = '22023'; end if;
+  if coalesce(trim(p_device_id), '') = '' then raise exception 'DEVICE_ID_REQUIRED' using errcode = '22023'; end if;
+  if p_new_data->>'format' <> 'katos-sync-envelope' or p_new_data->>'contentHash' <> p_new_content_hash then
+    raise exception 'INVALID_CANONICAL_ENVELOPE' using errcode = '22023';
   end if;
 
-  -- Also serializes first-time row creation for this user.
   perform pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0));
-  select * into v_current
-    from public.planner_data_v3
-    where user_id = v_user_id
-    for update;
-
-  if found then
-    if coalesce(v_current.revision, 0) <> p_expected_revision then
-      return query select 'CONFLICT'::text, v_current.revision, v_current.content_hash, v_current.updated_at;
-      return;
-    end if;
-
-    insert into public.planner_data_v3_snapshots(user_id, revision, data, reason, device_id, content_hash)
-    values(v_user_id, v_current.revision, v_current.data, coalesce(nullif(trim(p_reason), ''), 'sync'), p_device_id, v_current.content_hash);
-    v_next_revision := v_current.revision + 1;
-  else
-    if p_expected_revision <> 0 then
-      return query select 'CONFLICT'::text, 0::bigint, null::text, null::timestamptz;
-      return;
-    end if;
-    v_next_revision := 1;
+  select * into v_current from public.planner_data_v3 where user_id = v_user_id for update;
+  if not found then
+    return query select 'MISSING'::text, null::bigint, null::text, null::timestamptz; return;
+  end if;
+  if v_current.revision <> p_expected_revision then
+    return query select 'REVISION_CONFLICT'::text, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
+  if v_current.data is distinct from p_expected_data then
+    return query select 'CONTENT_CONFLICT'::text, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
+  if v_current.content_hash is not null and v_current.content_hash <> p_expected_content_hash then
+    return query select 'HASH_CONFLICT'::text, v_current.revision, v_current.content_hash, v_current.updated_at; return;
   end if;
 
-  v_stored_data := (p_new_data - 'revision' - 'updatedAt' - 'updatedByDevice' - 'contentHash') ||
-    jsonb_build_object(
-      'revision', v_next_revision,
-      'updatedAt', v_now,
-      'updatedByDevice', p_device_id,
-      'contentHash', p_new_content_hash
-    );
+  select * into v_snapshot from public.planner_data_v3_snapshots
+    where id = p_rollback_snapshot_id and user_id = v_user_id for share;
+  if not found or v_snapshot.revision <> p_expected_revision
+     or v_snapshot.content_hash <> p_expected_content_hash
+     or v_snapshot.data is distinct from v_current.data then
+    return query select 'SNAPSHOT_CONFLICT'::text, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
 
-  insert into public.planner_data_v3(user_id, data, schema_version, revision, last_device_id, content_hash, last_reason, updated_at)
-  values(v_user_id, v_stored_data, coalesce((p_new_data->>'schemaVersion')::integer, 1), v_next_revision, p_device_id, p_new_content_hash, coalesce(nullif(trim(p_reason), ''), 'sync'), v_now)
-  on conflict(user_id) do update set
-    data = excluded.data,
-    schema_version = excluded.schema_version,
-    revision = excluded.revision,
-    last_device_id = excluded.last_device_id,
-    content_hash = excluded.content_hash,
-    last_reason = excluded.last_reason,
-    updated_at = excluded.updated_at;
+  v_next_revision := v_current.revision + 1;
+  update public.planner_data_v3 set
+    data = p_new_data,
+    schema_version = coalesce((p_new_data->>'schemaVersion')::integer, 1),
+    revision = v_next_revision,
+    last_device_id = p_device_id,
+    content_hash = p_new_content_hash,
+    last_reason = coalesce(nullif(trim(p_reason), ''), 'one-time-ipad-canonical-recovery'),
+    updated_at = v_now
+  where user_id = v_user_id;
 
   return query select 'OK'::text, v_next_revision, p_new_content_hash, v_now;
 end;
 $$;
 
-revoke all on function public.safe_write_katos_planner(bigint,jsonb,text,text,text) from public;
-revoke all on function public.safe_write_katos_planner(bigint,jsonb,text,text,text) from anon;
-grant execute on function public.safe_write_katos_planner(bigint,jsonb,text,text,text) to authenticated;
+create or replace function public.rollback_katos_canonical_recovery(
+  p_expected_failed_revision bigint,
+  p_expected_failed_data jsonb,
+  p_expected_failed_hash text,
+  p_rollback_snapshot_id uuid,
+  p_expected_snapshot_hash text,
+  p_device_id text,
+  p_reason text default 'automatic-canonical-recovery-rollback'
+)
+returns table(status text, new_revision bigint, stored_hash text, stored_at timestamptz)
+language plpgsql security invoker set search_path = public, pg_temp
+as $$
+declare
+  v_user_id uuid := auth.uid();
+  v_current public.planner_data_v3%rowtype;
+  v_snapshot public.planner_data_v3_snapshots%rowtype;
+  v_next_revision bigint;
+  v_now timestamptz := clock_timestamp();
+begin
+  if v_user_id is null then raise exception 'AUTH_REQUIRED' using errcode = '28000'; end if;
+  if p_expected_failed_revision is null or p_expected_failed_revision < 1 then raise exception 'EXPECTED_REVISION_REQUIRED' using errcode = '22023'; end if;
+  if jsonb_typeof(p_expected_failed_data) <> 'object' then raise exception 'INVALID_EXPECTED_DATA' using errcode = '22023'; end if;
+  if p_expected_failed_hash !~ '^[0-9a-f]{64}$' or p_expected_snapshot_hash !~ '^[0-9a-f]{64}$' then raise exception 'INVALID_CONTENT_HASH' using errcode = '22023'; end if;
+  if p_rollback_snapshot_id is null then raise exception 'ROLLBACK_SNAPSHOT_REQUIRED' using errcode = '22023'; end if;
+  if coalesce(trim(p_device_id), '') = '' then raise exception 'DEVICE_ID_REQUIRED' using errcode = '22023'; end if;
 
--- RLS review: keep ownership checks, narrow Data API access to authenticated users.
+  perform pg_advisory_xact_lock(hashtextextended(v_user_id::text, 0));
+  select * into v_current from public.planner_data_v3 where user_id = v_user_id for update;
+  if not found or v_current.revision <> p_expected_failed_revision
+     or v_current.content_hash <> p_expected_failed_hash
+     or v_current.data is distinct from p_expected_failed_data then
+    return query select 'CONCURRENT_CHANGE'::text, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
+
+  select * into v_snapshot from public.planner_data_v3_snapshots
+    where id = p_rollback_snapshot_id and user_id = v_user_id for share;
+  if not found or v_snapshot.content_hash <> p_expected_snapshot_hash then
+    return query select 'SNAPSHOT_CONFLICT'::text, v_current.revision, v_current.content_hash, v_current.updated_at; return;
+  end if;
+
+  insert into public.planner_data_v3_snapshots(user_id, data, schema_version, revision, reason, device_id, content_hash)
+  values(v_user_id, v_current.data, v_current.schema_version, v_current.revision,
+    'pre-automatic-canonical-recovery-rollback', p_device_id, v_current.content_hash);
+
+  v_next_revision := v_current.revision + 1;
+  update public.planner_data_v3 set
+    data = v_snapshot.data,
+    schema_version = v_snapshot.schema_version,
+    revision = v_next_revision,
+    last_device_id = p_device_id,
+    content_hash = v_snapshot.content_hash,
+    last_reason = coalesce(nullif(trim(p_reason), ''), 'automatic-canonical-recovery-rollback'),
+    updated_at = v_now
+  where user_id = v_user_id;
+
+  return query select 'OK'::text, v_next_revision, v_snapshot.content_hash, v_now;
+end;
+$$;
+
 alter table public.planner_data_v3 enable row level security;
 alter table public.planner_data_v3_snapshots enable row level security;
 
@@ -111,26 +199,25 @@ drop policy if exists "katos_v3_authenticated_update" on public.planner_data_v3;
 drop policy if exists "katos_v3_snapshots_authenticated_select" on public.planner_data_v3_snapshots;
 drop policy if exists "katos_v3_snapshots_authenticated_insert" on public.planner_data_v3_snapshots;
 
-create policy "katos_v3_authenticated_select"
-  on public.planner_data_v3 for select to authenticated
-  using ((select auth.uid()) = user_id);
-create policy "katos_v3_authenticated_insert"
-  on public.planner_data_v3 for insert to authenticated
-  with check ((select auth.uid()) = user_id);
-create policy "katos_v3_authenticated_update"
-  on public.planner_data_v3 for update to authenticated
-  using ((select auth.uid()) = user_id)
-  with check ((select auth.uid()) = user_id);
-create policy "katos_v3_snapshots_authenticated_select"
-  on public.planner_data_v3_snapshots for select to authenticated
-  using ((select auth.uid()) = user_id);
-create policy "katos_v3_snapshots_authenticated_insert"
-  on public.planner_data_v3_snapshots for insert to authenticated
-  with check ((select auth.uid()) = user_id);
+create policy "katos_v3_authenticated_select" on public.planner_data_v3
+  for select to authenticated using ((select auth.uid()) = user_id);
+create policy "katos_v3_authenticated_insert" on public.planner_data_v3
+  for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "katos_v3_authenticated_update" on public.planner_data_v3
+  for update to authenticated using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
+create policy "katos_v3_snapshots_authenticated_select" on public.planner_data_v3_snapshots
+  for select to authenticated using ((select auth.uid()) = user_id);
+create policy "katos_v3_snapshots_authenticated_insert" on public.planner_data_v3_snapshots
+  for insert to authenticated with check ((select auth.uid()) = user_id);
 
-revoke all on table public.planner_data_v3 from public;
-revoke all on table public.planner_data_v3_snapshots from public;
-revoke all on table public.planner_data_v3 from anon;
-revoke all on table public.planner_data_v3_snapshots from anon;
+revoke all on table public.planner_data_v3 from public, anon;
+revoke all on table public.planner_data_v3_snapshots from public, anon;
 grant select, insert, update on table public.planner_data_v3 to authenticated;
 grant select, insert on table public.planner_data_v3_snapshots to authenticated;
+
+revoke all on function public.prepare_katos_recovery_snapshot(bigint,jsonb,text,text,text) from public, anon;
+revoke all on function public.promote_katos_canonical_recovery(bigint,jsonb,text,uuid,jsonb,text,text,text) from public, anon;
+revoke all on function public.rollback_katos_canonical_recovery(bigint,jsonb,text,uuid,text,text,text) from public, anon;
+grant execute on function public.prepare_katos_recovery_snapshot(bigint,jsonb,text,text,text) to authenticated;
+grant execute on function public.promote_katos_canonical_recovery(bigint,jsonb,text,uuid,jsonb,text,text,text) to authenticated;
+grant execute on function public.rollback_katos_canonical_recovery(bigint,jsonb,text,uuid,text,text,text) to authenticated;

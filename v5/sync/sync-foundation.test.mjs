@@ -137,7 +137,7 @@ const bootstrap=await readFile(resolve(root,'v5/bootstrap.js'),'utf8');
 for(const legacy of['cloud-sync-v3.js','cloud-resume-sync.js','cloud-canonical-bridge.js','cloud-sync.js','cloud-first-hydrate.js','recovery-loaded-status.js','recovery-vault.js'])assert.equal(bootstrap.includes(legacy),false,`${legacy} is not bootstrapped`);
 assert.match(bootstrap,/sync\/sync-lab\.js/);
 const indexSource=await readFile(resolve(root,'v5/index.html'),'utf8');
-assert.match(indexSource,/bootstrap\.js\?v=7\.0\.6-manual-decisions-locked/,'iOS containers receive the locked manual-decision build instead of a cached recovery preview');
+assert.match(indexSource,/bootstrap\.js\?v=7\.0\.7-one-time-canonical-recovery/,'iOS containers receive the guarded canonical-recovery build instead of a cached readiness preview');
 const appSource=await readFile(resolve(root,'v5/app.js'),'utf8');
 assert.equal(appSource.includes('restoreCloudV4Data'),false,'startup and Settings do not invoke legacy planner_data hydration');
 assert.match(appSource,/data\.js\?v=7\.0\.0-safe-sync-foundation/);assert.match(appSource,/rooms\.js\?v=7\.0\.0-safe-sync-foundation/);
@@ -152,7 +152,8 @@ assert.equal(guardSource.includes('removeItem'),false,'recovery storage guard ne
 assert.equal(guardSource.includes('prune'),false,'recovery storage guard never prunes recovery keys');
 
 const migration=await readFile(resolve(root,'supabase/migrations/20260908_safe_katos_planner_foundation.sql'),'utf8');
-assert.match(migration,/REVIEW ONLY: do not apply/);assert.match(migration,/p_expected_revision/);assert.match(migration,/for update/);
+assert.match(migration,/explicit guarded confirmation/);assert.match(migration,/p_expected_revision/);assert.match(migration,/for update/);
+assert.match(migration,/prepare_katos_recovery_snapshot/);assert.match(migration,/promote_katos_canonical_recovery/);assert.match(migration,/rollback_katos_canonical_recovery/);
 assert.match(migration,/planner_data_v3_snapshots/);assert.match(migration,/CONFLICT/);assert.match(migration,/to authenticated/);
 
 console.log('V5 safe sync envelope, device, auth, diagnostics, and recovery protections passed');

@@ -22,8 +22,8 @@ export class SafeSyncEngine{
     return getAuthenticatedSession({storage:this.storage,fetchFunction:this.fetchFunction});
   }
 
-  async readEndpoint(endpoint,session,extraHeaders={}){
-    const request=()=>this.fetchFunction(endpoint,{method:'GET',headers:{apikey:CLOUD_PUBLISHABLE_KEY,Authorization:`Bearer ${session.access_token}`,...extraHeaders}});
+  async requestEndpoint(endpoint,session,{method='GET',headers={},body}={}){
+    const request=()=>this.fetchFunction(endpoint,{method,headers:{apikey:CLOUD_PUBLISHABLE_KEY,Authorization:`Bearer ${session.access_token}`,...headers},...(body===undefined?{}:{body})});
     let response=await request();
     if(response.status!==401)return{response,session,auth:null,authFailure:null};
     const refreshed=await refreshSession(session,{fetchFunction:this.fetchFunction,storage:this.storage});
@@ -33,14 +33,17 @@ export class SafeSyncEngine{
     return{response,session,auth:publicAuthDiagnostics({...refreshed,sourceKey:SYNC_SESSION_KEY}),authFailure:null};
   }
 
+  async readEndpoint(endpoint,session,extraHeaders={}){
+    return this.requestEndpoint(endpoint,session,{method:'GET',headers:extraHeaders});
+  }
+
   async fetchCloudDiagnostics(){
     const authentication=await this.authentication();
     let auth=publicAuthDiagnostics(authentication);
     if(authentication.state!=='AUTHENTICATED')return{ok:false,state:authentication.state,auth,row:null,envelope:null,error:authentication.error||null};
     try{
       let session=authentication.session;
-      // content_hash is computed from legacy rows until the review-only migration is approved.
-      const endpoint=`${CLOUD_URL}/rest/v1/planner_data_v3?user_id=eq.${encodeURIComponent(session.user.id)}&select=data,schema_version,revision,updated_at,last_device_id&limit=1`;
+      const endpoint=`${CLOUD_URL}/rest/v1/planner_data_v3?user_id=eq.${encodeURIComponent(session.user.id)}&select=data,schema_version,revision,updated_at,last_device_id,content_hash,last_reason&limit=1`;
       const plannerRead=await this.readEndpoint(endpoint,session);
       if(plannerRead.authFailure)return{ok:false,state:plannerRead.authFailure.state,auth:publicAuthDiagnostics(plannerRead.authFailure),row:null,envelope:null,error:plannerRead.authFailure.error||'Sign in again to read cloud diagnostics.'};
       session=plannerRead.session;if(plannerRead.auth)auth=plannerRead.auth;
@@ -51,7 +54,7 @@ export class SafeSyncEngine{
       const envelope=row?await envelopeFromCloudRow(row):null;
       let snapshots={available:false,count:null,latestRevision:null,latestAt:null,error:null};
       try{
-        const snapshotEndpoint=`${CLOUD_URL}/rest/v1/planner_data_v3_snapshots?user_id=eq.${encodeURIComponent(session.user.id)}&select=revision,created_at&order=created_at.desc&limit=1`;
+        const snapshotEndpoint=`${CLOUD_URL}/rest/v1/planner_data_v3_snapshots?user_id=eq.${encodeURIComponent(session.user.id)}&select=id,revision,created_at,content_hash&order=created_at.desc&limit=1`;
         const snapshotRead=await this.readEndpoint(snapshotEndpoint,session,{Prefer:'count=exact'});
         if(snapshotRead.authFailure)return{ok:false,state:snapshotRead.authFailure.state,auth:publicAuthDiagnostics(snapshotRead.authFailure),row,envelope,error:snapshotRead.authFailure.error||'Sign in again to read snapshot diagnostics.'};
         session=snapshotRead.session;if(snapshotRead.auth)auth=snapshotRead.auth;
@@ -74,7 +77,7 @@ export class SafeSyncEngine{
     let auth=publicAuthDiagnostics(authentication);
     if(authentication.state!=='AUTHENTICATED')return{ok:false,state:authentication.state,auth,row:null,envelope:null,error:authentication.error||null};
     try{
-      const endpoint=`${CLOUD_URL}/rest/v1/planner_data_v3_snapshots?user_id=eq.${encodeURIComponent(authentication.session.user.id)}&revision=eq.${revision}&select=data,revision,created_at,device_id,reason&limit=1`;
+      const endpoint=`${CLOUD_URL}/rest/v1/planner_data_v3_snapshots?user_id=eq.${encodeURIComponent(authentication.session.user.id)}&revision=eq.${revision}&select=id,data,schema_version,revision,created_at,device_id,reason,content_hash&order=created_at.desc&limit=1`;
       const read=await this.readEndpoint(endpoint,authentication.session);
       if(read.authFailure)return{ok:false,state:read.authFailure.state,auth:publicAuthDiagnostics(read.authFailure),row:null,envelope:null,error:read.authFailure.error||'Sign in again to read snapshot diagnostics.'};
       if(read.auth)auth=read.auth;
