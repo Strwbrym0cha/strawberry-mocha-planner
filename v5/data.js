@@ -337,14 +337,14 @@ export function saveV5GigShift(fields={}){
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your planner data first so the shift can be saved.'};
     const date=text(fields.date),startTime=text(fields.startTime),endTime=text(fields.endTime);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return{ok:false,error:'Choose the date for the DoorDash shift.'};
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return{ok:false,error:'Choose the date for the gig shift.'};
     if(!startTime||!endTime)return{ok:false,error:'Add the planned start and end time.'};
     const state=cloneState(source),shifts=list(pathValue(state,'work.gigShifts')),id=text(fields.id),index=shifts.findIndex(row=>String(row?.id)===id),existing=index>=0?obj(shifts[index]):{},status=['planned','completed','canceled'].includes(text(fields.status))?text(fields.status):(text(existing.status)||'planned'),now=new Date().toISOString();
-    const entry={...existing,id:existing.id||itemId('gig'),source:text(fields.source)||text(existing.source)||'DoorDash',date,startTime,endTime,targetAmount:cents(fields.targetAmount),area:text(fields.area),note:text(fields.note),status,summaryOrderId:text(fields.summaryOrderId)||text(existing.summaryOrderId),actualAmount:fields.actualAmount===undefined?existing.actualAmount:cents(fields.actualAmount),deliveryCount:fields.deliveryCount===undefined?existing.deliveryCount:Math.max(0,Number(fields.deliveryCount)||0),completedAt:text(fields.completedAt)||text(existing.completedAt),createdAt:existing.createdAt||now,updatedAt:now};
+    const entry={...existing,id:existing.id||itemId('gig'),source:text(fields.source)||text(existing.source)||'Gig work',date,startTime,endTime,targetAmount:cents(fields.targetAmount),station:fields.station===undefined?text(existing.station):text(fields.station),area:fields.area===undefined?text(existing.area):text(fields.area),note:fields.note===undefined?text(existing.note):text(fields.note),status,summaryOrderId:text(fields.summaryOrderId)||text(existing.summaryOrderId),actualAmount:fields.actualAmount===undefined?existing.actualAmount:cents(fields.actualAmount),deliveryCount:fields.deliveryCount===undefined?existing.deliveryCount:Math.max(0,Number(fields.deliveryCount)||0),packageCount:fields.packageCount===undefined?existing.packageCount:Math.max(0,Number(fields.packageCount)||0),completedAt:text(fields.completedAt)||text(existing.completedAt),createdAt:existing.createdAt||now,updatedAt:now};
     setAtPath(state,'work.gigShifts',index>=0?shifts.map((row,rowIndex)=>rowIndex===index?entry:row):[...shifts,entry]);
     persistPlannerState(state,'v5-gig-shift');
     return{ok:true,entry};
-  }catch(error){console.warn('KatOS V5 could not save this gig shift.',error);return{ok:false,error:'That DoorDash shift could not be saved. Your existing planner data is still safe.'}}
+  }catch(error){console.warn('KatOS V5 could not save this gig shift.',error);return{ok:false,error:'That gig shift could not be saved. Your existing planner data is still safe.'}}
 }
 
 // Mochini is real V5 planner state. Keep the existing V4-compatible location

@@ -13,6 +13,7 @@ await import('./brain-dump-v5.js?v=5.7.2-brain-dump');
 await import('./fixed-events-safe.js?v=5.7.8-fixed-events-safe');
 await import('./bill-skip-month.js?v=5.8.0-bill-skip-month');
 await import('./doordash-shift-modal.js?v=6.17.0-doordash-planner');
+await import('./flex-shift-modal.js?v=7.0.14-flex-shift-planner');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
 await import('./routine-player.js?v=6.8.0-routine-builder');
 await import('./routine-builder-layout-fix.js?v=6.15.1-routine-builder-layout');
