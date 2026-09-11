@@ -4,6 +4,8 @@ import{applyStudyAction,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook'
 import{applyMoneyGigAction,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
 import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
 import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
+import{applyHealthAction,selectMedicationCabinet}from'./health.js?v=7.0.11-medication-launch-pad';
+import{applyLaunchAction,selectLaunchPad}from'./launch-pad.js?v=7.0.11-medication-launch-pad';
 import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.10-phone-storage-capacity-fix';
 
 export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep};
@@ -33,7 +35,8 @@ const unwrapState=value=>{
   return current;
 };
 const COLLECTION_PATHS=[
-  'life.inbox','life.tasks','life.reminders','life.routines','life.routineInstances','life.events','life.threads',
+  'life.inbox','life.tasks','life.reminders','life.routines','life.routineInstances','life.events','life.threads','life.launches',
+  'health.medications','health.medicationLogs',
   'nourish.noms.foods','nourish.noms.recipes','nourish.noms.history','nourish.noms.groceries','nourish.noms.mealPlan','nourish.sips.history',
   'movement.sessions','movement.routines','movement.videos','movement.weighIns','movement.history','movement.logs','movement.completions',
   'education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.reviews','education.transferEvaluations','education.transferResults','education.terms','education.importantDates',
@@ -50,7 +53,8 @@ const COLLECTION_PATHS=[
   'money.income','money.expenses','money.subscriptions','money.budgets','noms.foods','noms.pantry','noms.groceries','dayNotes','history'
 ];
 const RECOVERY_COUNT_PATHS=[
-  'life.tasks','life.routines','life.routineInstances','life.events','life.reminders','life.threads',
+  'life.tasks','life.routines','life.routineInstances','life.events','life.reminders','life.threads','life.launches',
+  'health.medications','health.medicationLogs',
   'money.earnings','money.accounts','money.bills','money.spending','money.ledger','money.transactions','money.savingsGoals','money.debts','money.subscriptions',
   'money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets',
   'work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals',
@@ -295,6 +299,36 @@ function persistPlannerState(state,reason){
   localStorage.setItem(V4_KEY,raw);saveImportedState(state,raw,V4_KEY,reason);return state;
 }
 
+export function selectV5Health(date=localDateKey(),options={}){
+  const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state||{};
+  return selectMedicationCabinet(source,date,options);
+}
+
+export function runV5HealthAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your planner data first so Medication Cabinet can save safely.'};
+    const result=applyHealthAction(source,action,localDateKey());if(!result.ok)return result;
+    persistPlannerState(result.state,'v5-medication-cabinet');return{...result,state:undefined};
+  }catch(error){console.warn('KatOS V5 could not save that medication action.',error);return{ok:false,error:'That medication change could not be saved. Your existing planner data is still safe.'}}
+}
+
+export function selectV5LaunchPad(date=localDateKey(),canonical={},now=new Date()){
+  const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state||{};
+  return selectLaunchPad(source,date,canonical,now);
+}
+
+export function runV5LaunchAction(action={}){
+  if(plannerWritesBlocked())return bootstrapBlocked();
+  try{
+    const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
+    if(!source)return{ok:false,error:'Load your planner data first so Launch Pad can remember this.'};
+    const result=applyLaunchAction(source,action,localDateKey());if(!result.ok)return result;
+    persistPlannerState(result.state,'v5-launch-pad');return{...result,state:undefined};
+  }catch(error){console.warn('KatOS V5 could not save that Launch Pad action.',error);return{ok:false,error:'That Launch Pad change could not be saved. Your existing planner data is still safe.'}}
+}
+
 export function saveV5GigShift(fields={}){
   if(plannerWritesBlocked())return bootstrapBlocked();
   try{
@@ -481,7 +515,7 @@ export function updateV5LedgerEntry(id,fields={}){
   catch{return{ok:false,error:'That ledger entry could not be saved.'}}
 }
 
-const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary','money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets','work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals','lifestyle.movement.plans','lifestyle.movement.activities','lifestyle.movement.goals','lifestyle.hobbies.items','lifestyle.hobbies.projects','lifestyle.hobbies.resources','lifestyle.growth.areas','lifestyle.growth.goals','lifestyle.growth.milestones','lifestyle.growth.wins','lifestyle.growth.reflections']);
+const EDITABLE_RECORD_PATHS=new Set(['life.events','life.tasks','life.reminders','life.routines','health.medications','movement.sessions','movement.routines','v4.people','v4.hobbies','education.programs','education.providers','education.requirements','education.courses','education.items','education.sessions','education.transferEvaluations','education.transferResults','education.terms','education.importantDates','growth.goals','growth.wins','v4.brainDump','v4.archive','money.accounts','money.bills','money.savingsGoals','money.subscriptions','work.gigShifts','work.shifts','work.rbt.clients','work.rbt.sessions','work.hq.clients','work.hq.supervisors','work.hq.sessionPlans','work.hq.scheduleExceptions','work.hq.goalLibrary','work.hq.materialLibrary','money.hq.accounts','money.hq.transactions','money.hq.bills','money.hq.billInstances','money.hq.subscriptions','money.hq.goals','money.hq.goalContributions','money.hq.liabilities','money.hq.payRates','money.hq.legacyBuckets','work.gig.platforms','work.gig.orders','work.gig.payouts','work.gig.goals','lifestyle.movement.plans','lifestyle.movement.activities','lifestyle.movement.goals','lifestyle.hobbies.items','lifestyle.hobbies.projects','lifestyle.hobbies.resources','lifestyle.growth.areas','lifestyle.growth.goals','lifestyle.growth.milestones','lifestyle.growth.wins','lifestyle.growth.reflections']);
 export function updateV5Record(path,id,fields={}){
   if(plannerWritesBlocked())return bootstrapBlocked();
   try{

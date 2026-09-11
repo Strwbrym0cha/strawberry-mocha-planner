@@ -2,7 +2,7 @@ const recoveryLocked=localStorage.getItem('sm_recovery_lock')==='1';
 if(recoveryLocked)await import('./recovery-storage-guard.js?v=7.0.0-safe-sync-foundation');
 const{ensureDeviceBootstrapState}=await import('./sync/sync-device-bootstrap.js?v=7.0.10-phone-storage-capacity-fix');
 ensureDeviceBootstrapState(localStorage);
-await import('./app.js?v=7.0.10-phone-storage-capacity-fix');
+await import('./app.js?v=7.0.11-medication-launch-pad');
 await import('./sync/sync-lab.js?v=7.0.10-phone-storage-capacity-fix');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
