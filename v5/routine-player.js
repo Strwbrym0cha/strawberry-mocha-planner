@@ -1,4 +1,4 @@
-import{snapshotV4,selectV5DailyShit,runV5DailyAction,runV5MochiniAction}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
+import{snapshotV4,selectV5DailyShit,runV5DailyAction,runV5MochiniAction}from'./data.js?v=7.0.9-phone-bootstrap-quota-safe';
 
 const app=document.getElementById('app');
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

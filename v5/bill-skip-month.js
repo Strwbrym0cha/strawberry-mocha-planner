@@ -1,4 +1,4 @@
-import{runV5MoneyGigAction,selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.8-phone-canonical-bootstrap';
+import{runV5MoneyGigAction,selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.9-phone-bootstrap-quota-safe';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();
