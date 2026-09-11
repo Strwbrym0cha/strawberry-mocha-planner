@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit}from'./data.js?v=7.0.9-phone-bootstrap-quota-safe';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit}from'./data.js?v=7.0.10-phone-storage-capacity-fix';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};

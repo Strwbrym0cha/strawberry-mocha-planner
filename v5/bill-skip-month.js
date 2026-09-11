@@ -1,4 +1,4 @@
-import{runV5MoneyGigAction,selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.9-phone-bootstrap-quota-safe';
+import{runV5MoneyGigAction,selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.10-phone-storage-capacity-fix';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();

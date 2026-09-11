@@ -1,4 +1,4 @@
-import{snapshotV4,selectV5MoneyGig,runV5MoneyGigAction,getGigGoalProgress}from'./data.js?v=7.0.9-phone-bootstrap-quota-safe';
+import{snapshotV4,selectV5MoneyGig,runV5MoneyGigAction,getGigGoalProgress}from'./data.js?v=7.0.10-phone-storage-capacity-fix';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();

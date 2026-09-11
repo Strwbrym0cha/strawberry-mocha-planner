@@ -1,6 +1,6 @@
 import{serializeCanonicalState,stableSerialize}from'./sync-envelope.js';
 import{getOrCreateDeviceId}from'./sync-device.js';
-import{DEVICE_STATUS_KEY,deviceBootstrapStatus,isCanonicalDeviceVerified,normalSyncEnabled}from'./sync-device-bootstrap.js?v=7.0.9-phone-bootstrap-quota-safe';
+import{DEVICE_STATUS_KEY,deviceBootstrapStatus,isCanonicalDeviceVerified,normalSyncEnabled}from'./sync-device-bootstrap.js?v=7.0.10-phone-storage-capacity-fix';
 import{AUXILIARY_STORE_KEYS,STORAGE_KEYS}from'./sync-storage.js';
 import{CLOUD_URL}from'./sync-auth.js';
 
