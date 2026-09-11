@@ -82,6 +82,16 @@ export function approximateLocalStorageBytes(storage=localStorage){
   return bytes;
 }
 
+export function katosLocalStorageUsage(storage=localStorage){
+  let bytes=0;const keys=[];
+  try{for(let index=0;index<storage.length;index++){
+    const key=storage.key(index)||'';
+    if(!/^(?:sm_|katos-)/i.test(key))continue;
+    const raw=storage.getItem(key)||'';keys.push(key);bytes+=(key.length+raw.length)*2;
+  }}catch{}
+  return{bytes,keys};
+}
+
 export async function storageUsage(storage=localStorage,navigatorObject=globalThis.navigator){
   const approximateBytes=approximateLocalStorageBytes(storage);
   let usage=null,quota=null;

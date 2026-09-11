@@ -4,7 +4,7 @@ import{applyStudyAction,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook'
 import{applyMoneyGigAction,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=5.4.0-money-gig';
 import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
 import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
-import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.8-phone-canonical-bootstrap';
+import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.9-phone-bootstrap-quota-safe';
 
 export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep};
 

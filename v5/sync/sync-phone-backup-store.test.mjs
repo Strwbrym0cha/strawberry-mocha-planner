@@ -1,0 +1,31 @@
+import assert from'node:assert/strict';
+import{webcrypto}from'node:crypto';
+import{bootstrapStorageDiagnostics,createVerifiedPhoneBackup,installCanonicalPayload}from'./sync-device-bootstrap.js';
+import{PHONE_BACKUP_PREFIX}from'./sync-device-bootstrap.js';
+import{defaultIndexedDbBackupStore}from'./sync-phone-backup-store.js';
+import{serializeCanonicalState}from'./sync-envelope.js';
+import{auxiliaryDefaults,STORAGE_KEYS}from'./sync-storage.js';
+
+globalThis.crypto??=webcrypto;
+class Storage{constructor(values={}){this.values=new Map(Object.entries(values));this.writes=[]}get length(){return this.values.size}key(index){return[...this.values.keys()][index]??null}getItem(key){return this.values.has(key)?this.values.get(key):null}setItem(key,value){this.writes.push(key);this.values.set(String(key),String(value))}removeItem(key){this.values.delete(key)}}
+const state={schemaVersion:4,life:{tasks:[{id:'phone-only',title:'Stale phone'}]},money:{hq:{}},work:{gig:{},hq:{}},education:{},v4:{archive:[]}};
+const values={[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:state}),...Object.fromEntries(Object.entries(auxiliaryDefaults()).map(([key,value])=>[key,JSON.stringify(value)]))};
+const diagnostics=await bootstrapStorageDiagnostics({storage:new Storage(values),navigatorObject:{storage:{estimate:async()=>({usage:80,quota:100})}}});
+assert.equal(diagnostics.localStorageFit,'LIKELY_INSUFFICIENT');assert.ok(diagnostics.katosLocalStorageBytes>0);assert.ok(diagnostics.attemptedBackupBytes>0);assert.equal(diagnostics.storageManager.remaining,20);
+const quotaStorage=new Storage(values);quotaStorage.setItem=(key,value)=>{quotaStorage.writes.push(key);const error=new Error('The quota has been exceeded.');error.name='QuotaExceededError';throw error};
+const records=new Map(),indexedDbStore={put:async record=>records.set(record.backupId,structuredClone(record)),get:async id=>structuredClone(records.get(id)||null)};
+const fallback=await createVerifiedPhoneBackup({storage:quotaStorage,deviceId:'iphone',now:()=>100,indexedDbStore});
+assert.equal(fallback.backend,'IndexedDB');assert.equal(fallback.verified,true);assert.equal(fallback.localStorageFailure.code,'PHONE_BACKUP_STORAGE_QUOTA_EXCEEDED');assert.match(fallback.id,new RegExp(`^${PHONE_BACKUP_PREFIX}`));assert.equal(records.get(fallback.id).localHash,fallback.localHash);assert.equal(quotaStorage.getItem(STORAGE_KEYS.renderedPlanner),values[STORAGE_KEYS.renderedPlanner],'backup quota failure leaves the phone planner unchanged');
+const badStore={put:async record=>records.set(record.backupId,record),get:async()=>null};
+await assert.rejects(()=>createVerifiedPhoneBackup({storage:quotaStorage,deviceId:'iphone',now:()=>101,indexedDbStore:badStore}),error=>error.code==='PHONE_BACKUP_INDEXEDDB_VERIFY_FAILED');
+assert.equal(quotaStorage.getItem(STORAGE_KEYS.renderedPlanner),values[STORAGE_KEYS.renderedPlanner],'failed IndexedDB verification leaves the phone planner unchanged');
+const idbFailure={put:async()=>{throw new Error('IDB unavailable')},get:async()=>null};
+await assert.rejects(()=>createVerifiedPhoneBackup({storage:quotaStorage,deviceId:'iphone',now:()=>102,indexedDbStore:idbFailure}),error=>error.code==='PHONE_BACKUP_INDEXEDDB_WRITE_FAILED');
+assert.equal(quotaStorage.getItem(STORAGE_KEYS.renderedPlanner),values[STORAGE_KEYS.renderedPlanner],'failed backup never starts a planner replacement');
+let nativeRecord=null,created=false;
+const nativeFactory={open:()=>{const request={},database={objectStoreNames:{contains:()=>created},createObjectStore:()=>{created=true},close:()=>{},transaction:()=>{const transaction={},store={put:record=>{nativeRecord=structuredClone(record);queueMicrotask(()=>transaction.oncomplete?.())},get:()=>{const getRequest={};queueMicrotask(()=>{getRequest.result=structuredClone(nativeRecord);getRequest.onsuccess?.();queueMicrotask(()=>transaction.oncomplete?.())});return getRequest}};transaction.objectStore=()=>store;return transaction}};queueMicrotask(()=>{request.result=database;request.onupgradeneeded?.();request.onsuccess?.()});return request}};
+const nativeStore=defaultIndexedDbBackupStore(nativeFactory);await nativeStore.put({backupId:'native-id',payload:{x:'1'}});assert.deepEqual(await nativeStore.get('native-id'),{backupId:'native-id',payload:{x:'1'}},'native IndexedDB adapter writes and reads the dedicated store');
+const canonicalSource=new Storage(values),canonicalEnvelope=await serializeCanonicalState({storage:canonicalSource,revision:6});
+const destination=new Storage({[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:{schemaVersion:4,life:{tasks:[{id:'old'}]}}}),[STORAGE_KEYS.planner]:JSON.stringify({old:true}),...Object.fromEntries(Object.entries(auxiliaryDefaults()).map(([key,value])=>[key,JSON.stringify(value)]))});
+installCanonicalPayload(destination,canonicalEnvelope);assert.equal((await serializeCanonicalState({storage:destination,revision:6})).contentHash,canonicalEnvelope.contentHash,'canonical replacement persists an independently readable hash match');assert.deepEqual(destination.writes,[STORAGE_KEYS.renderedPlanner,STORAGE_KEYS.planner,...Object.keys(auxiliaryDefaults()),STORAGE_KEYS.knownRevision],'canonical install writes only final planner keys and never stages an incoming copy in localStorage');
+console.log('Phone bootstrap classifies localStorage quota, falls back to IndexedDB, and verifies backup read-back before any install.');
