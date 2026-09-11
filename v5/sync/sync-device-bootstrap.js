@@ -3,7 +3,7 @@ import{countCanonicalCollections}from'./sync-diagnostics.js';
 import{canonicalContent,deserializeCanonicalState,hashCanonicalState,serializeCanonicalState,stableSerialize,verifyCanonicalEnvelope}from'./sync-envelope.js';
 import{getOrCreateDeviceId}from'./sync-device.js';
 import{defaultIndexedDbBackupStore,isQuotaExceededError,byteSize}from'./sync-phone-backup-store.js?v=7.0.10-phone-storage-capacity-fix';
-import{migrateEligibleKatOSBackups,phoneStoragePreparationRequired}from'./sync-phone-storage-capacity.js?v=7.0.10-phone-storage-capacity-fix';
+import{migrateEligibleKatOSBackups,phoneStoragePreparationRequired,readPhoneStoragePreparationReceipt}from'./sync-phone-storage-capacity.js?v=7.0.10-phone-storage-capacity-fix';
 import{AUXILIARY_STORE_KEYS,katosLocalStorageUsage,katosStorageCapacityReport,readRenderedPlannerState,recoveryModeOn,storageUsage,STORAGE_KEYS}from'./sync-storage.js';
 
 export const PHONE_BOOTSTRAP_BUILD='7.0.10-phone-storage-capacity-fix';
@@ -134,11 +134,12 @@ export async function preparePhoneStorageForCanonicalInstall({storage=localStora
 
 export async function installCanonicalCloudCopy({confirmed=false,engine,storage=localStorage,build=PHONE_BOOTSTRAP_BUILD,now=Date.now,indexedDbStore=null}={}){
   if(!confirmed)return{ok:false,status:'CONFIRMATION_REQUIRED',cloudMutated:false};
-  let backup=null,stage='PRE_INSTALL_VERIFICATION',initial=null,storageDiagnostics=null,swapUsed=false,rollbackRequired=false,rollbackSucceeded=false;
+  let backup=null,stage='PRE_INSTALL_VERIFICATION',initial=null,storageDiagnostics=null,storagePreparation=null,swapUsed=false,rollbackRequired=false,rollbackSucceeded=false;
   try{
     initial=await verifyCanonicalCloud({engine,storage});storageDiagnostics=initial.storageDiagnostics;
     const preparation=phoneStoragePreparationRequired(storage,{incomingCanonicalBytes:byteSize(initial.cloud.envelope)});
     if(preparation.required)fail('PHONE_STORAGE_PREPARATION_REQUIRED','Prepare phone storage for canonical install before replacing the active planner key.');
+    storagePreparation=readPhoneStoragePreparationReceipt(storage);
     stage='PHONE_BACKUP';backup=await createVerifiedPhoneBackup({storage,deviceId:initial.deviceId,build,now,local:initial.local,storageDiagnostics});
     const verifiedBackup=await readVerifiedPhoneBackup({storage,backup,indexedDbStore,expectedLocalHash:initial.local.contentHash});
     stage='IMMEDIATE_CLOUD_RECHECK';const fresh=await verifyCanonicalCloud({engine,storage});
@@ -151,8 +152,8 @@ export async function installCanonicalCloudCopy({confirmed=false,engine,storage=
     stage='POST_INSTALL_CLOUD_RECHECK';const postInstallCloud=await verifyCanonicalCloud({engine,storage});
     const status={state:'CANONICAL_DEVICE_VERIFIED',canonicalVerified:true,verifiedAt:new Date(nowValue(now)).toISOString(),build,deviceId:postInstallCloud.deviceId,cloudRevision:postInstallCloud.cloud.revision,cloudHash:postInstallCloud.cloud.hash,phoneHash:persisted.contentHash,backupBackend:backup.backend,backupId:backup.id||backup.key,backupHash:backup.hash,backupVerified:true,normalSync:'NOT_ENABLED'};
     stage='STATUS_METADATA';writeInstallKey(storage,DEVICE_STATUS_KEY,stableSerialize(status));
-    return{ok:true,status:'PHONE VERIFIED — LOCAL MATCHES CANONICAL CLOUD',stage,preInstall:{deviceId:initial.deviceId,hash:initial.local.contentHash,revision:initial.local.revision,sizeBytes:initial.local.serializedBytes,counts:initial.local.counts},storageDiagnostics,device:status,backup,installationCompleted:true,swapUsed,rollbackRequired,rollbackSucceeded,phone:{hash:persisted.contentHash,revision:persisted.revision,counts:persisted.counts,integrity:phonePost.integrity},cloud:{revision:postInstallCloud.cloud.revision,hash:postInstallCloud.cloud.hash,counts:postInstallCloud.cloud.counts,integrity:postInstallCloud.cloud.integrity},cloudMutated:false};
-  }catch(error){return{ok:false,status:rollbackSucceeded?'PHONE_INSTALL_ROLLED_BACK_LOCALLY':'PHONE BOOTSTRAP ABORTED',stage,failureCode:error?.code||'BOOTSTRAP_FAILED',error:error?.message||String(error),preInstall:initial?.local?{deviceId:initial.deviceId,hash:initial.local.contentHash,revision:initial.local.revision,sizeBytes:initial.local.serializedBytes}:null,storageDiagnostics,backup,installationCompleted:false,swapUsed,rollbackRequired,rollbackSucceeded,cloudMutated:false};}
+    return{ok:true,status:'PHONE VERIFIED — LOCAL MATCHES CANONICAL CLOUD',stage,preInstall:{deviceId:initial.deviceId,hash:initial.local.contentHash,revision:initial.local.revision,sizeBytes:initial.local.serializedBytes,counts:initial.local.counts},storageDiagnostics,storageBefore:storagePreparation?.before,storageAfter:storagePreparation?.after,migrated:storagePreparation?.migrated,device:status,backup,installationCompleted:true,swapUsed,rollbackRequired,rollbackSucceeded,phone:{hash:persisted.contentHash,revision:persisted.revision,counts:persisted.counts,integrity:phonePost.integrity},cloud:{revision:postInstallCloud.cloud.revision,hash:postInstallCloud.cloud.hash,counts:postInstallCloud.cloud.counts,integrity:postInstallCloud.cloud.integrity},cloudMutated:false};
+  }catch(error){return{ok:false,status:rollbackSucceeded?'PHONE_INSTALL_ROLLED_BACK_LOCALLY':'PHONE BOOTSTRAP ABORTED',stage,failureCode:error?.code||'BOOTSTRAP_FAILED',error:error?.message||String(error),preInstall:initial?.local?{deviceId:initial.deviceId,hash:initial.local.contentHash,revision:initial.local.revision,sizeBytes:initial.local.serializedBytes}:null,storageDiagnostics,storageBefore:storagePreparation?.before,storageAfter:storagePreparation?.after,migrated:storagePreparation?.migrated,backup,installationCompleted:false,swapUsed,rollbackRequired,rollbackSucceeded,cloudMutated:false};}
 }
 
 export function buildPhoneBootstrapResultText(result){
