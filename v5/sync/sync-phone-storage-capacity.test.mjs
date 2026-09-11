@@ -1,7 +1,7 @@
 import assert from'node:assert/strict';
 import{webcrypto}from'node:crypto';
 import{guardedPlannerKeySwap}from'./sync-device-bootstrap.js';
-import{migrateEligibleKatOSBackups,phoneStoragePreparationRequired}from'./sync-phone-storage-capacity.js';
+import{migrateEligibleKatOSBackups,phoneStoragePreparationRequired,readPhoneStoragePreparationReceipt}from'./sync-phone-storage-capacity.js';
 import{serializeCanonicalState}from'./sync-envelope.js';
 import{auxiliaryDefaults,katosLocalStorageInventory,katosStorageCapacityReport,STORAGE_KEYS}from'./sync-storage.js';
 
@@ -16,6 +16,7 @@ assert.equal(active.category,'active planner state');assert.equal(active.safeToM
 const records=new Map(),store={put:async record=>records.set(record.backupId,structuredClone(record)),get:async id=>structuredClone(records.get(id)||null)};
 const migrated=await migrateEligibleKatOSBackups({storage,deviceId:'iphone',indexedDbStore:store,now:()=>1789000000100,incomingCanonicalBytes:178058});
 assert.equal(migrated.status,'Phone storage prepared');assert.equal(migrated.cloudMutated,false);assert.equal(migrated.normalSync,'NOT_ENABLED');assert.equal(migrated.migrated.length,2);assert.equal(storage.getItem(STORAGE_KEYS.renderedPlanner),activeRaw);assert.equal(storage.getItem('sm_v5_backup_before_cloud_refresh_1789000000000'),null,'source is removed only after byte-for-byte IndexedDB verification');assert.ok([...records.values()].every(record=>record.rawPayload===backupRaw));assert.equal(phoneStoragePreparationRequired(storage,{incomingCanonicalBytes:178058}).required,false,'post-migration inventory no longer asks to remove eligible backup sources');
+assert.equal(readPhoneStoragePreparationReceipt(storage)?.migrated.length,2,'a tiny non-payload receipt keeps the migration report available for the final bootstrap result');assert.equal(katosLocalStorageInventory(storage).find(row=>row.key==='sm_v5_phone_storage_preparation').safeToMigrate,false,'the preparation receipt is control metadata, not a deletion target');
 
 const failedSource=new Storage({[STORAGE_KEYS.renderedPlanner]:activeRaw,sm_v5_backup_before_cloud_refresh_1789000000002:backupRaw});
 await assert.rejects(()=>migrateEligibleKatOSBackups({storage:failedSource,indexedDbStore:{put:async()=>{},get:async()=>null}}),error=>error.code==='PHONE_STORAGE_MIGRATION_VERIFY_FAILED');assert.equal(failedSource.getItem('sm_v5_backup_before_cloud_refresh_1789000000002'),backupRaw,'failed IndexedDB verification retains its source');

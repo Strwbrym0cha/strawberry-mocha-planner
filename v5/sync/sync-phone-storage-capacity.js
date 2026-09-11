@@ -2,6 +2,7 @@ import{byteSize,defaultIndexedDbBackupStore}from'./sync-phone-backup-store.js';
 import{katosStorageCapacityReport}from'./sync-storage.js';
 
 export const PHONE_STORAGE_MIGRATION_PREFIX='sm_v5_indexeddb_migrated_backup_';
+export const PHONE_STORAGE_PREPARATION_KEY='sm_v5_phone_storage_preparation';
 const fail=(code,message)=>{const error=new Error(message);error.code=code;throw error};
 const nowValue=now=>typeof now==='function'?now():now;
 
@@ -25,10 +26,18 @@ export async function migrateEligibleKatOSBackups({storage=localStorage,deviceId
     migrated.push({key:row.key,sizeBytes:row.utf8Bytes,backupId:record.backupId,verified:true,purpose:row.backupPurpose,hash:row.plannerOrRecoveryHash||null});
   }
   const after=katosStorageCapacityReport(storage,{incomingCanonicalBytes});
-  return{ok:true,status:'Phone storage prepared',before,after,migrated,freedBytes:Math.max(0,before.katosLocalStorageBytes-after.katosLocalStorageBytes),cloudMutated:false,normalSync:'NOT_ENABLED'};
+  const result={ok:true,status:'Phone storage prepared',before,after,migrated,freedBytes:Math.max(0,before.katosLocalStorageBytes-after.katosLocalStorageBytes),cloudMutated:false,normalSync:'NOT_ENABLED'};
+  // This receipt holds only key names, sizes, IDs, and verification outcomes—not planner data.
+  const receipt={preparedAt:new Date(stamp).toISOString(),before:{katosLocalStorageBytes:before.katosLocalStorageBytes,inventory:before.inventory.slice(0,5)},after:{katosLocalStorageBytes:after.katosLocalStorageBytes,requiredHeadroomBytes:after.requiredHeadroomBytes},migrated,freedBytes:result.freedBytes};
+  try{storage.setItem(PHONE_STORAGE_PREPARATION_KEY,JSON.stringify(receipt));result.receiptStored=true;}catch{result.receiptStored=false;}
+  return result;
 }
 
 export function phoneStoragePreparationRequired(storage=localStorage,{incomingCanonicalBytes=0}={}){
   const report=katosStorageCapacityReport(storage,{incomingCanonicalBytes});
   return{required:report.requiresPreparation,report};
+}
+
+export function readPhoneStoragePreparationReceipt(storage=localStorage){
+  try{const receipt=JSON.parse(storage.getItem(PHONE_STORAGE_PREPARATION_KEY)||'null');return receipt&&typeof receipt==='object'?receipt:null;}catch{return null}
 }
