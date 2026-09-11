@@ -1,4 +1,4 @@
-import{selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.10-phone-storage-capacity-fix';
+import{selectV5MoneyGig,localDateKey}from'./data.js?v=7.0.12-ipad-only';
 
 const app=document.getElementById('app');
 const list=value=>Array.isArray(value)?value:[];

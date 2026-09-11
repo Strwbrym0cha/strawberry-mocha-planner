@@ -1,8 +1,9 @@
 import{serializeCanonicalState,stableSerialize}from'./sync-envelope.js';
 import{getOrCreateDeviceId}from'./sync-device.js';
-import{DEVICE_STATUS_KEY,deviceBootstrapStatus,isCanonicalDeviceVerified,normalSyncEnabled}from'./sync-device-bootstrap.js?v=7.0.10-phone-storage-capacity-fix';
+import{DEVICE_STATUS_KEY,deviceBootstrapStatus,isCanonicalDeviceVerified,normalSyncEnabled}from'./sync-device-bootstrap.js?v=7.0.12-ipad-only';
 import{AUXILIARY_STORE_KEYS,STORAGE_KEYS}from'./sync-storage.js';
 import{CLOUD_URL}from'./sync-auth.js';
+import{isSingleDeviceIpadMode}from'./single-device-mode.js?v=7.0.12-ipad-only';
 
 export const NORMAL_SYNC_BASE_KEY='sm_v5_normal_sync_base';
 export const NORMAL_SYNC_CONFLICT_PREFIX='sm_v5_normal_sync_conflict_';
@@ -24,6 +25,7 @@ function rememberBase(storage,cloud){
 }
 
 export async function observeNormalSyncCloud({engine,storage=localStorage}={}){
+  if(isSingleDeviceIpadMode(storage))return{ok:false,state:'SINGLE_DEVICE_IPAD',error:'Cross-device sync is permanently off in iPad-only mode.'};
   if(!isCanonicalDeviceVerified(storage))return{ok:false,state:'DEVICE_BOOTSTRAP_REQUIRED',error:'This device is not a verified canonical device.'};
   const cloud=await engine.fetchCloudDiagnostics();
   if(!cloud.ok||!cloud.envelope||!cloud.row)return{ok:false,state:cloud?.state||'OFFLINE',error:cloud?.error||'Cloud could not be read.'};
@@ -42,6 +44,7 @@ function preserveConflict(storage,{base,cloud,localEnvelope,reason}){
 
 export async function commitNormalSyncCAS({engine,storage=localStorage}={}){
   try{
+    if(isSingleDeviceIpadMode(storage))fail('SINGLE_DEVICE_IPAD','Cross-device sync is off in iPad-only mode. No cloud request was made.');
     if(!isCanonicalDeviceVerified(storage)||!normalSyncEnabled(storage))fail('NORMAL_SYNC_NOT_ACTIVE','Normal sync is not active for this verified device.');
     const base=observedNormalSyncBase(storage);
     if(!base)fail('BASE_REVISION_REQUIRED','Read canonical cloud before attempting a normal sync write.');
@@ -75,6 +78,7 @@ export async function commitNormalSyncCAS({engine,storage=localStorage}={}){
 }
 
 export function normalSyncReadiness(storage=localStorage){
+  if(isSingleDeviceIpadMode(storage))return{state:'IPAD-ONLY MODE',device:deviceBootstrapStatus(storage),base:null,requirements:{deviceVerified:false,cloudObserved:false,normalSyncActive:false,recoveryRpcCalled:false,bootstrapBypass:false}};
   const device=deviceBootstrapStatus(storage),base=observedNormalSyncBase(storage);
   return{state:isCanonicalDeviceVerified(storage)&&base?'READY TO ENABLE NORMAL SYNC':'NOT READY TO ENABLE NORMAL SYNC',device,base,requirements:{deviceVerified:isCanonicalDeviceVerified(storage),cloudObserved:!!base,normalSyncActive:normalSyncEnabled(storage),recoveryRpcCalled:false,bootstrapBypass:false}};
 }

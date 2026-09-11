@@ -21,7 +21,7 @@ const RECOVERY_CONTROL_KEYS=new Set([STORAGE_KEYS.recoveryLock,'sm_recovery_prom
 const isObject=value=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const encoder=new TextEncoder();
 const ACTIVE_PLANNER_KEYS=new Set([STORAGE_KEYS.renderedPlanner,STORAGE_KEYS.planner,...AUXILIARY_STORE_KEYS]);
-const CONTROL_KEYS=new Set([STORAGE_KEYS.recoveryLock,STORAGE_KEYS.knownRevision,'sm_recovery_promoted_revision','sm_v5_device_sync_status','sm_v5_device_id','sm_v5_phone_storage_preparation']);
+const CONTROL_KEYS=new Set([STORAGE_KEYS.recoveryLock,STORAGE_KEYS.knownRevision,'sm_recovery_promoted_revision','sm_v5_device_sync_status','sm_v5_device_id','sm_v5_phone_storage_preparation','sm_v5_operating_mode']);
 const SESSION_KEY_RE=/(?:session|auth|token)/i;
 const BACKUP_RULES=Object.freeze([
   {re:/^sm_v5_phone_backup_before_canonical_install_\d+$/i,purpose:'phone canonical bootstrap backup'},

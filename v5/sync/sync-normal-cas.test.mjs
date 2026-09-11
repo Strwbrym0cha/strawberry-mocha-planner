@@ -8,7 +8,7 @@ import{auxiliaryDefaults,STORAGE_KEYS}from'./sync-storage.js';
 globalThis.crypto??=webcrypto;
 class Storage{constructor(values={}){this.values=new Map(Object.entries(values))}get length(){return this.values.size}key(index){return[...this.values.keys()][index]??null}getItem(key){return this.values.has(key)?this.values.get(key):null}setItem(key,value){this.values.set(String(key),String(value))}removeItem(key){this.values.delete(key)}}
 const planner={schemaVersion:4,life:{tasks:[{id:'task-1',title:'Base'}]},money:{hq:{}},work:{gig:{},hq:{}},education:{},v4:{archive:[]}};
-const baseStorage=new Storage({[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:planner}),...Object.fromEntries(Object.entries(auxiliaryDefaults()).map(([key,value])=>[key,JSON.stringify(value)]))});
+const baseStorage=new Storage({sm_v5_operating_mode:'cross-device-recovery',[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:planner}),...Object.fromEntries(Object.entries(auxiliaryDefaults()).map(([key,value])=>[key,JSON.stringify(value)]))});
 const cloudEnvelope=await serializeCanonicalState({storage:baseStorage,revision:6});
 baseStorage.setItem(DEVICE_STATUS_KEY,stableSerialize({state:'NORMAL_SYNC_ACTIVE',canonicalVerified:true,normalSync:'ACTIVE'}));
 baseStorage.setItem(NORMAL_SYNC_BASE_KEY,stableSerialize({revision:6,hash:cloudEnvelope.contentHash}));
@@ -23,7 +23,7 @@ const writeEngine={
 const committed=await commitNormalSyncCAS({engine:writeEngine,storage:baseStorage});
 assert.equal(committed.ok,true);assert.equal(committed.cloud.revision,7);assert.equal(requestBody.p_expected_revision,6);assert.equal(requestBody.p_expected_content_hash,cloudEnvelope.contentHash);assert.notEqual(requestBody.p_new_content_hash,cloudEnvelope.contentHash);assert.equal(baseStorage.getItem(STORAGE_KEYS.knownRevision),'7');
 
-const staleStorage=new Storage({[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:planner}),...Object.fromEntries(Object.entries(auxiliaryDefaults()).map(([key,value])=>[key,JSON.stringify(value)])),[DEVICE_STATUS_KEY]:stableSerialize({state:'NORMAL_SYNC_ACTIVE',canonicalVerified:true,normalSync:'ACTIVE'}),[NORMAL_SYNC_BASE_KEY]:stableSerialize({revision:6,hash:cloudEnvelope.contentHash})});
+const staleStorage=new Storage({sm_v5_operating_mode:'cross-device-recovery',[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:planner}),...Object.fromEntries(Object.entries(auxiliaryDefaults()).map(([key,value])=>[key,JSON.stringify(value)])),[DEVICE_STATUS_KEY]:stableSerialize({state:'NORMAL_SYNC_ACTIVE',canonicalVerified:true,normalSync:'ACTIVE'}),[NORMAL_SYNC_BASE_KEY]:stableSerialize({revision:6,hash:cloudEnvelope.contentHash})});
 let writes=0;
 const staleEngine={fetchCloudDiagnostics:async()=>({ok:true,envelope:{...cloudEnvelope,revision:7,contentHash:'f'.repeat(64)},row:{data:{...cloudEnvelope,contentHash:'f'.repeat(64)}},auth:{state:'AUTHENTICATED',userId:'owner'}}),authentication:async()=>{writes++;return null},requestEndpoint:async()=>{writes++;return null}};
 const stale=await commitNormalSyncCAS({engine:staleEngine,storage:staleStorage});

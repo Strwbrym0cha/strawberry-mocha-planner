@@ -2,16 +2,17 @@ import{getAuthenticatedSession,refreshSession,SYNC_SESSION_KEY,CLOUD_PUBLISHABLE
 import{envelopeFromCloudRow,validateCanonicalEnvelope}from'./sync-envelope.js';
 import{browserFetch,resolveFetch}from'./sync-fetch.js';
 import{recoveryModeOn}from'./sync-storage.js';
+import{isSingleDeviceIpadMode}from'./single-device-mode.js?v=7.0.12-ipad-only';
 
 export const SYNC_STATES=Object.freeze({
-  PAUSED:'PAUSED',DEVICE_BOOTSTRAP_REQUIRED:'DEVICE_BOOTSTRAP_REQUIRED',LOCAL_MASTER_UNSEEDED:'LOCAL_MASTER_UNSEEDED',UP_TO_DATE:'UP_TO_DATE',REMOTE_NEWER:'REMOTE_NEWER',
+  PAUSED:'PAUSED',IPAD_ONLY_LOCAL:'IPAD_ONLY_LOCAL',DEVICE_BOOTSTRAP_REQUIRED:'DEVICE_BOOTSTRAP_REQUIRED',LOCAL_MASTER_UNSEEDED:'LOCAL_MASTER_UNSEEDED',UP_TO_DATE:'UP_TO_DATE',REMOTE_NEWER:'REMOTE_NEWER',
   LOCAL_DIRTY:'LOCAL_DIRTY',UPLOADING:'UPLOADING',DOWNLOADING:'DOWNLOADING',CONFLICT:'CONFLICT',OFFLINE:'OFFLINE',
   REAUTH_REQUIRED:'REAUTH_REQUIRED',ERROR:'ERROR'
 });
 
 export class SafeSyncEngine{
   constructor({storage=localStorage,fetchFunction=browserFetch}={}){
-    this.storage=storage;this.fetchFunction=resolveFetch(fetchFunction);this.state=recoveryModeOn(storage)?SYNC_STATES.PAUSED:SYNC_STATES.DEVICE_BOOTSTRAP_REQUIRED;
+    this.storage=storage;this.fetchFunction=resolveFetch(fetchFunction);this.state=isSingleDeviceIpadMode(storage)?SYNC_STATES.IPAD_ONLY_LOCAL:recoveryModeOn(storage)?SYNC_STATES.PAUSED:SYNC_STATES.DEVICE_BOOTSTRAP_REQUIRED;
   }
 
   isRecoveryProtected(){return recoveryModeOn(this.storage)}
@@ -91,9 +92,9 @@ export class SafeSyncEngine{
     }catch(error){return{ok:false,state:SYNC_STATES.OFFLINE,auth,row:null,envelope:null,error:error?.message||`Snapshot revision ${revision} is unavailable.`}}
   }
 
-  async push(){return{ok:false,state:SYNC_STATES.PAUSED,error:'Cloud writes are disabled during the diagnostic phase.'}}
-  async pull(){return{ok:false,state:SYNC_STATES.PAUSED,error:'Cloud installation is disabled during the diagnostic phase.'}}
-  async seed(){return{ok:false,state:SYNC_STATES.PAUSED,error:'Cloud seeding is disabled until the iPad diagnostic report is approved.'}}
+  async push(){return{ok:false,state:isSingleDeviceIpadMode(this.storage)?SYNC_STATES.IPAD_ONLY_LOCAL:SYNC_STATES.PAUSED,error:'Planner cloud sync is disabled.'}}
+  async pull(){return{ok:false,state:isSingleDeviceIpadMode(this.storage)?SYNC_STATES.IPAD_ONLY_LOCAL:SYNC_STATES.PAUSED,error:'Planner cloud sync is disabled.'}}
+  async seed(){return{ok:false,state:isSingleDeviceIpadMode(this.storage)?SYNC_STATES.IPAD_ONLY_LOCAL:SYNC_STATES.PAUSED,error:'Planner cloud sync is disabled.'}}
 }
 
 export const createSafeSyncEngine=options=>new SafeSyncEngine(options);

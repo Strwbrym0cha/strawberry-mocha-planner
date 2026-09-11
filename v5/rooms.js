@@ -1,4 +1,4 @@
-import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit,selectV5Health,selectV5LaunchPad}from'./data.js?v=7.0.11-medication-launch-pad';
+import{loadV5DailyNote,loadV5RoomDetail,ledgerSummary,migrationInfo,selectV5DailyShit,selectV5Health,selectV5LaunchPad}from'./data.js?v=7.0.12-ipad-only';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};

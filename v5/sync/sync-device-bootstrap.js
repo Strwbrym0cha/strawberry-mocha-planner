@@ -2,11 +2,12 @@ import{APPROVED_CANONICAL_COUNTS,verifyCanonicalRecoveryIntegrity}from'./sync-ca
 import{countCanonicalCollections}from'./sync-diagnostics.js';
 import{canonicalContent,deserializeCanonicalState,hashCanonicalState,serializeCanonicalState,stableSerialize,verifyCanonicalEnvelope}from'./sync-envelope.js';
 import{getOrCreateDeviceId}from'./sync-device.js';
-import{defaultIndexedDbBackupStore,isQuotaExceededError,byteSize}from'./sync-phone-backup-store.js?v=7.0.10-phone-storage-capacity-fix';
-import{migrateEligibleKatOSBackups,phoneStoragePreparationRequired,readPhoneStoragePreparationReceipt}from'./sync-phone-storage-capacity.js?v=7.0.10-phone-storage-capacity-fix';
+import{defaultIndexedDbBackupStore,isQuotaExceededError,byteSize}from'./sync-phone-backup-store.js?v=7.0.12-ipad-only';
+import{migrateEligibleKatOSBackups,phoneStoragePreparationRequired,readPhoneStoragePreparationReceipt}from'./sync-phone-storage-capacity.js?v=7.0.12-ipad-only';
 import{AUXILIARY_STORE_KEYS,katosLocalStorageUsage,katosStorageCapacityReport,readRenderedPlannerState,recoveryModeOn,storageUsage,STORAGE_KEYS}from'./sync-storage.js';
+import{isSingleDeviceIpadMode}from'./single-device-mode.js?v=7.0.12-ipad-only';
 
-export const PHONE_BOOTSTRAP_BUILD='7.0.10-phone-storage-capacity-fix';
+export const PHONE_BOOTSTRAP_BUILD='7.0.12-ipad-only';
 export const CANONICAL_CLOUD=Object.freeze({revision:6,hash:'b67b18371ee35accee0b5f5d8aee39f4651429ee5c0322dfe83528abac1b9504',counts:APPROVED_CANONICAL_COUNTS});
 export const DEVICE_STATUS_KEY='sm_v5_device_sync_status';
 export const PHONE_BACKUP_PREFIX='sm_v5_phone_backup_before_canonical_install_';
@@ -22,6 +23,11 @@ export function deviceBootstrapStatus(storage=localStorage){
 }
 export function ensureDeviceBootstrapState(storage=localStorage){
   const current=deviceBootstrapStatus(storage);
+  if(isSingleDeviceIpadMode(storage)){
+    const status={...current,state:'IPAD_ONLY_LOCAL',mode:'single-device-ipad',normalSync:'NOT_ENABLED',initializedAt:current.initializedAt||new Date().toISOString()};
+    storage.setItem(DEVICE_STATUS_KEY,stableSerialize(status));
+    return status;
+  }
   if(current.state!=='DEVICE_STATUS_MISSING')return current;
   const state=recoveryModeOn(storage)?'RECOVERY_MODE_PAUSED':'DEVICE_BOOTSTRAP_REQUIRED';
   const status={state,initializedAt:new Date().toISOString(),normalSync:'NOT_ENABLED'};
@@ -29,7 +35,7 @@ export function ensureDeviceBootstrapState(storage=localStorage){
   return status;
 }
 export const isCanonicalDeviceVerified=(storage=localStorage)=>{const status=deviceBootstrapStatus(storage);return status.state==='CANONICAL_DEVICE_VERIFIED'||status.canonicalVerified===true};
-export const normalSyncEnabled=(storage=localStorage)=>deviceBootstrapStatus(storage).state==='NORMAL_SYNC_ACTIVE';
+export const normalSyncEnabled=(storage=localStorage)=>!isSingleDeviceIpadMode(storage)&&deviceBootstrapStatus(storage).state==='NORMAL_SYNC_ACTIVE';
 
 function rawPayload(storage){return Object.fromEntries(localKeys.map(key=>[key,storage.getItem(key)]));}
 const backupRecordBytes=backup=>byteSize(backup);
