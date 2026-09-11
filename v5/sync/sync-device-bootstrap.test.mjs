@@ -19,5 +19,5 @@ const backup=await createVerifiedPhoneBackup({storage,deviceId:'phone-1',now:()=
 const failedBackupStorage=new Storage({[STORAGE_KEYS.renderedPlanner]:JSON.stringify({data:state})});failedBackupStorage.setItem=()=>{throw new Error('quota')};await assert.rejects(()=>createVerifiedPhoneBackup({storage:failedBackupStorage}),/quota/);
 globalThis.localStorage=storage;storage.setItem(DEVICE_STATUS_KEY,JSON.stringify({state:'DEVICE_BOOTSTRAP_REQUIRED'}));
 const{saveV5Workspace}=await import('../data.js?device-bootstrap-write-guard');
-assert.equal(saveV5Workspace('tasks',{task:'Blocked phone task'}).code,'DEVICE_BOOTSTRAP_REQUIRED','local planner write paths are guarded below the UI');
+assert.equal(saveV5Workspace('tasks',{task:'iPad local task'}).ok,true,'iPad-only mode lets ordinary local planner saves proceed even when a historical bootstrap status exists');
 assert.equal(CANONICAL_CLOUD.revision,6);assert.equal(CANONICAL_CLOUD.hash.length,64);console.log('Phone bootstrap blocks stale/empty/local-only clients before cloud mutation and verifies the local precautionary backup.');

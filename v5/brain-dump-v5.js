@@ -1,4 +1,4 @@
-import{snapshotV4,saveV5Workspace,updateV5Record,archiveV5Record}from'./data.js?v=7.0.10-phone-storage-capacity-fix';
+import{snapshotV4,saveV5Workspace,updateV5Record,archiveV5Record}from'./data.js?v=7.0.12-ipad-only';
 
 const app=document.getElementById('app');
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

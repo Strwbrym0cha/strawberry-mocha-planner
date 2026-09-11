@@ -90,7 +90,7 @@ assert.match(report.text,/Cloud canonical size:/);assert.match(report.text,/late
 assert.equal(/access_token|refresh_token|new-access|new-refresh/.test(report.text+report.json),false,'diagnostic exports contain no credentials');
 
 let networkCalls=0;
-const protectedStorage=new MemoryStorage({[STORAGE_KEYS.recoveryLock]:'1',[STORAGE_KEYS.planner]:'{"safe":true}'});
+const protectedStorage=new MemoryStorage({sm_v5_operating_mode:'cross-device-recovery',[STORAGE_KEYS.recoveryLock]:'1',[STORAGE_KEYS.planner]:'{"safe":true}'});
 const engine=new SafeSyncEngine({storage:protectedStorage,fetchFunction:async()=>{networkCalls++;throw new Error('should not run')}});
 assert.equal(engine.state,SYNC_STATES.PAUSED);assert.equal(engine.canWriteCloud(),false);
 assert.equal((await engine.push()).state,SYNC_STATES.PAUSED);assert.equal((await engine.pull()).state,SYNC_STATES.PAUSED);assert.equal((await engine.seed()).state,SYNC_STATES.PAUSED);
@@ -137,10 +137,10 @@ const bootstrap=await readFile(resolve(root,'v5/bootstrap.js'),'utf8');
 for(const legacy of['cloud-sync-v3.js','cloud-resume-sync.js','cloud-canonical-bridge.js','cloud-sync.js','cloud-first-hydrate.js','recovery-loaded-status.js','recovery-vault.js'])assert.equal(bootstrap.includes(legacy),false,`${legacy} is not bootstrapped`);
 assert.match(bootstrap,/sync\/sync-lab\.js/);
 const indexSource=await readFile(resolve(root,'v5/index.html'),'utf8');
-assert.match(indexSource,/bootstrap\.js\?v=7\.0\.10-phone-storage-capacity-fix/,'iOS containers receive the guarded phone-bootstrap build instead of a cached recovery preview');
+assert.match(indexSource,/bootstrap\.js\?v=7\.0\.12-ipad-only/,'iOS containers receive the iPad-only build instead of a cached recovery preview');
 const appSource=await readFile(resolve(root,'v5/app.js'),'utf8');
 assert.equal(appSource.includes('restoreCloudV4Data'),false,'startup and Settings do not invoke legacy planner_data hydration');
-assert.match(appSource,/data\.js\?v=7\.0\.10-phone-storage-capacity-fix/);assert.match(appSource,/rooms\.js\?v=7\.0\.0-safe-sync-foundation/);
+assert.match(appSource,/data\.js\?v=7\.0\.12-ipad-only/);assert.match(appSource,/rooms\.js\?v=7\.0\.0-safe-sync-foundation/);
 const dataSource=await readFile(resolve(root,'v5/data.js'),'utf8');
 assert.match(dataSource,/Legacy cloud restore is disabled/);
 assert.match(dataSource,/Rendering is a pure read/);

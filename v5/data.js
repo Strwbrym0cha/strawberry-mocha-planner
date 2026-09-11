@@ -6,7 +6,8 @@ import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActiviti
 import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
 import{applyHealthAction,selectMedicationCabinet}from'./health.js?v=7.0.11-medication-launch-pad';
 import{applyLaunchAction,selectLaunchPad}from'./launch-pad.js?v=7.0.11-medication-launch-pad';
-import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.10-phone-storage-capacity-fix';
+import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.12-ipad-only';
+import{isSingleDeviceIpadMode}from'./sync/single-device-mode.js?v=7.0.12-ipad-only';
 
 export{getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep};
 
@@ -20,7 +21,8 @@ const V5_DAILY_NOTES_KEY='sm_v5_detailed_daily_notes';
 const V5_ROOM_DETAILS_KEY='sm_v5_room_details';
 const V5_LEDGER_KEY='sm_v5_money_ledger';
 const BOOTSTRAP_WRITE_ERROR='This device is awaiting canonical-cloud bootstrap. Local planner changes are locked until verification completes.';
-const plannerWritesBlocked=()=>['DEVICE_BOOTSTRAP_REQUIRED','RECOVERY_MODE_PAUSED'].includes(deviceBootstrapStatus(localStorage).state);
+// The cancelled cross-device project may not block ordinary iPad-local planner saves.
+const plannerWritesBlocked=()=>!isSingleDeviceIpadMode(localStorage)&&['DEVICE_BOOTSTRAP_REQUIRED','RECOVERY_MODE_PAUSED'].includes(deviceBootstrapStatus(localStorage).state);
 const bootstrapBlocked=()=>({ok:false,error:BOOTSTRAP_WRITE_ERROR,code:'DEVICE_BOOTSTRAP_REQUIRED'});
 
 const list=value=>Array.isArray(value)?value:[];

@@ -3,8 +3,9 @@ import{collectSyncDiagnostics}from'./sync-diagnostics.js';
 import{collectReadOnlyReconciliation}from'./sync-reconciliation.js';
 import{APPROVED_MANUAL_RECOVERY_DECISIONS,APPROVED_RECOVERY_SESSION,collectReadOnlyRecoveryPlan,RECOVERY_ACTIONS}from'./sync-recovery-plan.js';
 import{APPROVED_CANONICAL_RECOVERY,CANONICAL_RECOVERY_BUILD,createOneTimeCanonicalRecovery}from'./sync-canonical-recovery.js';
-import{CANONICAL_CLOUD,buildPhoneBootstrapResultText,deviceBootstrapStatus,installCanonicalCloudCopy,preparePhoneStorageForCanonicalInstall,verifyCanonicalCloud}from'./sync-device-bootstrap.js?v=7.0.10-phone-storage-capacity-fix';
-import{normalSyncReadiness}from'./sync-normal-cas.js?v=7.0.10-phone-storage-capacity-fix';
+import{CANONICAL_CLOUD,buildPhoneBootstrapResultText,deviceBootstrapStatus,installCanonicalCloudCopy,preparePhoneStorageForCanonicalInstall,verifyCanonicalCloud}from'./sync-device-bootstrap.js?v=7.0.12-ipad-only';
+import{normalSyncReadiness}from'./sync-normal-cas.js?v=7.0.12-ipad-only';
+import{isSingleDeviceIpadMode,singleDeviceStatus}from'./single-device-mode.js?v=7.0.12-ipad-only';
 
 const engine=createSafeSyncEngine();
 const canonicalRecovery=createOneTimeCanonicalRecovery({engine});
@@ -121,7 +122,14 @@ async function runReconciliation(card){
   finally{if(button.isConnected){button.disabled=false;button.textContent='Compare local + cloud + snapshot'}}
 }
 
-async function mount(force=false){
+function renderIpadOnlyStorage(card){
+  const status=singleDeviceStatus();
+  card.dataset.syncStatus='ipad-only';
+  card.innerHTML=`<div class="card-head"><div><div class="ey">🍓 KATOS STORAGE</div><h2>iPad-only mode</h2><p>KatOS lives on this iPad. Cloud sync and phone sync are turned off.</p></div><span class="cloud-account-state offline">Local</span></div><div class="room-list"><div><b>Mode</b><br>iPad only</div><div><b>Planner storage</b><br>Local</div><div><b>Cloud sync</b><br>Off</div><div><b>Recovery archive</b><br>Preserved · last verified cloud revision ${status.lastVerifiedRecoveryRevision}</div></div><details style="margin-top:14px"><summary>Advanced Recovery Tools</summary><p>Read-only archive diagnostics are available only when opened intentionally. Cross-device sync, phone bootstrap, and recovery actions remain disabled.</p><div class="button-row"><button type="button" class="btn soft" data-open-recovery-archive>Open read-only archive diagnostics</button></div></details>`;
+  card.querySelector('[data-open-recovery-archive]')?.addEventListener('click',()=>mountAdvanced(true));
+}
+
+async function mountAdvanced(force=false){
   const title=document.querySelector('.top-title'),page=document.querySelector('.main .page')||document.querySelector('.main');
   if(!page||String(title?.textContent||'').trim()!=='Settings')return;
   let card=page.querySelector('[data-sync-lab]');
@@ -132,17 +140,24 @@ async function mount(force=false){
   try{
     const report=await collectSyncDiagnostics({engine,buildVersion:buildVersion()});
     if(!card.isConnected)return;
-    card.innerHTML=`<div class="card-head"><div><div class="ey">☁️ KATOS SYNC LAB</div><h2>Recovery protected</h2><p>Diagnostics, reconciliation, and planning remain read-only. Only the explicitly confirmed one-time recovery control can write the verified iPad copy to cloud.</p></div><span class="cloud-account-state offline">Paused</span></div><div class="room-list"><div><b>Device</b><br>${escapeHtml(report.device.label)} · <code>${escapeHtml(report.device.deviceId)}</code></div><div><b>Local</b><br>${escapeHtml(report.local.sourceKey||'none')} · revision ${escapeHtml(report.local.revision??'unseeded')} · ${escapeHtml(shortHash(report.local.contentHash))} · ${escapeHtml(report.local.serializedBytes)} bytes</div><div><b>Cloud</b><br>revision ${escapeHtml(report.cloud.revision??'unknown')} · ${escapeHtml(report.cloud.updatedAt||'unknown')} · ${escapeHtml(shortHash(report.cloud.contentHash))} · ${escapeHtml(report.cloud.serializedBytes==null?'unknown':`${report.cloud.serializedBytes} bytes`)} · server snapshots ${escapeHtml(report.cloud.snapshotCount??'unknown')}${report.cloud.latestSnapshotRevision==null?'':` · latest r${escapeHtml(report.cloud.latestSnapshotRevision)}${report.cloud.latestSnapshotAt?` at ${escapeHtml(report.cloud.latestSnapshotAt)}`:''}`}</div><div><b>Comparison</b><br>${escapeHtml(report.comparison)} · Recovery mode ${report.recoveryMode?'ON':'OFF'} · Auth ${escapeHtml(report.auth.state)}</div><div><b>Storage safety</b><br>${report.recovery.count} recovery backup keys · quota warning ${report.storage.warning?'YES':'NO'} · IndexedDB use: none</div></div>${countRows(report)}<div class="button-row" style="margin-top:14px"><button type="button" class="btn soft" data-copy-sync>Copy sync diagnostics</button><button type="button" class="btn soft" data-download-sync>Download sync diagnostics JSON</button><button type="button" class="btn soft" data-refresh-sync>Refresh diagnostics</button><button type="button" class="btn soft" data-reconcile-sync>Compare local + cloud + snapshot</button></div><div data-reconciliation-output></div>${oneTimeRecoverySection(report)}${phoneBootstrapSection(report)}${normalSyncGateSection()}`;
+    card.innerHTML=`<div class="card-head"><div><div class="ey">ADVANCED RECOVERY TOOLS</div><h2>Recovery archive diagnostics</h2><p>Read-only archive diagnostics only. Cloud sync, phone bootstrap, CAS sync, and recovery actions are disabled in iPad-only mode.</p></div><span class="cloud-account-state offline">Archive</span></div><div class="room-list"><div><b>Device</b><br>${escapeHtml(report.device.label)} · <code>${escapeHtml(report.device.deviceId)}</code></div><div><b>Local</b><br>${escapeHtml(report.local.sourceKey||'none')} · ${escapeHtml(shortHash(report.local.contentHash))} · ${escapeHtml(report.local.serializedBytes)} bytes</div><div><b>Recovery archive</b><br>cloud revision ${escapeHtml(report.cloud.revision??'unknown')} · ${escapeHtml(shortHash(report.cloud.contentHash))} · snapshots ${escapeHtml(report.cloud.snapshotCount??'unknown')}</div><div><b>Storage safety</b><br>${report.recovery.count} preserved recovery backup keys</div></div><div class="button-row" style="margin-top:14px"><button type="button" class="btn soft" data-copy-sync>Copy diagnostics</button><button type="button" class="btn soft" data-download-sync>Download diagnostics JSON</button><button type="button" class="btn soft" data-refresh-sync>Refresh diagnostics</button><button type="button" class="btn soft" data-back-to-ipad-storage>Back to iPad-only storage</button></div>`;
     card.dataset.syncStatus='ready';
     card.querySelector('[data-copy-sync]').onclick=async event=>{const button=event.currentTarget;try{await copyText(report.text);button.textContent='Copied'}catch{button.textContent='Copy failed'}setTimeout(()=>{if(button.isConnected)button.textContent='Copy sync diagnostics'},1200)};
     card.querySelector('[data-download-sync]').onclick=()=>downloadDiagnostics(report);
-    card.querySelector('[data-refresh-sync]').onclick=()=>mount(true);
-    card.querySelector('[data-reconcile-sync]').onclick=()=>runReconciliation(card);
-    const promote=card.querySelector('[data-promote-canonical]');if(promote)promote.onclick=()=>confirmCanonicalRecovery(()=>runCanonicalRecovery(card));
-    bindPhoneBootstrap(card,report);
+    card.querySelector('[data-refresh-sync]').onclick=()=>mountAdvanced(true);
+    card.querySelector('[data-back-to-ipad-storage]').onclick=()=>mount(true);
   }catch(error){card.dataset.syncStatus='error';card.innerHTML+=`<p><b>Diagnostics could not be completed:</b> ${escapeHtml(error?.message||error)}</p><p>No planner or cloud data was changed.</p>`}
+}
+
+async function mount(force=false){
+  const title=document.querySelector('.top-title'),page=document.querySelector('.main .page')||document.querySelector('.main');
+  if(!page||String(title?.textContent||'').trim()!=='Settings')return;
+  let card=page.querySelector('[data-sync-lab]');
+  if(!card){card=document.createElement('section');card.className='card full cloud-account-card';card.dataset.syncLab='';const stats=page.querySelector('.room-stat-grid');if(stats)stats.insertAdjacentElement('afterend',card);else page.prepend(card)}
+  if(isSingleDeviceIpadMode())return renderIpadOnlyStorage(card);
+  return mountAdvanced(force);
 }
 
 window.addEventListener('katos:rendered',()=>queueMicrotask(mount));
 setTimeout(mount,350);
-window.KatOSSyncLab=Object.freeze({state:'PAUSED',canWrite:false,recoveryBuild:CANONICAL_RECOVERY_BUILD,refresh:()=>mount(true)});
+window.KatOSSyncLab=Object.freeze({state:'IPAD_ONLY_LOCAL',canWrite:false,recoveryBuild:CANONICAL_RECOVERY_BUILD,refresh:()=>mount(true),openArchive:()=>mountAdvanced(true)});

@@ -122,6 +122,6 @@ const labSource=await readFile(resolve(root,'v5/sync/sync-lab.js'),'utf8');
 assert.match(labSource,/Compare local \+ cloud \+ snapshot/);assert.match(labSource,/Show item-level differences/);assert.match(labSource,/Copy reconciliation report/);
 for(const unsafe of['data-sync-upload','data-sync-seed','data-sync-restore','data-sync-merge','data-sync-keep-local','data-sync-keep-cloud'])assert.equal(labSource.includes(unsafe),false,`${unsafe} is not exposed`);
 const indexSource=await readFile(resolve(root,'v5/index.html'),'utf8');
-assert.match(indexSource,/7\.0\.10-phone-storage-capacity-fix/);
+assert.match(indexSource,/7\.0\.12-ipad-only/);
 
 console.log('V5 stable-ID, three-way, field-diff, redaction, snapshot-selection, and no-write reconciliation tests passed');

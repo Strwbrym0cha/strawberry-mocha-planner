@@ -1,4 +1,4 @@
-import{archiveV5Record,localDateKey,runV5MoneyGigAction,saveV5GigShift,selectV5MoneyGig,snapshotV4,updateV5Record}from'./data.js?v=7.0.10-phone-storage-capacity-fix';
+import{archiveV5Record,localDateKey,runV5MoneyGigAction,saveV5GigShift,selectV5MoneyGig,snapshotV4,updateV5Record}from'./data.js?v=7.0.12-ipad-only';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();
