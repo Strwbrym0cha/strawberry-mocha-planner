@@ -2,7 +2,7 @@ const{ensureSingleDeviceIpadMode}=await import('./sync/single-device-mode.js?v=7
 ensureSingleDeviceIpadMode(localStorage);
 const{ensureDeviceBootstrapState}=await import('./sync/sync-device-bootstrap.js?v=7.0.12-ipad-only');
 ensureDeviceBootstrapState(localStorage);
-await import('./app.js?v=7.0.12-ipad-only');
+await import('./app.js?v=7.0.13-medication-save-fix');
 await import('./sync/sync-lab.js?v=7.0.12-ipad-only');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');

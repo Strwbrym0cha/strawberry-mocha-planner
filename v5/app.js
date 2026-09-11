@@ -3,7 +3,7 @@ import{renderBoss}from'./boss.js?v=5.6.0-final-integration';
 import{renderStudy}from'./study.js?v=5.3.0-study-nook';
 import{renderMoney,renderGigWork}from'./money.js?v=5.6.2-gig-work-home';
 import{renderMovement,renderHobbies,renderGrowth}from'./lifestyle-render.js?v=5.6.0-final-integration';
-import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=7.0.0-safe-sync-foundation';
+import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=7.0.13-medication-save-fix';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();
