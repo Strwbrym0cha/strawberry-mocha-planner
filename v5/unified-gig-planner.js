@@ -11,6 +11,8 @@ const activePlan=row=>!row?.archivedAt&&!row?.summaryOrderId&&!['completed','can
 const formatDate=value=>{if(!value)return'Date not set';const date=new Date(`${value}T12:00:00`);return Number.isNaN(date.getTime())?value:date.toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})};
 const formatTime=value=>{if(!/^\d{1,2}:\d{2}$/.test(text(value)))return'';const[hours,minutes]=value.split(':').map(Number),date=new Date;date.setHours(hours,minutes,0,0);return date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})};
 const timeRange=row=>[formatTime(row?.startTime),formatTime(row?.endTime)].filter(Boolean).join(' – ')||'Time not set';
+const durationMinutes=row=>{if(!/^\d{1,2}:\d{2}$/.test(text(row?.startTime))||!/^\d{1,2}:\d{2}$/.test(text(row?.endTime)))return Number(row?.scheduledMinutes)||0;const[sh,sm]=row.startTime.split(':').map(Number),[eh,em]=row.endTime.split(':').map(Number);let minutes=(eh*60+em)-(sh*60+sm);if(minutes<0)minutes+=1440;return minutes};
+const hoursLabel=row=>{const minutes=durationMinutes(row);if(!minutes)return'';const hours=Math.floor(minutes/60),rest=minutes%60;return rest?`${hours}h ${rest}m`:`${hours} hr`};
 
 function plannedRows(){
  const today=localDateKey(),rows=list(snapshotV4()?.state?.work?.gigShifts).filter(row=>activePlan(row)&&(isFlex(row)||isDoorDash(row)));
@@ -19,7 +21,7 @@ function plannedRows(){
 
 function rowMarkup(row,today){
  const flex=isFlex(row),kind=flex?'Amazon Flex':'DoorDash',icon=flex?'📦':'🚗',open=flex?'data-flex-plan-open':'data-doordash-plan-open',late=row.date&&row.date<today;
- return`<button type="button" class="unified-gig-row ${late?'needs-summary':''}" ${open}="${esc(row.id)}"><span class="unified-gig-kind"><i>${icon}</i><span><b>${kind}</b><small>${esc(formatDate(row.date))} · ${esc(timeRange(row))}${row.area?` · ${esc(row.area)}`:''}</small></span></span><span class="unified-gig-target"><b>${money(row.targetAmount)}</b><small>${late?'Add summary':'expected'}</small></span></button>`;
+ return`<button type="button" class="unified-gig-row ${late?'needs-summary':''}" ${open}="${esc(row.id)}"><span class="unified-gig-kind"><i>${icon}</i><span><b>${kind}</b><small>${esc(formatDate(row.date))} · ${esc(timeRange(row))}${flex&&hoursLabel(row)?` · ${esc(hoursLabel(row))} scheduled`:''}${row.area?` · ${esc(row.area)}`:''}</small></span></span><span class="unified-gig-target"><b>${money(row.targetAmount)}</b><small>${late?'Add summary':'expected'}</small></span></button>`;
 }
 
 function cardMarkup(){

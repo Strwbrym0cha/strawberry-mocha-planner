@@ -60,11 +60,11 @@ app.addEventListener('submit',event=>{
  if(!planResult.ok){error.textContent=planResult.error||'Could not save this Flex block.';return}
  if(intent==='plan'){close();rerender();return}
  const actualPay=Number(data.actualPay)||0;if(actualPay<=0){error.textContent='Add the actual Flex pay before completing the block.';saveV5GigShift({...planResult.entry,status:'planned'});return}
- const packageCount=Math.max(0,Number(data.packageCount)||0),orderResult=runV5MoneyGigAction({type:'order-save',id:form.dataset.summaryId||'',platformId:platformResult.result.id,date:text(data.date)||localDateKey(),basePay:actualPay,tip:0,bonus:0,promo:0,reimbursement:0,otherPay:0,mileage:Number(data.mileage)||0,activeMinutes:0,onlineMinutes:0,status:'completed',notes:text(data.summaryNotes)});
+ const packageCount=Math.max(0,Number(data.packageCount)||0),actualMinutes=Math.max(0,(Number(data.actualHours)||0)*60+(Number(data.actualMinutesPart)||0)),orderResult=runV5MoneyGigAction({type:'order-save',id:form.dataset.summaryId||'',platformId:platformResult.result.id,date:text(data.date)||localDateKey(),basePay:actualPay,tip:0,bonus:0,promo:0,reimbursement:0,otherPay:0,mileage:Number(data.mileage)||0,activeMinutes:actualMinutes,onlineMinutes:actualMinutes,status:'completed',notes:text(data.summaryNotes)});
  if(!orderResult.ok){error.textContent=orderResult.error||'Could not save the Flex earnings.';saveV5GigShift({...planResult.entry,status:'planned'});return}
  const summaryId=orderResult.result?.id||form.dataset.summaryId,attached=updateV5Record('work.gig.orders',summaryId,{entryMode:'shift',aggregateShift:true,packageCount,station:text(data.station),deliveryArea:text(data.area),startTime:text(data.startTime),endTime:text(data.endTime),shiftLabel:'Amazon Flex block',plannedShiftId:planResult.entry.id});
  if(!attached.ok){error.textContent=attached.error||'The earnings saved, but the Flex details could not be linked.';return}
- const completed=saveV5GigShift({...planResult.entry,status:'completed',summaryOrderId:summaryId,actualAmount:actualPay,packageCount,station:text(data.station),area:text(data.area),completedAt:new Date().toISOString()});if(!completed.ok){error.textContent=completed.error||'The summary saved, but the planned block could not be closed.';return}close();rerender();
+ const completed=saveV5GigShift({...planResult.entry,status:'completed',summaryOrderId:summaryId,actualAmount:actualPay,actualMinutes,packageCount,station:text(data.station),area:text(data.area),completedAt:new Date().toISOString()});if(!completed.ok){error.textContent=completed.error||'The summary saved, but the planned block could not be closed.';return}close();rerender();
 });
 
 new MutationObserver(()=>requestAnimationFrame(decorate)).observe(app,{childList:true});

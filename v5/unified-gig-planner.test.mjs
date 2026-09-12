@@ -9,6 +9,7 @@ assert.match(unified,/data-doordash-add/);
 assert.match(unified,/data-flex-add/);
 assert.match(unified,/data-doordash-plan-open/);
 assert.match(unified,/data-flex-plan-open/);
+assert.match(unified,/scheduled/,'Flex rows show their scheduled duration');
 assert.match(unified,/\.doordash-planner-card,\.flex-planner-card/,'separate planner cards are removed');
 assert.match(doorDash,/unifiedGigPlanner/,'DoorDash does not recreate its separate planner when unified');
 assert.match(flex,/unifiedGigPlanner/,'Flex does not recreate its separate planner when unified');
