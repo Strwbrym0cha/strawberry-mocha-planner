@@ -1,4 +1,4 @@
-import{archiveV5Record,localDateKey,runV5MoneyGigAction,saveV5GigShift,selectV5MoneyGig,snapshotV4,updateV5Record}from'./data.js?v=7.0.12-ipad-only';
+import{archiveV5Record,localDateKey,runV5MoneyGigAction,saveV5GigShift,selectV5MoneyGig,snapshotV4,updateV5Record}from'./data.js?v=6.17.0-doordash-planner';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();
@@ -36,8 +36,8 @@ function plannerCard(view){
 function decorate(){
  const hero=app.querySelector('.gig-hero-card');if(!hero)return;
  const orderButton=hero.querySelector('[data-money-open="new-order"]');if(orderButton&&orderButton.textContent!=='🍓 ＋ Shipt order')orderButton.textContent='🍓 ＋ Shipt order';
- const buttons=hero.querySelector('.button-row');if(buttons&&!buttons.querySelector('[data-doordash-add]'))buttons.insertAdjacentHTML('afterbegin','<button type="button" class="btn primary" data-doordash-add>🚗 ＋ Plan DoorDash shift</button>');
- const view=getView();if(!app.querySelector('.doordash-planner-card'))hero.insertAdjacentHTML('afterend',plannerCard(view));
+ const unified=document.documentElement.dataset.unifiedGigPlanner==='1',buttons=hero.querySelector('.button-row');if(!unified&&buttons&&!buttons.querySelector('[data-doordash-add]'))buttons.insertAdjacentHTML('afterbegin','<button type="button" class="btn primary" data-doordash-add>🚗 ＋ Plan DoorDash shift</button>');
+ const view=getView();if(!unified&&!app.querySelector('.doordash-planner-card'))hero.insertAdjacentHTML('afterend',plannerCard(view));
  for(const row of summaryRows(view)){
    const card=app.querySelector(`[data-money-open="order-${CSS.escape(String(row.id))}"]`);if(!card)continue;
    const name=card.querySelector('b'),meta=card.querySelector('small');if(name)name.textContent='DoorDash shift summary';if(meta)meta.textContent=`${row.deliveryCount||0} deliveries · DoorDash pay ${money(row.basePay)} · tips ${money(row.tip)}`;card.dataset.doordashSummaryOpen=String(row.id);

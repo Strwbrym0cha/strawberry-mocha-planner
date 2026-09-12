@@ -38,8 +38,8 @@ function plannerCard(){
 
 function decorate(){
  const hero=app.querySelector('.gig-hero-card');if(!hero)return;
- const buttons=hero.querySelector('.button-row');if(buttons&&!buttons.querySelector('[data-flex-add]'))buttons.insertAdjacentHTML('afterbegin','<button type="button" class="btn primary" data-flex-add>📦 ＋ Plan Flex block</button>');
- if(!app.querySelector('.flex-planner-card')){const dash=app.querySelector('.doordash-planner-card');(dash||hero).insertAdjacentHTML('afterend',plannerCard())}
+ const unified=document.documentElement.dataset.unifiedGigPlanner==='1',buttons=hero.querySelector('.button-row');if(!unified&&buttons&&!buttons.querySelector('[data-flex-add]'))buttons.insertAdjacentHTML('afterbegin','<button type="button" class="btn primary" data-flex-add>📦 ＋ Plan Flex block</button>');
+ if(!unified&&!app.querySelector('.flex-planner-card')){const dash=app.querySelector('.doordash-planner-card');(dash||hero).insertAdjacentHTML('afterend',plannerCard())}
  const view=getView();for(const row of summaryRows(view)){const card=app.querySelector(`[data-money-open="order-${CSS.escape(String(row.id))}"]`);if(!card)continue;const name=card.querySelector('b'),meta=card.querySelector('small');if(name)name.textContent='Amazon Flex block';if(meta)meta.textContent=`${row.packageCount||0} packages · ${row.station||'station not entered'} · ${row.deliveryArea||'area not entered'}`;card.dataset.flexSummaryOpen=String(row.id)}
 }
 
