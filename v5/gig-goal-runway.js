@@ -41,11 +41,12 @@ export function buildGigGoalRunway({goal,progress={},shifts=[],platforms=[],toda
  const daysLeft=Math.max(0,dayNumber(to)-dayNumber(today)+1);
  const paceTarget=target*(elapsedDays/totalDays);
  const expired=today>to&&remaining>0;
- let status='needs-plan',statusLabel=`${unplanned.toFixed(2)} still needs a shift`;
+ let status='needs-plan',statusLabel='More shifts need planning';
  if(remaining<=0){status='complete';statusLabel='Goal complete';}
  else if(planned>=remaining){status='covered';statusLabel='On track · planned shifts cover it';}
+ else if(today<from){status='upcoming';statusLabel='Upcoming goal · planning can start now';}
  else if(!expired&&earned>=paceTarget){status='on-pace';statusLabel='On pace · finish planning the rest';}
  else if(expired){status='expired';statusLabel='Deadline passed · update or extend it';}
  const dailyNeeded=daysLeft?cents(unplanned/daysLeft):unplanned;
- return{goal,from,to,target,earned,planned,covered,remaining,unplanned,totalDays,elapsedDays,daysLeft,dailyNeeded,status,statusLabel,earnedPercent:target?Math.min(100,earned/target*100):0,plannedPercent:target?Math.min(100-earned/target*100,planned/target*100):0,coveredPercent:target?Math.min(100,covered/target*100):0};
+ return{goal,from,to,target,earned,planned,covered,remaining,unplanned,totalDays,elapsedDays,daysLeft,dailyNeeded,status,statusLabel,earnedPercent:target?Math.min(100,earned/target*100):0,plannedPercent:target?Math.max(0,Math.min(100-earned/target*100,planned/target*100)):0,coveredPercent:target?Math.min(100,covered/target*100):0};
 }

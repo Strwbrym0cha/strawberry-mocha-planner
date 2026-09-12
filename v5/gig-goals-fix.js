@@ -1,5 +1,5 @@
 import{snapshotV4,selectV5MoneyGig,runV5MoneyGigAction,getGigGoalProgress}from'./data.js?v=7.0.14-flex-shift-planner';
-import{buildGigGoalRunway,chooseTrackedGigGoal}from'./gig-goal-runway.js?v=7.0.15-gig-goal-tracker';
+import{buildGigGoalRunway,chooseTrackedGigGoal}from'./gig-goal-runway.js?v=7.0.16-gig-goal-tracker-polish';
 
 const app=document.getElementById('app');
 const text=value=>String(value??'').trim();
