@@ -2,7 +2,7 @@ const{ensureSingleDeviceIpadMode}=await import('./sync/single-device-mode.js?v=7
 ensureSingleDeviceIpadMode(localStorage);
 const{ensureDeviceBootstrapState}=await import('./sync/sync-device-bootstrap.js?v=7.0.12-ipad-only');
 ensureDeviceBootstrapState(localStorage);
-await import('./app.js?v=7.0.13-medication-save-fix');
+await import('./app.js?v=7.0.20-daily-routines');
 await import('./sync/sync-lab.js?v=7.0.12-ipad-only');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
@@ -17,7 +17,7 @@ await import('./flex-shift-modal.js?v=7.0.19-flex-hours');
 await import('./flex-hours.js?v=7.0.19-flex-hours');
 await import('./unified-gig-planner.js?v=7.0.19-flex-hours');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
-await import('./routine-player.js?v=6.8.0-routine-builder');
+await import('./routine-player.js?v=7.0.20-daily-routines');
 await import('./routine-builder-layout-fix.js?v=6.15.1-routine-builder-layout');
 await import('./mochini-avatar.js?v=6.6.0-approved-atlas-final');
 await import('./mochini-companion.js?v=7.0.1-render-safe');

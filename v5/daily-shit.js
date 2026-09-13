@@ -36,15 +36,31 @@ export function occursOn(item,date){
 export function occurrenceFor(item,date){return obj(obj(item.occurrences)[date])}
 export function occurrenceStatus(item,date){
  const occurrence=occurrenceFor(item,date);if(occurrence.status)return occurrence.status;
- if(!isRecurring(item)&&isSavedComplete(item))return'complete';
- if(!isRecurring(item)&&item.skipped)return'skipped';
+ if(isRecurring(item))return'open';
+ const savedStatus=isSavedComplete(item)?'complete':item.skipped?'skipped':'';
+ if(!savedStatus)return'open';
+ const occurrenceDates=Object.keys(obj(item.occurrences)).filter(dateOk);
+ if(occurrenceDates.length)return'open';
+ const timestamp=savedStatus==='complete'?text(item.completedAt):text(item.skippedAt),anchor=dateOf(item)||(dateOk(timestamp.slice(0,10))?timestamp.slice(0,10):'');
+ if(anchor===date)return savedStatus;
  return'open';
 }
 export function isOpenOccurrence(item,date){return occursOn(item,date)&&!['complete','skipped','snoozed'].includes(occurrenceStatus(item,date));}
 export function isHardDeadline(item){return item?.deadlineType==='hard'||item?.hardDeadline===true||item?.hardBoundary===true}
 export function isOverdue(item,date){const due=text(item?.dueDate||item?.date||item?.due);return !isRecurring(item)&&!isSavedComplete(item)&&isHardDeadline(item)&&dateOk(due)&&due<date}
 
-function actionItem(kind,item,date){return{kind,id:String(item.id),title:titleOf(item),date,time:timeOf(item),priority:text(item.priority).toLowerCase()||'normal',energy:text(item.energy||item.effort).toLowerCase()||'medium',duration:Number(item.minutes??item.durationMin??item.duration)||0,hard:isHardDeadline(item),status:occurrenceStatus(item,date),source:item};}
+function minutesBetween(start,end){if(!/^\d{1,2}:\d{2}$/.test(text(start))||!/^\d{1,2}:\d{2}$/.test(text(end)))return 0;const[sh,sm]=text(start).split(':').map(Number),[eh,em]=text(end).split(':').map(Number);let minutes=(eh*60+em)-(sh*60+sm);if(minutes<0)minutes+=1440;return Math.max(0,minutes)}
+function gigGoalDuration(state,item,date){
+ if(text(item?.sourceType)!=='gig-work'||(!text(item?.externalId).startsWith('gig:goal:')&&!/gig work toward today/i.test(titleOf(item))))return null;
+ const shifts=list(state?.work?.gigShifts).filter(row=>dateOf(row)===date&&!row?.archivedAt&&!['canceled','cancelled','archived'].includes(text(row?.status).toLowerCase())),scheduled=shifts.reduce((sum,row)=>sum+(Number(row?.scheduledMinutes)||minutesBetween(row?.startTime,row?.endTime)),0);
+ if(scheduled>0)return{minutes:scheduled,source:'scheduled-block'};
+ const orders=list(state?.work?.gig?.orders),gross=row=>['basePay','promo','tip','bonus','reimbursement','otherPay'].reduce((sum,key)=>sum+(Number(row?.[key])||0),0),timed=orders.filter(row=>dateOk(row?.date)&&row.date<date&&!['canceled','cancelled'].includes(text(row?.status).toLowerCase())&&(Number(row?.onlineMinutes)||Number(row?.activeMinutes))),earned=timed.reduce((sum,row)=>sum+gross(row),0),worked=timed.reduce((sum,row)=>sum+(Number(row?.onlineMinutes)||Number(row?.activeMinutes)||0),0);
+ const planSamples=list(state?.work?.gigShifts).filter(row=>!row?.archivedAt&&Number(row?.targetAmount)>0&&(Number(row?.scheduledMinutes)||minutesBetween(row?.startTime,row?.endTime))),planPay=planSamples.reduce((sum,row)=>sum+(Number(row.targetAmount)||0),0),planMinutes=planSamples.reduce((sum,row)=>sum+(Number(row?.scheduledMinutes)||minutesBetween(row?.startTime,row?.endTime)),0),hourly=worked&&earned>0?earned/(worked/60):planMinutes&&planPay>0?planPay/(planMinutes/60):0;
+ const goal=list(state?.work?.gig?.goals).find(row=>String(row?.id)===text(item?.sourceId))||list(state?.work?.gig?.goals).find(row=>row?.period==='day'&&row?.startDate===date),todayEarned=orders.filter(row=>row?.date===date&&!['canceled','cancelled'].includes(text(row?.status).toLowerCase())).reduce((sum,row)=>sum+gross(row),0),remaining=Math.max(0,(Number(goal?.targetAmount)||0)-todayEarned);
+ if(hourly>0&&remaining>0)return{minutes:Math.max(5,Math.ceil((remaining/hourly*60)/5)*5),source:'goal-estimate'};
+ return{minutes:0,source:'goal-estimate'};
+}
+function actionItem(kind,item,date,state){const gigDuration=gigGoalDuration(state,item,date),duration=gigDuration?.minutes??(Number(item.minutes??item.durationMin??item.duration)||0),durationSource=gigDuration?.source||text(item.durationSource);return{kind,id:String(item.id),title:titleOf(item),date,time:timeOf(item),priority:text(item.priority).toLowerCase()||'normal',energy:text(item.energy||item.effort).toLowerCase()||'medium',duration,durationSource,hard:isHardDeadline(item),status:occurrenceStatus(item,date),source:item};}
 function routineInstances(state){return list(state?.life?.routineInstances)}
 function routineInstance(state,routine,date){return routineInstances(state).find(item=>String(item?.routineId)===String(routine?.id)&&item?.date===date)||null}
 function routinePaused(routine,date){return dateOk(routine?.pausedUntil)&&routine.pausedUntil>=date}
@@ -60,14 +76,14 @@ function routineView(state,routine,date){const instance=routineInstance(state,ro
 function compareActions(a,b){return Number(b.hard)-Number(a.hard)||priorityRank(b.priority)-priorityRank(a.priority)||(a.time||'99:99').localeCompare(b.time||'99:99')||(a.duration||0)-(b.duration||0)||a.title.localeCompare(b.title)}
 
 export function selectDailyShit(state={},date,{mode='normal'}={}){
- const tasks=list(state?.life?.tasks),pings=list(state?.life?.reminders),all=[...tasks.map(item=>actionItem('task',item,date)),...pings.map(item=>actionItem('ping',item,date))];
+ const tasks=list(state?.life?.tasks),pings=list(state?.life?.reminders),all=[...tasks.map(item=>actionItem('task',item,date,state)),...pings.map(item=>actionItem('ping',item,date,state))];
  const open=all.filter(item=>isOpenOccurrence(item.source,date));
  const done=all.filter(item=>occurrenceStatus(item.source,date)==='complete');
  const timed=open.filter(item=>item.time).sort(compareActions);
  const today=open.filter(item=>!item.time&&(item.kind==='ping'||item.hard||item.priority==='today'||item.priority==='now'||dateOf(item.source)===date)).sort(compareActions);
  const could=open.filter(item=>!item.time&&!today.includes(item)&&item.kind==='task'&&!dateOf(item.source)).sort(compareActions);
  const later=all.filter(item=>item.kind==='task'&&!isSavedComplete(item.source)&&!isRecurring(item.source)&&item.status==='open'&&!open.includes(item)&&!done.includes(item)).sort(compareActions);
- const overdue=tasks.filter(item=>isOverdue(item,date)).map(item=>actionItem('task',item,date)).sort(compareActions);
+ const overdue=tasks.filter(item=>isOverdue(item,date)).map(item=>actionItem('task',item,date,state)).sort(compareActions);
  const routineLibrary=list(state?.life?.routines).filter(routine=>routine?.archived!==true).map(routine=>routineView(state,routine,date));
  const routines=routineLibrary.filter(routine=>routineOccurs(routine.routine,date));
  const recommendation=[...overdue,...today,...timed,...could].filter(item=>!['complete','skipped'].includes(item.status)).sort(compareActions)[0]||null;
@@ -84,8 +100,8 @@ function fail(error){return{ok:false,error}}
 
 export function applyDailyAction(source,action={},today){const state=clone(source),type=text(action.type),date=dateOk(action.date)?action.date:today;if(!dateOk(today))return fail('A local planner date is required.');
  if(type==='ensure-linked'){
-  const externalId=text(action.externalId),sourceType=text(action.sourceType),category=sourceType.startsWith('study')||sourceType==='academic-date'?'Study':sourceType.startsWith('money')||sourceType==='gig-work'?'Money':'Work';if(!externalId)return fail('A stable linked-action ID is required.');const existing=items(state,'life.tasks').find(item=>text(item.externalId)===externalId);if(existing){const updated=patchItem(state,'life.tasks',existing.id,{text:text(action.title)||existing.text,title:text(action.title)||existing.title,date:dateOk(action.date)?action.date:existing.date,dueDate:dateOk(action.date)?action.date:existing.dueDate,priority:text(action.priority)||existing.priority,energy:text(action.energy)||existing.energy,minutes:Number(action.duration)||existing.minutes,deadlineType:text(action.deadlineType)||existing.deadlineType,sourceId:text(action.sourceId)||existing.sourceId,sourceType:sourceType||existing.sourceType,category});return{ok:true,state,result:updated,reused:true}}
-  const created=applyDailyAction(state,{type:'quick-add',kind:'task',title:action.title,date,priority:action.priority,energy:action.energy,duration:action.duration,deadlineType:action.deadlineType},today);if(!created.ok)return created;const linked=patchItem(created.state,'life.tasks',created.result.id,{externalId,sourceId:text(action.sourceId),sourceType,category});return{ok:true,state:created.state,result:linked,reused:false};
+  const externalId=text(action.externalId),sourceType=text(action.sourceType),category=sourceType.startsWith('study')||sourceType==='academic-date'?'Study':sourceType.startsWith('money')||sourceType==='gig-work'?'Money':'Work';if(!externalId)return fail('A stable linked-action ID is required.');const existing=items(state,'life.tasks').find(item=>text(item.externalId)===externalId);if(existing){const hasDuration=Number.isFinite(Number(action.duration)),updated=patchItem(state,'life.tasks',existing.id,{text:text(action.title)||existing.text,title:text(action.title)||existing.title,date:dateOk(action.date)?action.date:existing.date,dueDate:dateOk(action.date)?action.date:existing.dueDate,priority:text(action.priority)||existing.priority,energy:text(action.energy)||existing.energy,minutes:hasDuration?Math.max(0,Number(action.duration)):existing.minutes,durationSource:text(action.durationSource)||existing.durationSource,deadlineType:text(action.deadlineType)||existing.deadlineType,sourceId:text(action.sourceId)||existing.sourceId,sourceType:sourceType||existing.sourceType,category});return{ok:true,state,result:updated,reused:true}}
+  const created=applyDailyAction(state,{type:'quick-add',kind:'task',title:action.title,date,priority:action.priority,energy:action.energy,duration:action.duration,deadlineType:action.deadlineType},today);if(!created.ok)return created;const linked=patchItem(created.state,'life.tasks',created.result.id,{externalId,sourceId:text(action.sourceId),sourceType,durationSource:text(action.durationSource),category});return{ok:true,state:created.state,result:linked,reused:false};
  }
  if(type==='quick-add'){
   const title=text(action.title);if(!title)return fail('Give it a name first.');const kind=['task','ping','routine'].includes(text(action.kind))?text(action.kind):'task';
@@ -103,6 +119,7 @@ export function applyDailyAction(source,action={},today){const state=clone(sourc
  if(type.startsWith('routine-')){
   const rows=items(state,'life.routines'),routine=rows.find(item=>String(item?.id)===String(action.id));if(!routine)return fail('That routine is no longer here.');
   if(type==='routine-run')return{ok:true,state,result:createRoutineInstance(state,routine,date,{status:'running',startedAt:new Date().toISOString()})};
+  if(type==='routine-quick-complete'){const steps=routineSteps(routine),stamp=new Date().toISOString(),completedSteps=Object.fromEntries(steps.map(step=>[step.id,'complete']));return{ok:true,state,result:createRoutineInstance(state,routine,date,{status:'complete',tinyStart:text(routine.tinyStart||routine.firstStep)?'complete':'',steps:completedSteps,completedSteps:steps.length,totalSteps:steps.length,completionRatio:1,startedAt:stamp,loggedAt:stamp,completedAt:stamp})};}
   if(type==='routine-skip'){return{ok:true,state,result:createRoutineInstance(state,routine,date,{status:'skipped',skippedAt:new Date().toISOString()})};}
   if(type==='routine-pause'){if(!dateOk(action.until))return fail('Choose a pause-through date.');return{ok:true,state,result:patchItem(state,'life.routines',routine.id,{...routine,pausedUntil:action.until})};}
   if(type==='routine-tiny-start'){const steps=routineSteps(routine),tiny=text(routine.tinyStart||routine.firstStep||steps[0]?.label);if(!tiny)return fail('Add a Tiny Start before beginning this routine.');const instance=createRoutineInstance(state,routine,date,{status:'running'}),matched=steps.find(step=>step.label.toLowerCase()===tiny.toLowerCase()),nextSteps=matched?{...obj(instance.steps),[matched.id]:'complete'}:obj(instance.steps);return{ok:true,state,result:createRoutineInstance(state,routine,date,{...instance,tinyStart:'complete',tinyStartCompletedAt:new Date().toISOString(),steps:nextSteps,status:'partial'})};}

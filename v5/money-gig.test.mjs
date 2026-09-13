@@ -113,9 +113,13 @@ const dailyGoal=run({type:'gig-goal-save',name:'Today 200',period:'day',targetAm
 assert.equal(getGigGoalProgress(state,dailyGoal.id,today).remaining,99.07,'gig goal uses earned income');
 assert.equal(selectMoneyGig(state,today).gigWeek.gross,100.93,'weekly gig total uses earned orders');
 assert.equal(selectMoneyGig(state,today).gigMonth.gross,100.93,'monthly gig total uses earned orders');
+state.work.gigShifts=[{id:'today-flex',source:'Amazon Flex',date:today,startTime:'14:00',endTime:'17:30',targetAmount:84,status:'planned'}];
 run({type:'gig-link-daily',kind:'goal',id:dailyGoal.id,date:today});
 run({type:'gig-link-daily',kind:'goal',id:dailyGoal.id,date:today});
 assert.equal(state.life.tasks.filter(row=>row.externalId===`gig:goal:${dailyGoal.id}`).length,1,'gig Daily Shit action is idempotent');
+const linkedGigTask=state.life.tasks.find(row=>row.externalId===`gig:goal:${dailyGoal.id}`);
+assert.equal(linkedGigTask.minutes,210,'gig goal Daily Shit task uses the scheduled block duration instead of a fake ten minutes');
+assert.equal(linkedGigTask.durationSource,'scheduled-block');
 
 const payout=run({type:'payout-save',platformId:shipt.id,orderIds:[shiptOrder.id,secondShipt.id],amount:'',status:'available',destinationAccountId:checking.id});
 assert.equal(payout.orderIds.length,2,'one payout can group multiple orders from its platform');

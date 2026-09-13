@@ -38,6 +38,12 @@ state=result.state;
 assert.equal(state.life.tasks.find(item=>item.id==='flex').occurrences[day].status,'snoozed','snooze records the old occurrence');
 assert.equal(selectDailyShit(state,tomorrow).open.map(item=>item.id).includes('flex'),true,'snoozed one-off work appears on its new date');
 
+result=applyDailyAction(state,{type:'quick-add',kind:'task',title:'Only done today',date:day,duration:12},day);
+const datedTaskId=result.result.id;state=result.state;
+result=applyDailyAction(state,{type:'complete',kind:'task',id:datedTaskId,date:day},day);state=result.state;
+assert.equal(selectDailyShit(state,day).done.some(item=>item.id===datedTaskId),true,'one-off completion belongs to its actual day');
+assert.equal(selectDailyShit(state,tomorrow).done.some(item=>item.id===datedTaskId),false,'one-off completion never leaks into another day');
+
 result=applyDailyAction(state,{type:'routine-run',id:'morning',date:day},day);
 assert.equal(result.ok,true);
 state=result.state;
@@ -106,6 +112,14 @@ routineState=result.state;
 assert.equal(selectDailyShit(routineState,day).routines.some(item=>item.id===shower.id),false,'inactive routines do not clutter today');
 assert.equal(selectDailyShit(routineState,day).routineLibrary.some(item=>item.id===shower.id),true,'inactive routines remain editable in the routine library');
 assert.equal(routineState.life.routineInstances.some(item=>item.routineId===shower.id),true,'editing or pausing a routine never deletes completion history');
+
+let quickRoutine=seed();
+result=applyDailyAction(quickRoutine,{type:'routine-quick-complete',id:'morning',date:day},day);
+assert.equal(result.ok,true,'a routine can be counted without opening the follow-along player');
+quickRoutine=result.state;
+const quickInstance=quickRoutine.life.routineInstances.find(item=>item.routineId==='morning'&&item.date===day);
+assert.equal(quickInstance.status,'complete');
+assert.deepEqual(Object.values(quickInstance.steps),['complete','complete'],'quick completion counts every routine step explicitly');
 
 result=applyDailyAction(state,{type:'quick-add',kind:'task',title:'New tiny action',duration:5,energy:'tiny'},day);
 assert.equal(result.ok,true);

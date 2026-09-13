@@ -1,9 +1,9 @@
-import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,restoreV5Record,runV5DailyAction,selectV5DailyShit,runV5WorkAction,selectV5WorkHQ,runV5StudyAction,selectV5StudyNook,runV5MoneyGigAction,selectV5MoneyGig,runV5LifestyleAction,selectV5Lifestyle,runV5MochiniAction,runV5HealthAction,runV5LaunchAction,snapshotV4,migrateV4ToV5,importV4Export}from'./data.js?v=7.0.12-ipad-only';
+import{loadV5Ui,saveV5Ui,saveV5DailyNote,saveV5RoomDetail,saveV5LedgerEntry,saveV5Workspace,updateV5Record,archiveV5Record,restoreV5Record,runV5DailyAction,selectV5DailyShit,runV5WorkAction,selectV5WorkHQ,runV5StudyAction,selectV5StudyNook,runV5MoneyGigAction,selectV5MoneyGig,runV5LifestyleAction,selectV5Lifestyle,runV5MochiniAction,runV5HealthAction,runV5LaunchAction,snapshotV4,migrateV4ToV5,importV4Export}from'./data.js?v=7.0.20-daily-routines';
 import{renderBoss}from'./boss.js?v=5.6.0-final-integration';
 import{renderStudy}from'./study.js?v=5.3.0-study-nook';
 import{renderMoney,renderGigWork}from'./money.js?v=5.6.2-gig-work-home';
 import{renderMovement,renderHobbies,renderGrowth}from'./lifestyle-render.js?v=5.6.0-final-integration';
-import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=7.0.13-medication-save-fix';
+import{renderRoom,renderDailyNoteModal}from'./rooms.js?v=7.0.20-daily-routines';
 
 const app=document.getElementById('app');
 const ui=loadV5Ui();

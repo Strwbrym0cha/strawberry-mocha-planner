@@ -25,9 +25,9 @@ const fakeNode=()=>({
 });
 const app=fakeNode();
 app.addEventListener=(type,handler)=>{const rows=listeners.get(type)||[];rows.push(handler);listeners.set(type,rows)};
-const body=fakeNode(),head=fakeNode();
+const body=fakeNode(),head=fakeNode(),documentElement=fakeNode();
 globalThis.document={
-  body,head,readyState:'complete',hidden:false,visibilityState:'visible',
+  body,head,documentElement,readyState:'complete',hidden:false,visibilityState:'visible',
   getElementById:id=>id==='app'?app:null,querySelector:()=>null,querySelectorAll:()=>[],createElement:()=>fakeNode(),addEventListener:()=>{},execCommand:()=>true
 };
 globalThis.window={addEventListener:()=>{},dispatchEvent:()=>{},confirm:()=>false,alert:()=>{},matchMedia:()=>({matches:false})};

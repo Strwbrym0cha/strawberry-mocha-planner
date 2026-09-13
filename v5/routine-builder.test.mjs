@@ -16,9 +16,11 @@ assert.equal(html.includes('new-routine'),true,'Routine Builder keeps an obvious
 const player=readFileSync(new URL('./routine-player.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('./routine-player.css',import.meta.url),'utf8');
 for(const token of ['data-routine-player-open','ONLY MISSION RIGHT NOW','data-routine-player-tiny-done','data-routine-player-show-full','Not right now','Save partial & close','routine-complete'])assert.equal(player.includes(token),true,`Tiny Start flow includes ${token}`);
+for(const token of ['data-routine-player-done','Already done','Follow along','routine-quick-complete'])assert.equal(player.includes(token),true,`Optional routine path includes ${token}`);
 assert.equal(player.includes('markRemainingSkipped'),false,'Tiny mode never auto-skips unfinished steps');
 assert.equal(player.includes('localStorage.setItem'),false,'Routine Player writes only through the canonical persisted action path');
 for(const token of ['.mode-tiny .routine-player-card','.mode-power .routine-player-card','@media(max-width:780px)','overflow-wrap:anywhere'])assert.equal(css.includes(token),true,`${token} keeps the three V5 modes and mobile layout intentional`);
+assert.equal(css.includes('max-height:420px'),true,'the routine list is compact instead of taking over the Daily Shit screen');
 
 
 const homeRoutine={id:'morning',date,title:'Morning Routine',icon:'☀️',daypart:'morning',status:'partial',complete:1,total:3,tinyStart:'Put my feet on the floor.',tinyStartDone:true,steps:[{id:'water',label:'Drink water'},{id:'meds',label:'Take meds'},{id:'dress',label:'Get dressed'}],instance:{steps:{water:'complete'}}};
