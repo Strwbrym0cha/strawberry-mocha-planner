@@ -10,6 +10,8 @@ function dateOf(row){return text(row?.date||row?.dueDate||row?.startDate)}
 function formatTime(value){if(!/^\d{2}:\d{2}$/.test(text(value)))return'';const[h,m]=value.split(':').map(Number),d=new Date(2000,0,1,h,m);return d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})}
 function minutesUntil(row,now){const value=timeOf(row);if(!/^\d{2}:\d{2}$/.test(value))return Number.POSITIVE_INFINITY;const[h,m]=value.split(':').map(Number);return h*60+m-(now.getHours()*60+now.getMinutes())}
 function timeRank(row,now,nearRank,laterRank){const delta=minutesUntil(row,now);return delta<=90?nearRank:laterRank}
+function gigSource(row){return text(row?.source||row?.platform||row?.label||row?.shiftLabel)}
+function isFlex(row){return /amazon\s*flex|\bflex\b/i.test(gigSource(row))}
 function route(kind,row){
   if(kind==='routine')return{view:'daily',open:`edit-routine-${row.id}`,lane:''};
   if(kind==='task'||kind==='ping')return{view:'daily',open:`edit-${kind}-${row.id}`,lane:''};
@@ -18,11 +20,11 @@ function route(kind,row){
   if(kind==='study')return{view:'study',open:row.id?`course-${row.id}`:'',lane:''};
   return{view:'time',open:'',lane:''};
 }
-function candidate(kind,row,{title,meta,firstMove,smallerStep,rank=50}={}){const target=route(kind,row);return{key:`${kind}:${row.id}`,kind,id:String(row.id),title:title||titleOf(row),meta:meta||'',firstMove,smallerStep,...target,rank}}
+function candidate(kind,row,{title,meta,firstMove,smallerStep,icon='',rank=50}={}){const target=route(kind,row);return{key:`${kind}:${row.id}`,kind,id:String(row.id),title:title||titleOf(row),meta:meta||'',firstMove,smallerStep,icon,...target,rank}}
 
 export function selectLaunchPad(state={},date,canonical={},now=new Date()){
   const daily=canonical.daily||{},work=canonical.work||{},study=canonical.study||{},candidates=[];
-  list(state?.work?.gigShifts).filter(row=>dateOf(row)===date&&text(row.status||'planned')==='planned').forEach(row=>candidates.push(candidate('gig',row,{title:'DoorDash shift',meta:[formatTime(timeOf(row)),row.endTime?`to ${formatTime(row.endTime)}`:'',Number(row.targetAmount)>0?`$${Number(row.targetAmount).toFixed(0)} target`:'',text(row.area)].filter(Boolean).join(' · '),firstMove:'Put on your shoes and grab your charger.',smallerStep:'Put your shoes where you can reach them.',rank:timeRank(row,now,10,45)})));
+  list(state?.work?.gigShifts).filter(row=>dateOf(row)===date&&text(row.status||'planned')==='planned').forEach(row=>{const flex=isFlex(row);candidates.push(candidate('gig',row,{title:flex?'Amazon Flex block':'DoorDash shift',meta:[formatTime(timeOf(row)),row.endTime?`to ${formatTime(row.endTime)}`:'',Number(row.targetAmount)>0?`$${Number(row.targetAmount).toFixed(0)} ${flex?'expected':'target'}`:'',text(row.station),text(row.area)].filter(Boolean).join(' · '),firstMove:flex?'Grab your keys, charger, and anything you need for the Flex station.':'Put on your shoes and grab your charger.',smallerStep:flex?'Put your keys and charger where you can reach them.':'Put your shoes where you can reach them.',icon:flex?'📦':'⚡',rank:timeRank(row,now,10,45)}))});
   const session=list(work.todaySessions).find(row=>!['complete','completed','canceled'].includes(text(row.status).toLowerCase()))||list(work.upcoming).find(row=>dateOf(row)===date);
   if(session)candidates.push(candidate('work',session,{title:titleOf(session,session.client||'Work session'),meta:[formatTime(timeOf(session)),text(session.client)].filter(Boolean).join(' · '),firstMove:'Gather the materials you need for this session.',smallerStep:'Put one needed item by the door.',rank:timeRank(session,now,15,35)}));
   const ritual=list(daily.routines).find(row=>!['complete','skipped'].includes(text(row.status).toLowerCase()));

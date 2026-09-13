@@ -5,7 +5,7 @@ import{applyMoneyGigAction,selectMoneyGig,getAccounts,getAccountBalance,getMoney
 import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=5.5.0-lifestyle';
 import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
 import{applyHealthAction,selectMedicationCabinet}from'./health.js?v=7.0.11-medication-launch-pad';
-import{applyLaunchAction,selectLaunchPad}from'./launch-pad.js?v=7.0.11-medication-launch-pad';
+import{applyLaunchAction,selectLaunchPad}from'./launch-pad.js?v=7.0.21-launch-pad-flex';
 import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.12-ipad-only';
 import{isSingleDeviceIpadMode}from'./sync/single-device-mode.js?v=7.0.12-ipad-only';
 

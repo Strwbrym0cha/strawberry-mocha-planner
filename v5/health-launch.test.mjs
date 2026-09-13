@@ -31,6 +31,14 @@ let launch=selectLaunchPad(state,date,{daily,work:{todaySessions:[]},study:{}},m
 assert.equal(launch.item.key,'task:glasses','a current task beats a distant evening shift');
 assert.equal(launch.item.displayMove,'Find the shop phone number.');
 
+const flexState={...state,life:{...state.life,launches:[]},work:{...state.work,gigShifts:[{id:'flex',source:'Amazon Flex',date,startTime:'09:00',endTime:'13:00',targetAmount:98,station:'DNO2',area:'Covington',status:'planned'}]}};
+const flexLaunch=selectLaunchPad(flexState,date,{daily:{routines:[]},work:{todaySessions:[]},study:{}},morning);
+assert.equal(flexLaunch.item.title,'Amazon Flex block','Flex blocks are not mislabeled as DoorDash shifts');
+assert.equal(flexLaunch.item.icon,'📦','Flex blocks use their own Launch Pad icon');
+assert.match(flexLaunch.item.meta,/\$98 expected/);
+assert.match(flexLaunch.item.meta,/DNO2/);
+assert.match(flexLaunch.item.displayMove,/Flex station/);
+
 result=applyLaunchAction(state,{type:'launch-smaller',key:launch.item.key,kind:launch.item.kind,id:launch.item.id,date},date,morning);assert.equal(result.ok,true);state=result.state;
 launch=selectLaunchPad(state,date,{daily,work:{todaySessions:[]},study:{}},morning);
 assert.equal(launch.item.state,'smaller');
