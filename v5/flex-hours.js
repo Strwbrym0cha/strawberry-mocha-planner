@@ -25,12 +25,14 @@ function enhance(){
  if(planFields&&!form.querySelector('[data-flex-planned-hours]'))planFields.insertAdjacentHTML('afterend','<div class="flex-hours"><span>Scheduled block</span><b data-flex-planned-hours></b></div>');
  const summaryFields=form.querySelector('.flex-summary-stage .room-detail-fields');
  if(summaryFields&&!form.elements.namedItem('actualHours')){
-  const{plan,summary}=records(form),scheduled=durationMinutes(form.elements.namedItem('startTime')?.value,form.elements.namedItem('endTime')?.value),actual=split(summary?.activeMinutes??plan?.actualMinutes??scheduled),notes=summaryFields.querySelector('.money-field.wide');
-  const fieldset=document.createElement('fieldset');fieldset.className='flex-time-pair';fieldset.innerHTML=`<legend>Actual duration</legend><input name="actualHours" type="number" min="0" step="1" inputmode="numeric" placeholder="Hours" value="${actual.hours||''}"><input name="actualMinutesPart" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="Minutes" value="${actual.minutes||''}">`;summaryFields.insertBefore(fieldset,notes||null);
+  const{plan,summary}=records(form),scheduled=durationMinutes(form.elements.namedItem('startTime')?.value,form.elements.namedItem('endTime')?.value),savedActual=Number(summary?.activeMinutes??plan?.actualMinutes),validActual=savedActual>0&&savedActual<=1440,actual=validActual?split(savedActual):{hours:'',minutes:''},notes=summaryFields.querySelector('.money-field.wide'),help=savedActual>1440?'The saved duration looks too large. Enter the real time here to correct it.':`Scheduled: ${format(scheduled)}. Enter how long it really took.`;
+  const fieldset=document.createElement('fieldset');fieldset.className='flex-time-pair';fieldset.innerHTML=`<legend>Actual duration</legend><label class="flex-time-field"><span>Hours</span><input name="actualHours" type="number" min="0" max="24" step="1" inputmode="numeric" placeholder="Hours" value="${actual.hours}"></label><label class="flex-time-field"><span>Minutes</span><input name="actualMinutesPart" type="number" min="0" max="59" step="1" inputmode="numeric" placeholder="Minutes" value="${actual.minutes}"></label><small class="flex-time-help">${help}</small>`;summaryFields.insertBefore(fieldset,notes||null);
  }
  updateScheduled(form);
 }
 
+app.addEventListener('focusin',event=>{const form=event.target.closest?.('[data-flex-shift-form]');if(form&&['actualHours','actualMinutesPart'].includes(event.target.name))event.target.select?.()});
 app.addEventListener('input',event=>{const form=event.target.closest?.('[data-flex-shift-form]');if(form&&['startTime','endTime'].includes(event.target.name))updateScheduled(form)});
 new MutationObserver(enhance).observe(app,{childList:true});
 enhance();
+
