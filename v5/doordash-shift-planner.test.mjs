@@ -30,6 +30,6 @@ assert.equal(reopened.ok,true);
 assert.equal(plannedSchedule.includes('DoorDash shift'),true,'a planned DoorDash shift is labeled on Schedule');
 
 const planner=readFileSync(new URL('./doordash-shift-modal.js',import.meta.url),'utf8');
-for(const token of ['DOORDASH SHIFT PLANNER','Plan it now. Fill in the summary after.','data-doordash-plan-open','Save planned shift','Save completed summary','plannedShiftId','summaryOrderId'])assert.equal(planner.includes(token),true,`DoorDash planner includes ${token}`);
+for(const token of ['DOORDASH SHIFT PLANNER','Plan it now. Fill in the summary after.','data-doordash-plan-open','Save planned shift','Starting miles · optional','Ending miles · optional','data-odometer-total','startOdometer','endOdometer','Save completed summary','plannedShiftId','summaryOrderId'])assert.equal(planner.includes(token),true,`DoorDash planner includes ${token}`);
 
 console.log('V5 DoorDash shift planner tests passed');

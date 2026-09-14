@@ -15,8 +15,9 @@ const{renderRoom}=await import('./rooms.js');
 const reopened=saveV5GigShift({...completed.entry,status:'planned'});assert.equal(reopened.ok,true);
 const schedule=renderRoom('time',{today:'2026-09-12',state:readV4State()},{scheduleView:'week',canonical:{daily:{},work:{occurrences:[]},study:{assignments:[],importantDates:[]},money:{bills:[]},lifestyle:{movement:{activities:[]}}}});
 assert.equal(schedule.includes('Amazon Flex shift'),true,'the planned Flex block appears on Schedule');
+assert.match(schedule,/schedule-day-head"><b>Sun<\/b>/,'the Schedule week starts on Sunday');
 
 const planner=readFileSync(new URL('./flex-shift-modal.js',import.meta.url),'utf8');
-for(const token of ['AMAZON FLEX PLANNER','Plan an Amazon Flex block','Expected pay','Packages','Station · optional','Delivery area · optional','Save completed block','packageCount','plannedShiftId','summaryOrderId'])assert.equal(planner.includes(token),true,`Flex planner includes ${token}`);
+for(const token of ['AMAZON FLEX PLANNER','Plan an Amazon Flex block','Expected pay','Packages','Station · optional','Delivery area · optional','Starting miles · optional','Ending miles · optional','data-odometer-total','startOdometer','endOdometer','Save completed block','packageCount','plannedShiftId','summaryOrderId'])assert.equal(planner.includes(token),true,`Flex planner includes ${token}`);
 const css=readFileSync(new URL('./flex-shift-modal.css',import.meta.url),'utf8');assert.match(css,/@media\(max-width:780px\)/);
 console.log('V5 Amazon Flex shift planner tests passed');

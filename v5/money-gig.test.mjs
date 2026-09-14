@@ -1,5 +1,5 @@
 import assert from'node:assert/strict';
-import{applyMoneyGigAction,getAccountBalance,getBillInstances,getCashFlowSummary,getFinancialGoals,getGigEarningsSummary,getGigGoalProgress,getGigPlatformComparison,getLedgerTransactions,getMoneySummary,getPendingGigPayouts,getSubscriptions,initializeMoneyGig,selectMoneyGig}from'./money-gig.js';
+import{applyMoneyGigAction,calculateTripMileage,getAccountBalance,getBillInstances,getCashFlowSummary,getFinancialGoals,getGigEarningsSummary,getGigGoalProgress,getGigPlatformComparison,getLedgerTransactions,getMoneySummary,getPendingGigPayouts,getSubscriptions,initializeMoneyGig,selectMoneyGig}from'./money-gig.js';
 
 const today='2026-09-03';
 let state={schemaVersion:4,life:{tasks:[],reminders:[],routines:[],routineInstances:[]},work:{shifts:[],hq:{sessionPlans:[]}},money:{accounts:[],bills:[],subscriptions:[],savingsGoals:[],debts:[]},v4:{archive:[]}};
@@ -96,10 +96,16 @@ assert.equal(goalViews.find(row=>row.goal.id===contributionGoal.id).amount,50,'l
 assert.equal(getFinancialGoals(state).length,3);
 
 const shipt=state.work.gig.platforms.find(row=>row.name==='Shipt'),doorDash=state.work.gig.platforms.find(row=>row.name==='DoorDash');
-const shiptOrder=run({type:'order-save',platformId:shipt.id,date:today,basePay:18,tip:0,activeMinutes:60,onlineMinutes:90,mileage:12});
-run({type:'order-save',id:shiptOrder.id,platformId:shipt.id,date:today,basePay:18,tip:27.93,activeMinutes:60,onlineMinutes:90,mileage:12});
-const secondShipt=run({type:'order-save',platformId:shipt.id,date:today,basePay:15,tip:5,activeMinutes:30,onlineMinutes:40,mileage:5});
-const doorOrder=run({type:'order-save',platformId:doorDash.id,date:today,basePay:24,promo:3,tip:8,activeMinutes:45,mileage:8});
+assert.equal(calculateTripMileage(50000,50012),12,'trip mileage is the ending odometer minus the starting odometer');
+const incompleteMileage=applyMoneyGigAction(state,{type:'order-save',platformId:shipt.id,date:today,basePay:1,startOdometer:50000},today);
+assert.equal(incompleteMileage.ok,false,'one odometer reading cannot silently save as zero miles');
+const backwardsMileage=applyMoneyGigAction(state,{type:'order-save',platformId:shipt.id,date:today,basePay:1,startOdometer:50012,endOdometer:50000},today);
+assert.equal(backwardsMileage.ok,false,'ending odometer cannot be below starting odometer');
+const shiptOrder=run({type:'order-save',platformId:shipt.id,date:today,basePay:18,tip:0,activeMinutes:60,onlineMinutes:90,startOdometer:50000,endOdometer:50012});
+assert.equal(shiptOrder.mileage,12);
+run({type:'order-save',id:shiptOrder.id,platformId:shipt.id,date:today,basePay:18,tip:27.93,activeMinutes:60,onlineMinutes:90,startOdometer:50000,endOdometer:50012});
+const secondShipt=run({type:'order-save',platformId:shipt.id,date:today,basePay:15,tip:5,activeMinutes:30,onlineMinutes:40,startOdometer:50012,endOdometer:50017});
+const doorOrder=run({type:'order-save',platformId:doorDash.id,date:today,basePay:24,promo:3,tip:8,activeMinutes:45,startOdometer:50017,endOdometer:50025});
 const beforePayout=getAccountBalance(state,checking.id);
 let gigSummary=getGigEarningsSummary(state,{from:today,to:today});
 assert.equal(gigSummary.gross,100.93,'Shipt, DoorDash, and the late tip all count as earned once');
@@ -110,6 +116,9 @@ assert.notEqual(gigSummary.perActiveHour,null,'active-hour earnings appear only 
 assert.equal(getGigPlatformComparison(state,{from:today,to:today}).length,2);
 assert.equal(getAccountBalance(state,checking.id),beforePayout,'earned orders never change account balances');
 const dailyGoal=run({type:'gig-goal-save',name:'Today 200',period:'day',targetAmount:200,startDate:today,endDate:today});
+const weeklyGoal=run({type:'gig-goal-save',name:'Sunday week',period:'week',targetAmount:500});
+assert.equal(weeklyGoal.startDate,'2026-08-30','weekly goals begin on Sunday');
+assert.equal(weeklyGoal.endDate,'2026-09-05','weekly goals end on Saturday');
 assert.equal(getGigGoalProgress(state,dailyGoal.id,today).remaining,99.07,'gig goal uses earned income');
 assert.equal(selectMoneyGig(state,today).gigWeek.gross,100.93,'weekly gig total uses earned orders');
 assert.equal(selectMoneyGig(state,today).gigMonth.gross,100.93,'monthly gig total uses earned orders');
@@ -120,6 +129,12 @@ assert.equal(state.life.tasks.filter(row=>row.externalId===`gig:goal:${dailyGoal
 const linkedGigTask=state.life.tasks.find(row=>row.externalId===`gig:goal:${dailyGoal.id}`);
 assert.equal(linkedGigTask.minutes,210,'gig goal Daily Shit task uses the scheduled block duration instead of a fake ten minutes');
 assert.equal(linkedGigTask.durationSource,'scheduled-block');
+
+const archivedPayout=run({type:'payout-save',platformId:doorDash.id,orderIds:[doorOrder.id],amount:'',status:'available'});
+run({type:'archive',kind:'payout',id:archivedPayout.id});
+assert.equal(selectMoneyGig(state,today).gig.payouts.some(row=>row.id===archivedPayout.id),false,'archived payouts stop rendering in Money Café');
+assert.equal(state.v4.archive.some(row=>row.kind==='work.gig.payouts'&&row.originalId===archivedPayout.id),true,'archived payouts move to Memory Box');
+assert.equal(state.work.gig.orders.find(row=>row.id===doorOrder.id).payoutId,'','archiving an unreceived payout releases its orders for another payout');
 
 const payout=run({type:'payout-save',platformId:shipt.id,orderIds:[shiptOrder.id,secondShipt.id],amount:'',status:'available',destinationAccountId:checking.id});
 assert.equal(payout.orderIds.length,2,'one payout can group multiple orders from its platform');

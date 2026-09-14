@@ -1,4 +1,4 @@
-import{applyDailyAction}from'./daily-shit.js?v=5.5.0-lifestyle';
+import{applyDailyAction}from'./daily-shit.js?v=7.0.22-odometer-sunday-payout';
 
 const list=value=>Array.isArray(value)?value:[];
 const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
@@ -28,7 +28,7 @@ export const getHobbies=source=>normalize(source).hobbies.items.filter(active);
 export const getHobbyProjects=source=>normalize(source).hobbies.projects.filter(active);
 export const getGrowthGoals=source=>normalize(source).growth.goals.filter(active);
 export const getGrowthWins=source=>normalize(source).growth.wins.filter(active);
-export function getMovementSummary(source,today=todayKey()){const rows=getMovementActivities(source),start=new Date(`${today}T12:00:00`);start.setDate(start.getDate()-((start.getDay()+6)%7));const from=todayKey(start),week=rows.filter(row=>row.date>=from&&row.date<=today&&row.status==='completed');return{weekCount:week.length,weekMinutes:week.reduce((sum,row)=>sum+(Number(row.minutes)||0),0),completed:rows.filter(row=>row.status==='completed').length,skipped:rows.filter(row=>row.status==='skipped').length}}
+export function getMovementSummary(source,today=todayKey()){const rows=getMovementActivities(source),start=new Date(`${today}T12:00:00`);start.setDate(start.getDate()-start.getDay());const from=todayKey(start),week=rows.filter(row=>row.date>=from&&row.date<=today&&row.status==='completed');return{weekCount:week.length,weekMinutes:week.reduce((sum,row)=>sum+(Number(row.minutes)||0),0),completed:rows.filter(row=>row.status==='completed').length,skipped:rows.filter(row=>row.status==='skipped').length}}
 export function getRecommendedMovement(source,{energy='medium',minutes=30,timeOfDay='anytime'}={}){const rank={tiny:0,low:1,medium:2,high:3},limit=rank[text(energy).toLowerCase()]??2;return getMovementPlans(source).filter(row=>(rank[text(row.energy).toLowerCase()]??1)<=limit&&(Number(row.minutes)||0)<=Number(minutes||30)&&(row.timeOfDay==='anytime'||row.timeOfDay===timeOfDay)).sort((a,b)=>(Number(a.minutes)||0)-(Number(b.minutes)||0)||a.title.localeCompare(b.title))[0]||null}
 export function getHobbyRecommendation(source,{mode='normal'}={}){const caps={tiny:[0,10],chill:[1,45],normal:[2,90],'locked-in':[3,999]},[energy,max]=caps[mode]||caps.normal,rank={tiny:0,low:1,medium:2,high:3};return getHobbies(source).filter(row=>['current','exploring','want-to-try'].includes(row.status)&&(rank[row.energy]??1)<=energy&&(Number(row.minutes)||30)<=max).sort((a,b)=>(Number(a.minutes)||30)-(Number(b.minutes)||30)||a.title.localeCompare(b.title))[0]||null}
 export function getGrowthNextStep(source){return getGrowthGoals(source).filter(row=>row.status==='active').sort((a,b)=>(a.targetDate||'9999').localeCompare(b.targetDate||'9999')||a.title.localeCompare(b.title))[0]||null}

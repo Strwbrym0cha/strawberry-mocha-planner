@@ -1,4 +1,4 @@
-import{snapshotV4,selectV5MoneyGig,runV5MoneyGigAction,getGigGoalProgress,updateV5Record,archiveV5Record}from'./data.js?v=7.0.14-flex-shift-planner';
+import{snapshotV4,selectV5MoneyGig,runV5MoneyGigAction,getGigGoalProgress,updateV5Record,archiveV5Record}from'./data.js?v=7.0.22-odometer-sunday-payout';
 import{buildGigGoalRunway,chooseTrackedGigGoal}from'./gig-goal-runway.js?v=7.0.16-gig-goal-tracker-polish';
 
 const app=document.getElementById('app');
@@ -10,7 +10,7 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&
 const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(text(value));
 const localDay=()=>{const d=new Date(),off=d.getTimezoneOffset();return new Date(d.getTime()-off*60000).toISOString().slice(0,10)};
 function addDays(value,days){const d=new Date(`${value}T12:00:00`);d.setDate(d.getDate()+days);return d.toISOString().slice(0,10)}
-function weekRange(value){const d=new Date(`${value}T12:00:00`),offset=(d.getDay()+6)%7,start=addDays(value,-offset);return[start,addDays(start,6)]}
+function weekRange(value){const d=new Date(`${value}T12:00:00`),start=addDays(value,-d.getDay());return[start,addDays(start,6)]}
 function monthRange(value){const d=new Date(`${value}T12:00:00`),y=d.getFullYear(),m=d.getMonth();const start=`${y}-${String(m+1).padStart(2,'0')}-01`;const end=new Date(y,m+1,0,12).toISOString().slice(0,10);return[start,end]}
 function periodLabel(value){return({day:'Daily',week:'Weekly',month:'Monthly',custom:'Deadline'})[value]||'Gig'}
 function dateLabel(progress){const{from,to}=progress?.range||progress||{};if(!from)return'';if(from===to)return from;return`${from} → ${to}`}
