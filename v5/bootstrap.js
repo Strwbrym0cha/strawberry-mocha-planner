@@ -16,6 +16,7 @@ await import('./doordash-shift-modal.js?v=7.0.22-odometer-sunday-payout');
 await import('./flex-shift-modal.js?v=7.0.22-odometer-sunday-payout');
 await import('./flex-hours.js?v=7.0.19-flex-hours');
 await import('./unified-gig-planner.js?v=7.0.19-flex-hours');
+await import('./gig-shift-checkin.js?v=7.0.24-gig-shift-checkin');
 await import('./gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
 await import('./routine-player.js?v=7.0.20-daily-routines');
 await import('./routine-builder-layout-fix.js?v=6.15.1-routine-builder-layout');
