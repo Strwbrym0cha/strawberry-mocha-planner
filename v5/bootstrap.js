@@ -26,4 +26,8 @@ await import('./mochini-face-patch.js?v=6.4.0-face-slots');
 await import('./mochini-approved-art.js?v=6.10.1-normal-pose-companion');
 await import('./mochini-chat.js?v=6.0.0-canonical-rig');
 await import('./mochini-polish.js?v=5.9.5-safari-art-fix');
-await import('./shipt-daily-groups.js?v=5.9.2-shipt-persistent-groups');\nawait import('./optimization-health.js?v=7.1.0-optimization-pass');\nawait import('./optimization-money.js?v=7.1.0-optimization-pass');\nawait import('./optimization-schedule-study.js?v=7.1.0-optimization-pass');\nawait import('./optimization-safety.js?v=7.1.0-optimization-pass');\n
+await import('./shipt-daily-groups.js?v=5.9.2-shipt-persistent-groups');
+await import('./optimization-health.js?v=7.1.0-optimization-pass');
+await import('./optimization-money.js?v=7.1.0-optimization-pass');
+await import('./optimization-schedule-study.js?v=7.1.0-optimization-pass');
+await import('./optimization-safety.js?v=7.1.0-optimization-pass');
