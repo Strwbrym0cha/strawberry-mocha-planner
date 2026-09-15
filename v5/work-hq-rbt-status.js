@@ -13,7 +13,10 @@ const list=value=>Array.isArray(value)?value:[];
 function careerFlags(career={}){
   const journey=list(career.rbtJourney);
   const examPassed=text(career.exam?.result)==='passed'||journey.some(row=>row?.id==='exam'&&row?.status==='complete');
-  const certified=career.certified===true||text(career.currentStage)==='rbt'||journey.some(row=>row?.id==='certification'&&row?.status==='complete');
+  const explicitCertified=career.certified===true||text(career.currentStage)==='rbt'||journey.some(row=>row?.id==='certification'&&row?.status==='complete');
+  // In Kat's current RBT flow, a recorded passed exam means the credential milestone is complete.
+  // This also repairs older saved states where the pass was stored but the stage stayed BT/RLT.
+  const certified=explicitCertified||examPassed;
   return{examPassed,certified};
 }
 
@@ -26,10 +29,11 @@ function normalizeCareer(hq){
   }
   if(flags.certified){
     career.certified=true;
+    career.certifiedAt=career.certifiedAt||career.exam?.updatedAt||now;
     career.currentStage='rbt';
     career.targetStage=text(career.targetStage)&&career.targetStage!=='rbt'?career.targetStage:'lead-rbt';
     career.rbtJourney=list(career.rbtJourney).map(row=>row.id==='exam'||row.id==='certification'?{...row,status:'complete',completedAt:row.completedAt||career.certifiedAt||now}:row);
-    career.roadmap=list(career.roadmap).map(row=>row.id==='bt-rlt'?{...row,status:'complete'}:row.id==='rbt'?{...row,status:'current'}:row.id===career.targetStage&&row.status==='future'?{...row,status:'target'}:row);
+    career.roadmap=list(career.roadmap).map(row=>row.id==='bt-rlt'?{...row,status:'complete'}:row.id==='rbt'?{...row,status:'current',completedAt:row.completedAt||career.certifiedAt||now}:row.id===career.targetStage&&row.status==='future'?{...row,status:'target'}:row);
   }
   return hq;
 }
