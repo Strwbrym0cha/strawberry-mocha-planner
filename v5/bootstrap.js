@@ -2,7 +2,7 @@ const{ensureSingleDeviceIpadMode}=await import('./sync/single-device-mode.js?v=7
 ensureSingleDeviceIpadMode(localStorage);
 const{ensureDeviceBootstrapState}=await import('./sync/sync-device-bootstrap.js?v=7.0.12-ipad-only');
 ensureDeviceBootstrapState(localStorage);
-await import('./app.js?v=7.0.22-odometer-sunday-payout');
+await import('./app.js?v=7.2.2-gig-score-popup');
 await import('./sync/sync-lab.js?v=7.0.12-ipad-only');
 await import('./daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('./money-budgets.js?v=5.6.6-spending-budgets');
@@ -28,6 +28,6 @@ await import('./mochini-chat.js?v=6.0.0-canonical-rig');
 await import('./mochini-polish.js?v=5.9.5-safari-art-fix');
 await import('./shipt-daily-groups.js?v=5.9.2-shipt-persistent-groups');
 await import('./optimization-health.js?v=7.1.0-optimization-pass');
-await import('./optimization-money.js?v=7.1.0-optimization-pass');
+await import('./optimization-money.js?v=7.2.2-gig-score-popup');
 await import('./optimization-schedule-study.js?v=7.1.0-optimization-pass');
 await import('./optimization-safety.js?v=7.1.0-optimization-pass');

@@ -13,6 +13,13 @@ test('money safety does not create a ledger transaction',()=>{
  assert.match(source,/Only posted cash counts/);assert.doesNotMatch(files[1],/runV5MoneyGigAction/);
 });
 
+test('gig scorecards stay compact until opened in a V5 popup',()=>{
+ assert.match(files[1],/data-money-open="optimization-shift-scorecards"/);
+ assert.match(files[1],/data-money-modal="optimization-shift-scorecards" hidden/);
+ assert.match(files[1],/data-money-close/);
+ assert.match(files[1],/Open scorecards/);
+});
+
 test('routine friction records a reason without changing the routine definition',()=>{
  assert.match(files[0],/frictionLogs/);assert.match(files[0],/routine-skip/);assert.doesNotMatch(files[0],/updateV5Record/);
 });

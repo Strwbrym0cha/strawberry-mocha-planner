@@ -17,4 +17,14 @@ assert.equal(moneyHtml.includes('☕ MONEY CAFÉ')&&gigHtml.includes('BOSS BITCH
 assert.equal(moneyHtml.includes('data-money-open="order-'),false,'Money Café does not duplicate Gig Work order management');
 assert.equal(moneyHtml.includes('Cash flow')||moneyHtml.includes('CASH FLOW'),true,'today/week/month cash flow is presented compactly');
 
+const certifiedState=structuredClone(state);
+certifiedState.work.hq={...(certifiedState.work.hq||{}),career:{certified:true,currentStage:'rbt',rbtJourney:[{id:'exam',status:'complete'},{id:'certification',status:'complete'}]}};
+const certifiedHtml=renderGigWork(selectMoneyGig(certifiedState,today));
+assert.equal(certifiedHtml.includes('🧠 RBT Career'),true,'Gig Work keeps the live RBT career tab label');
+assert.equal(certifiedHtml.includes('🧠 BT/RLT → RBT'),false,'Gig Work does not revert a certified career to BT/RLT');
+
+const passedState=structuredClone(state);
+passedState.work.hq={...(passedState.work.hq||{}),career:{exam:{result:'passed'},rbtJourney:[{id:'exam',status:'complete'}]}};
+assert.equal(renderGigWork(selectMoneyGig(passedState,today)).includes('🧠 Exam passed → RBT'),true,'Gig Work reflects an exam-passed career state');
+
 console.log('V5 Money Café + Gig Work presentation tests passed');
