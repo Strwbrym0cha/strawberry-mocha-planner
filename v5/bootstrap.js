@@ -32,4 +32,4 @@ await import('./optimization-money.js?v=7.2.2-gig-score-popup');
 await import('./optimization-schedule-study.js?v=7.1.0-optimization-pass');
 await import('./optimization-safety.js?v=7.1.0-optimization-pass');
 await import('./money-mission.js?v=7.3.0-money-mission');
-await import('./weekly-mirror.js?v=7.3.0-money-mission');
+await import('./weekly-mirror.js?v=7.3.1-weekly-mirror-fix');
