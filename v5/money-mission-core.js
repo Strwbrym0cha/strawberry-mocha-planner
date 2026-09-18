@@ -22,16 +22,16 @@ export function gigExpensesInRange(transactions=[],from='',to=''){
  return{rows,total:cents(rows.reduce((sum,row)=>sum+number(row.amount),0)),byCategory};
 }
 
-export function buildMoneyMission({runway,transactions=[],completedShifts=[],today='' }={}){
+export function buildMoneyMission({runway,transactions=[],completedShifts=[],today='',linkedAccount=null}={}){
  if(!runway)return null;
- const expenses=gigExpensesInRange(transactions,runway.from,runway.to),grossEarned=cents(runway.earned),netEarned=cents(Math.max(0,grossEarned-expenses.total)),target=cents(runway.target),planned=cents(runway.planned),remaining=cents(Math.max(0,target-netEarned)),unplanned=cents(Math.max(0,target-netEarned-planned)),covered=cents(Math.min(target,netEarned+planned));
+ const expenses=gigExpensesInRange(transactions,runway.from,runway.to),grossEarned=cents(runway.earned),netEarned=cents(Math.max(0,grossEarned-expenses.total)),target=cents(runway.target),planned=cents(runway.planned),hasLinkedAccount=Boolean(linkedAccount?.id)&&Number.isFinite(Number(linkedAccount?.balance)),accountBalance=hasLinkedAccount?cents(Math.max(0,Number(linkedAccount.balance))):null,progressAmount=hasLinkedAccount?accountBalance:netEarned,remaining=cents(Math.max(0,target-progressAmount)),unplanned=cents(Math.max(0,target-progressAmount-planned)),covered=cents(Math.min(target,progressAmount+planned));
  const recent=list(completedShifts).filter(row=>text(row.date)>=runway.from&&text(row.date)<=runway.to),grossForRate=cents(recent.reduce((sum,row)=>sum+number(row.actual??row.actualAmount),0)),hours=recent.reduce((sum,row)=>sum+number(row.actualMinutes||row.durationMinutes)/60,0),netForRate=Math.max(0,grossForRate-expenses.total),netHourly=hours?cents(netForRate/hours):0,estimatedHours=netHourly?Math.ceil(unplanned/netHourly*10)/10:null;
  const daysLeft=Math.max(0,dayNumber(runway.to)-dayNumber(today||runway.from)+1),dailyNeeded=daysLeft?cents(unplanned/daysLeft):unplanned;
  let status='needs-plan',statusLabel='More shifts need planning';
  if(remaining<=0){status='complete';statusLabel='Mission complete';}
  else if(planned>=remaining){status='covered';statusLabel='Scheduled shifts cover the rest';}
  else if(today&&today>runway.to){status='expired';statusLabel='Deadline passed · adjust the mission';}
- return{...runway,grossEarned,expenses,netEarned,target,planned,remaining,unplanned,covered,netHourly,estimatedHours,dailyNeeded,status,statusLabel,coveredPercent:target?Math.min(100,covered/target*100):0,earnedPercent:target?Math.min(100,netEarned/target*100):0,plannedPercent:target?Math.max(0,Math.min(100-netEarned/target*100,planned/target*100)):0};
+ return{...runway,grossEarned,expenses,netEarned,target,planned,remaining,unplanned,covered,netHourly,estimatedHours,dailyNeeded,status,statusLabel,progressAmount,linkedAccount:hasLinkedAccount?{id:String(linkedAccount.id),name:text(linkedAccount.name)||'Linked account',balance:accountBalance}:null,coveredPercent:target?Math.min(100,covered/target*100):0,earnedPercent:target?Math.min(100,progressAmount/target*100):0,plannedPercent:target?Math.max(0,Math.min(100-progressAmount/target*100,planned/target*100)):0};
 }
 
 export function weekRange(today){

@@ -1,5 +1,5 @@
 import{snapshotV4,selectV5MoneyGig}from'./data.js?v=7.3.0-money-mission';
-import{buildWeeklyMirror}from'./money-mission-core.js?v=7.3.3-shift-food-fix';
+import{buildWeeklyMirror}from'./money-mission-core.js?v=7.3.4-account-goals';
 
 const app=document.querySelector('#app'),KEY='sm_v5_weekly_mirror',list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim(),esc=value=>text(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),money=value=>Number(value||0).toLocaleString([],{style:'currency',currency:'USD'});
 function saved(){try{return list(JSON.parse(localStorage.getItem(KEY)||'[]'))}catch{return[]}}
