@@ -10,7 +10,9 @@ export function isAutomaticGigExpense(row={}){
  if(!isSpentType(row.type||row.kind)||!isPosted(row.status))return false;
  if(row.gigExpense===true||text(row.gigExpense).toLowerCase()==='true')return true;
  const category=text(row.category).toLowerCase().replace(/[\s_-]+/g,' ');
- return ['gas','fuel','toll','tolls','parking','gig expense','gig cost','shift food'].includes(category);
+ if(['gas','fuel','toll','tolls','parking','gig expense','gig cost','shift food'].includes(category))return true;
+ const description=[row.merchant,row.label,row.name,row.notes,row.note].map(value=>text(value).toLowerCase().replace(/[\s_-]+/g,' ')).filter(Boolean).join(' · ');
+ return /\b(?:shift food|gig food|gas|fuel|parking|tolls?)\b/.test(description);
 }
 
 export function gigExpensesInRange(transactions=[],from='',to=''){
