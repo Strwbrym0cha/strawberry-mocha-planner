@@ -77,7 +77,7 @@ function markup(life){const [prop,sceneClass]=scene(life),hidden=currentView()==
     <button class="mc-bubble-close" type="button" data-mc-close aria-label="Close Mochini">×</button>
     <div class="mc-bubble-top"><span>${escape(prop)}</span><div><b>${escape(moodLabel(life.mood))}</b><small>${escape(life.currentActivity)}</small></div></div>
     <p>${escape(life.currentLine)}</p>
-    <div class="mc-actions"><button type="button" data-mc-action="poke">👉 Poke</button><button type="button" data-mc-action="berry" ${life.berriesFedToday>=BERRY_LIMIT?'disabled':''}>${life.berriesFedToday>=BERRY_LIMIT?'🍓 Full':'🍓 Berry'}</button></div>
+    <div class="mc-actions"><button type="button" data-mc-forgetting>What am I forgetting?</button><button type="button" data-mc-action="poke">👉 Poke</button><button type="button" data-mc-action="berry" ${life.berriesFedToday>=BERRY_LIMIT?'disabled':''}>${life.berriesFedToday>=BERRY_LIMIT?'🍓 Full':'🍓 Berry'}</button></div>
   </div>
   <button class="mc-body" type="button" data-mc-toggle aria-label="Mochini is ${escape(life.mood)} and ${escape(life.currentActivity)}">
     <span class="mc-scene-prop" aria-hidden="true">${escape(prop)}</span>
@@ -90,7 +90,7 @@ function ensureRoot(){
   if(!root){document.body.insertAdjacentHTML('beforeend',markup(life));root=document.getElementById(ROOT_ID)}else syncUi(life);
   return root;
 }
-function syncUi(life=currentLife()){
+function syncUi(life=displayLife||currentLife()){
   if(!root)root=document.getElementById(ROOT_ID);if(!root)return;
   root.className=`mochini-companion scene-${scene(life)[1]} ${currentView()==='mochini'?'is-hidden':''}`;root.dataset.mood=life.mood;
   const art=root.querySelector('[data-mc-art]');if(art&&art.getAttribute('src')!==spriteFor(life.mood))art.src=spriteFor(life.mood);
@@ -128,6 +128,7 @@ document.addEventListener('click',event=>{
 
 window.addEventListener('katos:rendered',()=>{ensureRoot();const life=applyContext();syncUi(life)});
 window.addEventListener('katos:mochini',()=>setTimeout(()=>syncUi(currentLife()),30));
+window.addEventListener('katos:mochini-state',event=>{const detail=obj(event.detail),life=displayLife||currentLife();displayLife={...life,mood:detail.mood||life.mood,currentActivityId:detail.activityId||life.currentActivityId,currentActivity:detail.activity||life.currentActivity,currentLine:detail.line||life.currentLine};syncUi(displayLife);if(detail.open!==false)showCheckIn(Number(detail.duration)||6500)});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(tickTimer);return}ensureRoot();const contextual=applyContext(true);syncUi(contextual);if(since(currentLife().lastAutonomyAt)>90_000)tick(true);else scheduleTick()});
 window.addEventListener('focus',()=>{ensureRoot();const contextual=applyContext();syncUi(contextual);if(since(currentLife().lastAutonomyAt)>2*60_000)tick(true)});
 window.addEventListener('online',()=>{ensureRoot();syncUi(applyContext())});

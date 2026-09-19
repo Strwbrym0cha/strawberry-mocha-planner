@@ -1,6 +1,6 @@
 import{snapshotV4,selectV5MoneyGig,getGigGoalProgress}from'./data.js?v=7.3.0-money-mission';
 import{chooseTrackedGigGoal,buildGigGoalRunway}from'./gig-goal-runway.js?v=7.0.15-gig-goal-tracker';
-import{buildShiftScorecards}from'./optimization-core.js?v=7.1.0-optimization-pass';
+import{buildShiftScorecards}from'./optimization-core.js?v=7.4.0-intelligence-pass';
 import{buildMoneyMission}from'./money-mission-core.js?v=7.3.4-account-goals';
 
 const app=document.querySelector('#app'),list=value=>Array.isArray(value)?value:[],esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char])),money=value=>Number(value||0).toLocaleString([],{style:'currency',currency:'USD'}),cents=value=>Math.round(Number(value||0)*100)/100;
