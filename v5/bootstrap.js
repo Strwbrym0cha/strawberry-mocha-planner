@@ -32,5 +32,5 @@ await import('./optimization-money.js?v=7.4.0-intelligence-pass');
 await import('./optimization-schedule-study.js?v=7.1.0-optimization-pass');
 await import('./optimization-safety.js?v=7.1.0-optimization-pass');
 await import('./money-mission.js?v=7.3.4-account-goals');
-await import('./weekly-mirror.js?v=7.3.4-account-goals');
+await import('./weekly-mirror.js?v=7.4.2-weekly-mirror-modal');
 await import('./intelligence-upgrade.js?v=7.4.0-intelligence-pass');
