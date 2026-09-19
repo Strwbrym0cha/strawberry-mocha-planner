@@ -6,7 +6,8 @@ function sync(mood){
   root.dataset.mood=resolved;setMoodFace(art,resolved);
 }
 window.addEventListener('katos:rendered',()=>queueMicrotask(()=>sync()));
-window.addEventListener('katos:mochini',event=>queueMicrotask(()=>sync(event.detail?.mood||event.detail?.life?.mood)));
+window.addEventListener('katos:mochini',()=>queueMicrotask(()=>sync()));
+window.addEventListener('katos:mochini-display',event=>queueMicrotask(()=>sync(event.detail?.mood)));
 window.addEventListener('focus',()=>queueMicrotask(()=>sync()));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)queueMicrotask(()=>sync())});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>sync(),{once:true});else sync();

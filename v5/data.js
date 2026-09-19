@@ -3,7 +3,8 @@ import{applyWorkAction,selectWorkHQ}from'./work-hq.js?v=7.0.22-odometer-sunday-p
 import{applyStudyAction,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
 import{applyMoneyGigAction,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=7.0.22-odometer-sunday-payout';
 import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=7.0.22-odometer-sunday-payout';
-import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt}from'./mochini-life.js?v=6.0.0-canonical-rig';
+import{normalizeMochiniLife,mochiniBerry,mochiniPoke,mochiniPrompt,MOCHINI_MOODS}from'./mochini-life.js?v=7.4.1-mood-layers';
+import{mergeReactionSideEffects,canonicalAutonomousLife}from'./mochini-state-core.js?v=7.4.1-mood-layers';
 import{applyHealthAction,selectMedicationCabinet}from'./health.js?v=7.0.11-medication-launch-pad';
 import{applyLaunchAction,selectLaunchPad}from'./launch-pad.js?v=7.0.21-launch-pad-flex';
 import{deviceBootstrapStatus}from'./sync/sync-device-bootstrap.js?v=7.0.12-ipad-only';
@@ -359,13 +360,13 @@ export function runV5MochiniAction(action={}){
   try{
     const source=readV4State()||candidateFromKey(V5_DATA_KEY)?.state;
     if(!source)return{ok:false,error:'Load your V4 data first so Mochini can remember this.'};
-    const state=cloneState(source),existing=pathValue(state,'v4.mochiniLife')||pathValue(state,'mochini.life')||pathValue(state,'mochini')||{};
+    const state=cloneState(source),existing=pathValue(state,'v4.mochiniLife')||pathValue(state,'mochini.life')||pathValue(state,'mochini')||{},autonomous=canonicalAutonomousLife(normalizeMochiniLife(existing),MOCHINI_MOODS);
     const type=text(action.type).toLowerCase();
-    const result=type==='berry'?mochiniBerry(existing):type==='poke'?mochiniPoke(existing):mochiniPrompt(existing,type);
-    if(pathValue(state,'v4.mochiniLife'))setAtPath(state,'v4.mochiniLife',result.life);
-    else setAtPath(state,'mochini.life',result.life);
+    const result=type==='berry'?mochiniBerry(autonomous):type==='poke'?mochiniPoke(autonomous):mochiniPrompt(autonomous,type),persisted=mergeReactionSideEffects(autonomous,result.life,MOCHINI_MOODS);
+    if(pathValue(state,'v4.mochiniLife'))setAtPath(state,'v4.mochiniLife',persisted);
+    else setAtPath(state,'mochini.life',persisted);
     persistPlannerState(state,'v5-mochini-life');
-    return{ok:true,...result};
+    return{ok:true,...result,autonomousLife:persisted};
   }catch(error){console.warn('KatOS V5 could not save that Mochini interaction.',error);return{ok:false,error:'Mochini could not save that interaction. Your planner is still safe.'}}
 }
 
@@ -454,7 +455,7 @@ export function saveV5Workspace(view,fields={}){
       case'boss':if(!value('date'))return{ok:false,error:'Choose the date for the gig shift first.'};appendAtPath(state,'work.gigShifts',{id:itemId('gig'),source:value('source')||'Gig work',date:value('date'),startTime:value('startTime'),endTime:value('endTime'),targetAmount:Number(fields.targetAmount)||0,note:value('note'),status:'planned',createdAt:now});break;
       case'time':appendAtPath(state,'life.events',{id:itemId('event'),title:value('anchor')||'Schedule item',date:value('date')||today,startTime:value('startTime'),endTime:value('endTime'),location:value('location'),priority:value('priority'),notes:value('scheduleNotes'),createdAt:now});break;
       case'tasks':if(!value('task'))return{ok:false,error:'Give the to-do a name first.'};appendAtPath(state,'life.tasks',{id:itemId('task'),text:value('task'),title:value('task'),date:value('due'),dueDate:value('due'),priority:value('priority').toLowerCase()||'normal',minutes:minutesFrom(value('timeEstimate')),location:value('location'),protected:value('protected').startsWith('Yes'),firstStep:value('firstStep'),notes:value('taskNotes'),done:false,createdAt:now});break;
-      case'mochini':state.mochini={...obj(state.mochini),life:{...obj(state.mochini?.life),mood:value('mood'),energy:value('energy'),help:value('help'),suggestions:value('suggestions'),topic:value('topic'),context:value('context'),boundary:value('boundary'),updatedAt:now}};break;
+      case'mochini':{const existingLife=canonicalAutonomousLife(normalizeMochiniLife(pathValue(state,'v4.mochiniLife')||pathValue(state,'mochini.life')||{}),MOCHINI_MOODS),settings={energy:value('energy'),help:value('help'),suggestions:value('suggestions'),topic:value('topic'),context:value('context'),boundary:value('boundary'),updatedAt:now};if(pathValue(state,'v4.mochiniLife'))setAtPath(state,'v4.mochiniLife',{...existingLife,...settings});else state.mochini={...obj(state.mochini),life:{...existingLife,...settings}};break}
       case'pings':if(!value('reminder'))return{ok:false,error:'Write the reminder first.'};appendAtPath(state,'life.reminders',{id:itemId('ping'),title:value('reminder'),date:value('date'),timing:value('when'),urgency:value('urgency'),repeat:value('repeat'),place:value('place'),notes:value('pingNotes'),completed:false,createdAt:now});break;
       case'routines':if(!value('routine'))return{ok:false,error:'Give the routine a name first.'};appendAtPath(state,'life.routines',{id:itemId('routine'),name:value('routine'),daypart:value('time'),recurrence:{'Every day':'daily',Weekdays:'weekdays','A few times a week':'selected',Weekly:'weekly','As needed':'as-needed'}[value('rhythm')]||'daily',cue:value('cue'),lowEnergy:value('energyVersion'),skipRule:value('skipRule'),steps:value('routineNotes').split('\n').map(label=>text(label)).filter(Boolean).map(label=>({id:itemId('step'),label,minutes:5,optional:false})),archived:false,createdAt:now});break;
       case'motion':appendAtPath(state,'movement.sessions',{id:itemId('movement'),label:value('type')||'Movement',type:value('type')||'movement',minutes:Number(fields.minutes)||0,effort:value('intensity'),location:value('location'),body:value('body'),after:value('after'),note:value('motionNotes'),date:today,createdAt:now});break;

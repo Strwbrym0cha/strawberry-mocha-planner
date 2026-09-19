@@ -1,3 +1,5 @@
+import{migrateAutonomousLife}from'./mochini-state-core.js?v=7.4.1-mood-layers';
+
 // Canonical Mochini life state for V5. UI-free on purpose: the same little
 // creature brain can drive her Command Center, floating companion, and future
 // pose/expression sheets without tying personality to one screen.
@@ -23,7 +25,7 @@ export const MOOD_TO_EXPRESSION={
 export const expressionForMood=mood=>MOOD_TO_EXPRESSION[mood]||'idle';
 
 export const DEFAULT_MOCHINI_LIFE={
-  mood:'content',moodIntensity:40,energy:70,affection:50,chaos:30,curiosity:58,playfulness:52,patience:78,fullness:0,
+  mood:'content',autonomousMood:'content',autonomousMoodAt:null,moodIntensity:40,energy:70,affection:50,chaos:30,curiosity:58,playfulness:52,patience:78,fullness:0,
   berriesFedToday:0,berriesFedTotal:0,pokeCount:0,pokeStreak:0,interactionsToday:0,
   currentActivityId:'princessing',currentActivity:'being a tiny strawberry princess',currentContext:'home',
   currentLine:'Hihi! I am so happy you’re here. What shall we do today? ♡',dialogueHistory:[],
@@ -31,11 +33,11 @@ export const DEFAULT_MOCHINI_LIFE={
 };
 
 export function normalizeMochiniLife(value={},now=new Date()){
-  const source=obj(value),today=dayKey(now),sameDay=source.dailyKey===today,lastPokeAge=since(source.lastPokeAt,now),streak=lastPokeAge<2*MINUTE?Math.max(0,Math.floor(number(source.pokeStreak,0))):0;
+  const source=migrateAutonomousLife(value,MOCHINI_MOODS),today=dayKey(now),sameDay=source.dailyKey===today,lastPokeAge=since(source.lastPokeAt,now),streak=lastPokeAge<2*MINUTE?Math.max(0,Math.floor(number(source.pokeStreak,0))):0;
   const berries=sameDay?Math.max(0,Math.floor(number(source.berriesFedToday,0))):0;
   const recoveredPatience=lastPokeAge>3*MINUTE?Math.max(number(source.patience,78),72):number(source.patience,78);
   return {...DEFAULT_MOCHINI_LIFE,...source,
-    mood:moods.has(source.mood)?source.mood:'content',moodIntensity:clamp(source.moodIntensity,40),energy:clamp(source.energy,70),affection:clamp(source.affection,50),chaos:clamp(source.chaos,30),curiosity:clamp(source.curiosity,58),playfulness:clamp(source.playfulness,52),patience:clamp(recoveredPatience,78),fullness:sameDay?clamp(source.fullness,Math.round(berries/BERRY_LIMIT*100)):0,
+    mood:moods.has(source.autonomousMood)?source.autonomousMood:'content',autonomousMood:moods.has(source.autonomousMood)?source.autonomousMood:'content',moodIntensity:clamp(source.moodIntensity,40),energy:clamp(source.energy,70),affection:clamp(source.affection,50),chaos:clamp(source.chaos,30),curiosity:clamp(source.curiosity,58),playfulness:clamp(source.playfulness,52),patience:clamp(recoveredPatience,78),fullness:sameDay?clamp(source.fullness,Math.round(berries/BERRY_LIMIT*100)):0,
     berriesFedToday:berries,berriesFedTotal:Math.max(0,Math.floor(number(source.berriesFedTotal,0))),pokeCount:Math.max(0,Math.floor(number(source.pokeCount,0))),pokeStreak:streak,interactionsToday:sameDay?Math.max(0,Math.floor(number(source.interactionsToday,0))):0,
     dialogueHistory:Array.isArray(source.dialogueHistory)?source.dialogueHistory.filter(item=>typeof item==='string').slice(-10):[],dailyKey:today
   };
@@ -131,7 +133,7 @@ export function mochiniAutonomy(value={},context='home',now=new Date()){
   else mood=weighted(CONTEXT_MOODS[context]||CONTEXT_MOODS.home);
   if(mood===life.mood&&Math.random()>.35){const alternatives=(CONTEXT_MOODS[context]||CONTEXT_MOODS.home).filter(([name])=>name!==mood);if(alternatives.length)mood=weighted(alternatives)}
   const [activityId,currentActivity]=activityFor(life,context,mood,now),line=lineFor(mood,activityId),night=hour<6||hour>=23,energyDrift=night?-3:(Math.random()<.45?-1:1);
-  life={...life,mood,moodIntensity:Math.round(35+Math.random()*45),energy:clamp(life.energy+energyDrift),curiosity:clamp(life.curiosity+(Math.random()<.5?-2:2)),playfulness:clamp(life.playfulness+(Math.random()<.5?-2:2)),patience:clamp(life.patience+(since(life.lastPokeAt,now)>2*MINUTE?6:0)),currentActivityId:activityId,currentActivity,currentContext:context,currentLine:line,lastMoodAt:nowIso,lastAutonomyAt:nowIso,dialogueHistory:history(life,line)};
+  life={...life,mood,autonomousMood:mood,autonomousMoodAt:nowIso,moodIntensity:Math.round(35+Math.random()*45),energy:clamp(life.energy+energyDrift),curiosity:clamp(life.curiosity+(Math.random()<.5?-2:2)),playfulness:clamp(life.playfulness+(Math.random()<.5?-2:2)),patience:clamp(life.patience+(since(life.lastPokeAt,now)>2*MINUTE?6:0)),currentActivityId:activityId,currentActivity,currentContext:context,currentLine:line,lastMoodAt:nowIso,lastAutonomyAt:nowIso,dialogueHistory:history(life,line)};
   const checkIn=['study','work','gig','daily'].includes(context)&&Math.random()<.28;
   return{life,line,expression:expressionForMood(mood),mood,accepted:true,autonomous:true,context,activityId,checkIn};
 }
