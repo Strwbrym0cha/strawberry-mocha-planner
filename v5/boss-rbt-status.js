@@ -1,4 +1,4 @@
-import{renderBoss as renderBaseBoss}from'./boss.js?base=5.6.0-final-integration';
+import{renderBoss as renderBaseBoss}from'./boss.js?base=7.5.0-rbt-hub';
 
 const text=value=>String(value??'').trim();
 const list=value=>Array.isArray(value)?value:[];

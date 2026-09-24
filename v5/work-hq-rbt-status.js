@@ -1,10 +1,11 @@
-import * as base from './work-hq.js?base=7.0.22-odometer-sunday-payout';
+import * as base from './work-hq.js?base=7.5.0-rbt-hub';
 
 export const WORK_DAYS=base.WORK_DAYS;
 export const CAREER_ROADMAP=base.CAREER_ROADMAP;
 export const RBT_JOURNEY=base.RBT_JOURNEY;
 export const workOccurrences=base.workOccurrences;
 export const prepStatus=base.prepStatus;
+export const buildWeeklyClientHours=base.buildWeeklyClientHours;
 
 const text=value=>String(value??'').trim();
 const bool=value=>value===true||value==='true'||value==='on'||value==='yes';

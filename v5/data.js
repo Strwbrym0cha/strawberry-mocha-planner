@@ -1,5 +1,5 @@
 import{applyDailyAction,selectDailyShit}from'./daily-shit.js?v=7.0.22-odometer-sunday-payout';
-import{applyWorkAction,selectWorkHQ}from'./work-hq.js?v=7.0.22-odometer-sunday-payout';
+import{applyWorkAction,selectWorkHQ}from'./work-hq.js?v=7.5.0-rbt-hub';
 import{applyStudyAction,selectStudyNook}from'./study-nook.js?v=5.3.0-study-nook';
 import{applyMoneyGigAction,selectMoneyGig,getAccounts,getAccountBalance,getMoneySummary,getLedgerTransactions,getCashFlowSummary,getUpcomingBills,getSubscriptions,getFinancialGoals,getGigEarningsSummary,getGigPlatformComparison,getGigGoalProgress,getPendingGigPayouts,getEstimatedWorkEarnings}from'./money-gig.js?v=7.0.22-odometer-sunday-payout';
 import{applyLifestyleAction,selectLifestyle,getMovementPlans,getMovementActivities,getMovementSummary,getRecommendedMovement,getHobbies,getHobbyProjects,getHobbyRecommendation,getGrowthGoals,getGrowthWins,getGrowthNextStep}from'./lifestyle.js?v=7.0.22-odometer-sunday-payout';
