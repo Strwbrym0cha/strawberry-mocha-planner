@@ -10,7 +10,7 @@ test('V6 preserves the V5 visual and canonical feature modules',()=>{
 });
 
 test('V6 uses the narrow render lifecycle without an app-wide observer',()=>{
- assert.match(command,/katos:rendered/);assert.doesNotMatch(command,/MutationObserver/);assert.doesNotMatch(intelligence,/MutationObserver/);
+ assert.match(command,/katos:v6-refresh/);assert.doesNotMatch(command,/katos:rendered/);assert.doesNotMatch(command,/MutationObserver/);assert.doesNotMatch(intelligence,/MutationObserver/);
 });
 
 test('V6 has a genuinely new Life Command Center information architecture',()=>{

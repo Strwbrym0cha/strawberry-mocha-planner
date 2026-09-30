@@ -35,3 +35,4 @@ await import('../v5/optimization-safety.js?v=7.1.0-optimization-pass');
 await import('../v5/money-mission.js?v=7.3.4-account-goals');
 await import('../v5/weekly-mirror.js?v=7.4.2-weekly-mirror-modal');
 await import('../v5/intelligence-upgrade.js?v=7.4.1-v6-lifecycle');
+window.dispatchEvent(new Event('katos:v6-refresh'));

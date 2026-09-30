@@ -115,5 +115,6 @@ let queued=false;function queue(){if(queued)return;queued=true;requestAnimationF
 
 app.addEventListener('click',event=>{
  const jump=event.target.closest('[data-v6-jump]');if(jump){event.preventDefault();app.querySelector(`[data-v6-slot="${jump.dataset.v6Jump}"]`)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
+ queue();
 },true);
-window.addEventListener('katos:rendered',queue);document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()});decorate();
+window.addEventListener('katos:v6-refresh',queue);window.addEventListener('storage',queue);document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()});decorate();
