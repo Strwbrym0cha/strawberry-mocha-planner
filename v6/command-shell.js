@@ -6,6 +6,7 @@ import{selectStudyNook}from'../v5/study-nook.js?v=5.3.0-study-nook';
 import{selectLifestyle}from'../v5/lifestyle.js?v=7.0.22-odometer-sunday-payout';
 import{buildAdaptiveDay,formatClock,formatMinutes}from'./adaptive-engine.js?v=6.1.0-life-command';
 import{routineFitsNow}from'./routine-timing.js?v=6.2.0-integrated-rooms';
+import{installNewRooms,isNewRoom,renderNewRoom}from'./new-rooms.js?v=6.4.0-new-rooms-stage2';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -19,13 +20,12 @@ const NAV_GROUPS=[
 ];
 const NAV=NAV_GROUPS.flatMap(([,items])=>items),LABELS=Object.fromEntries(NAV.filter(([,,,route])=>route!==null).map(([id,,label,route])=>[route||id,label]));
 const FUTURE_ROOMS={
- 'moon-garden':['🌙','Moon Garden','A quiet future room for capacity, patterns, and Kat Labs. Its palace shell is ready; no tracking or analysis has been added in Stage 1.'],
- 'love-letters':['💌','Love Letters','A private future room for relationship reflection. Its palace shell is ready; no relationship records or tracking have been added.'],
- 'wishing-tower':['✨','Wishing Tower','A future planning room for wishes and long-range goals. This Stage 1 space is intentionally a visual shell only.'],
  'royal-archives':['📖','Royal Archives','A future reference room for the notes and knowledge worth keeping close. This Stage 1 space is intentionally a visual shell only.']
 };
+const NEW_ROOM_LABELS={'moon-garden':'Moon Garden','love-letters':'Love Letters','wishing-tower':'Wishing Tower'};
 const ROOM_LABELS={motion:'Movement Hall',growth:'Growth Garden',dump:'Brain Inbox'};
 let activeNav=null,activeFuture=null,activeView=app.querySelector('.nav-btn.active[data-view]')?.dataset.view||'home';
+installNewRooms(app);
 const mode=()=>document.body.classList.contains('mode-tiny')?'tiny':document.body.classList.contains('mode-power')?'power':'normal';
 const currentView=()=>activeView;
 const titleOf=(row,fallback='Untitled')=>text(row?.title||row?.text||row?.name||row?.label||row?.client||row?.clientName)||fallback;
@@ -103,13 +103,13 @@ function roomMarkup(view,d){if(view==='home')return todayRoom(d);if(view==='time
 
 function defaultNav(view){return NAV.find(([id,,,route])=>(route||id)===view&&route!==null)?.[0]||null}
 function futureRoomMarkup(id){const[icon,title,copy]=FUTURE_ROOMS[id];return`<section class="v6-future-room"><div class="v6-future-mark">${icon}</div><div class="ey">FUTURE ROOM · STAGE 1 SHELL</div><h1>${esc(title)}</h1><p>${esc(copy)}</p><div class="v6-future-note">Nothing private is being tracked here yet.</div><button type="button" class="btn primary" data-v6-nav="home" data-route-view="home">Return to Palace Foyer</button></section>`}
-function showFutureRoom(id){const page=app.querySelector('.main>.page'),details=FUTURE_ROOMS[id];if(!page||!details)return;activeFuture=id;activeNav=id;sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));page.querySelector('.v6-command-room')?.remove();page.querySelector('.v6-detail-toolbar')?.remove();page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(id)}">${futureRoomMarkup(id)}</div>`);brandShell()}
+function showFutureRoom(id){const page=app.querySelector('.main>.page');if(!page)return;activeFuture=id;activeNav=id;sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));if(isNewRoom(id))renderNewRoom(id,page);else if(FUTURE_ROOMS[id]){page.querySelector('.v6-command-room')?.remove();page.querySelector('.v6-detail-toolbar')?.remove();page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(id)}">${futureRoomMarkup(id)}</div>`)}brandShell()}
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='Stage 1 · Palace';if(foot)foot.innerHTML='<b>KatOS V6</b><br>Dreamy, useful, and still yours.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='Stage 2 · New Rooms';if(foot)foot.innerHTML='<b>KatOS V6</b><br>Dreamy, useful, and still yours.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
- const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?FUTURE_ROOMS[activeFuture][1]:NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
+ const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?(NEW_ROOM_LABELS[activeFuture]||FUTURE_ROOMS[activeFuture]?.[1]||'The Palace'):NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
  app.querySelectorAll('.ey,.room-source').forEach(node=>{if(node.childElementCount===0)node.textContent=node.textContent.replace(/\bV5\b/g,'V6')});
 }
 
@@ -129,7 +129,7 @@ function integrateSource(view,page){
  room.querySelectorAll('[data-v6-slot]').forEach(slot=>{if(!slot.children.length)slot.innerHTML='<p class="v6-soft-empty">Nothing is waiting in this section.</p>'});
 }
 function showOverview(view){
- const page=app.querySelector('.main>.page');if(!page)return;if(page.querySelector('.v6-command-room')){integrateSource(view,page);return}const markup=roomMarkup(view,data(view));if(!markup)return;
+ const page=app.querySelector('.main>.page');if(!page)return;if(view==='hobbies'){renderNewRoom('rose-garden',page);return}if(page.querySelector('.v6-command-room')){integrateSource(view,page);return}const markup=roomMarkup(view,data(view));if(!markup)return;
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
  page.querySelector('.v6-command-room')?.remove();page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(view)}">${markup}</div>`);integrateSource(view,page);
 }
