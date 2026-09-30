@@ -1,4 +1,9 @@
-import{localDateKey,selectV5DailyShit,selectV5Health,selectV5StudyNook,selectV5WorkHQ,selectV5MoneyGig,selectV5Lifestyle,snapshotV4}from'../v5/data.js?v=7.5.0-rbt-hub';
+import{localDateKey,selectV5MoneyGig,snapshotV4}from'../v5/data.js?v=7.5.0-rbt-hub';
+import{selectDailyShit}from'../v5/daily-shit.js?v=7.0.22-odometer-sunday-payout';
+import{selectMedicationCabinet}from'../v5/health.js?v=7.0.11-medication-launch-pad';
+import{selectWorkHQ}from'../v5/work-hq.js?v=7.5.0-rbt-hub';
+import{selectStudyNook}from'../v5/study-nook.js?v=5.3.0-study-nook';
+import{selectLifestyle}from'../v5/lifestyle.js?v=7.0.22-odometer-sunday-payout';
 import{buildAdaptiveDay,formatClock,formatMinutes}from'./adaptive-engine.js?v=6.1.0-life-command';
 import{routineFitsNow}from'./routine-timing.js?v=6.2.0-integrated-rooms';
 
@@ -17,7 +22,7 @@ const sundayOf=date=>{const value=new Date(`${date}T12:00:00`);value.setDate(val
 const localClock=()=>{const now=new Date;return now.getHours()*60+now.getMinutes()};
 
 function data(){
- const snapshot=snapshotV4(),date=snapshot.today||localDateKey(),state=snapshot.state||{},daily=selectV5DailyShit(date,{mode:mode()}),health=selectV5Health(date),work=selectV5WorkHQ(date),school=selectV5StudyNook(date),finance=selectV5MoneyGig(date),life=selectV5Lifestyle(date),fixed=[],flexible=[],seen=new Set;
+ const snapshot=snapshotV4(),date=snapshot.today||localDateKey(),state=snapshot.state||{},daily=selectDailyShit(state,date,{mode:mode()}),health=selectMedicationCabinet(state,date),work=selectWorkHQ(state,date),school=selectStudyNook(state,date),finance=selectV5MoneyGig(date),life=selectLifestyle(state,date),fixed=[],flexible=[],seen=new Set;
  const addFixed=(kind,row,extra={})=>{const start=timeOf(row),key=`${dateOf(row)}:${start}:${titleOf(row)}`.toLowerCase();if(dateOf(row)!==date||!start||seen.has(key))return;seen.add(key);fixed.push({key,kind,title:extra.title||titleOf(row),startTime:start,endTime:text(row.endTime),duration:Number(row.duration||row.minutes||row.scheduledMinutes)||duration(start,row.endTime,60),prepMinutes:extra.prepMinutes||0,meta:extra.meta||''})};
  list(state?.life?.events).forEach(row=>addFixed('event',row,{prepMinutes:15}));list(state?.work?.gigShifts).filter(row=>!row.archivedAt).forEach(row=>addFixed('gig',row,{title:/flex/i.test(text(row.source))?'Amazon Flex block':titleOf(row,'Gig shift'),prepMinutes:25,meta:row.targetAmount?`${money(row.targetAmount)} expected`:''}));list(work.todaySessions).forEach(row=>addFixed('work',{...row,date},{title:titleOf(row,'Client session'),prepMinutes:30}));
  const addFlex=(kind,row,priority=30)=>{if(!row?.id)return;flexible.push({key:`${kind}:${row.id}`,kind,title:titleOf(row),duration:Math.max(5,Number(row.duration||row.minutes)||15),priority,firstMove:text(row.firstStep||row.tinyStart)||'Open it and choose the smallest move.'})};
