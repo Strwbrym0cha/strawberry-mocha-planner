@@ -64,5 +64,4 @@ app.addEventListener('change',event=>{const input=event.target.closest('[data-ad
 
 app.addEventListener('submit',event=>{const form=event.target.closest('[data-daily-task-edit][data-daily-kind="task"]');if(!form)return;const actual=Math.max(0,Number(form.elements.namedItem('actualMinutes')?.value)||0),id=form.dataset.dailyId;if(!actual)return;setTimeout(()=>{const task=taskById(id);if(!task||Number(task.lastLoggedActualMinutes)===actual)return;const history=[...list(task.durationHistory),{date:today(),estimatedMinutes:Number(task.minutes)||0,actualMinutes:actual,loggedAt:new Date().toISOString()}].slice(-30);updateV5Record('life.tasks',id,{actualMinutes:actual,lastLoggedActualMinutes:actual,durationHistory:history})},0)},true);
 window.addEventListener('katos:rendered',queue);
-new MutationObserver(queue).observe(app,{childList:true,subtree:true});
 decorate();
