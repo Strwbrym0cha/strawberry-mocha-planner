@@ -6,7 +6,7 @@ const[ui,store,css,index,command]=await Promise.all(['./new-rooms.js','./room-st
 test('Stage 2 exposes four functional V6 rooms through Palace navigation',()=>{
  for(const room of['rose-garden','moon-garden','love-letters','wishing-tower'])assert.match(ui,new RegExp(room));
  for(const label of['Watch Tracker','Play Tracker','Idea Garden','Cozy Menu','Daily Capacity Check-In','Kat Labs Experiment','Relationship Profile','Velvet Room Entry','Future Plan','Future Me Message'])assert.match(ui,new RegExp(label));
- assert.match(command,/renderNewRoom/);assert.match(index,/6\.4\.0-new-rooms-stage2/);assert.match(index,/new-rooms\.css/);
+ assert.match(command,/renderNewRoom/);assert.match(index,/6\.6\.0-living-palace/);assert.match(index,/new-rooms\.css/);
 });
 
 test('Stage 2 architecture is V6-only, stable-ID based, and locally persisted',()=>{

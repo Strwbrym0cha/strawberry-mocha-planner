@@ -1,5 +1,5 @@
 export const ROOM_STORAGE_KEY='katos_v6_new_rooms_v1';
-export const ROOM_SCHEMA_VERSION=2;
+export const ROOM_SCHEMA_VERSION=3;
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -8,12 +8,12 @@ const makeId=()=>globalThis.crypto?.randomUUID?.()||`v6-${Date.now().toString(36
 const clone=value=>JSON.parse(JSON.stringify(value));
 
 export function emptyRoomState(){
- return{schemaVersion:ROOM_SCHEMA_VERSION,rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]},smart:{settings:{capacityOverride:'',contextMode:'Home',recoveryDay:false,recoveryDate:''},openLoops:[],decisions:[],taskMeta:[],resetRecipes:[],prepPacks:[],calendarLinks:[],gigRoutes:[],adaptiveGoals:[],maintenance:[],inventory:[],skills:[],wiki:[],brainRoutes:[],nextHourPlans:[]}};
+ return{schemaVersion:ROOM_SCHEMA_VERSION,rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]},smart:{settings:{capacityOverride:'',contextMode:'Home',recoveryDay:false,recoveryDate:''},openLoops:[],decisions:[],taskMeta:[],resetRecipes:[],prepPacks:[],calendarLinks:[],gigRoutes:[],adaptiveGoals:[],maintenance:[],inventory:[],skills:[],wiki:[],brainRoutes:[],nextHourPlans:[]},living:{settings:{foyerOrder:['capacity','schedule','focus','context','next-hour'],hiddenWidgets:[]},chapters:[],milestones:[],pins:[]}};
 }
 
 export function normalizeRoomState(value){
  const base=emptyRoomState(),source=value&&typeof value==='object'?value:{};
- for(const room of ['rose','moon','love','wishing']){
+ for(const room of ['rose','moon','love','wishing','living']){
   const current=source[room]&&typeof source[room]==='object'?source[room]:{};
   for(const collection of Object.keys(base[room])){
    if(Array.isArray(base[room][collection]))base[room][collection]=list(current[collection]).filter(row=>row&&typeof row==='object');
@@ -102,8 +102,15 @@ export function moveMilestone(store,planId,milestoneId,direction){
  const state=store.load(),plan=state.wishing.plans.find(row=>row.id===planId);if(!plan)throw new Error('Plan not found.');const rows=list(plan.milestones),from=rows.findIndex(row=>row.id===milestoneId),to=from+(direction==='up'?-1:1);if(from<0||to<0||to>=rows.length)return plan;[rows[from],rows[to]]=[rows[to],rows[from]];return store.update('wishing','plans',planId,{milestones:rows});
 }
 
-export function dueFutureMessages(messages,today=new Date().toISOString().slice(0,10)){
- return activeRecords(messages).filter(row=>!row.surfaceDate||row.surfaceDate<=today);
+export function dueFutureMessages(messages,today=new Date().toISOString().slice(0,10),context={}){
+ const complete=row=>['achieved','complete','completed','finished'].includes(text(row?.status||row?.state).toLowerCase())||row?.done===true||row?.completed===true;
+ return activeRecords(messages).filter(row=>{
+  const trigger=text(row.triggerType||'Date');
+  if(trigger==='Plan achieved')return Boolean(row.linkedPlanId&&list(context.plans).some(plan=>String(plan.id)===String(row.linkedPlanId)&&text(plan.status)==='Achieved'));
+  if(trigger==='Course completed')return Boolean(row.triggerRecordId&&list(context.courses).some(course=>String(course.id)===String(row.triggerRecordId)&&complete(course)));
+  if(trigger==='Goal completed')return Boolean(row.triggerRecordId&&list(context.goals).some(goal=>String(goal.id)===String(row.triggerRecordId)&&complete(goal)));
+  return!row.surfaceDate||row.surfaceDate<=today;
+ });
 }
 
 export function concealedLabel(record,privacyMode){

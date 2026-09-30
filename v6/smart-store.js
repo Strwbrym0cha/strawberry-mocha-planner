@@ -1,4 +1,4 @@
-import{activeRecords,newRecord}from'./room-store.js?v=6.5.0-smart-palace-stage3';
+import{activeRecords,newRecord}from'./room-store.js?v=6.6.0-living-palace';
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
