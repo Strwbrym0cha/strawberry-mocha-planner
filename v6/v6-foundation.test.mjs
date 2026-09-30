@@ -2,7 +2,7 @@ import test from'node:test';
 import assert from'node:assert/strict';
 import{readFile}from'node:fs/promises';
 
-const[index,bootstrap,command,intelligence,manifest,companion]=await Promise.all([['./index.html',import.meta.url],['./bootstrap.js',import.meta.url],['./command-shell.js',import.meta.url],['../v5/intelligence-upgrade.js',import.meta.url],['../v5/mochini-face-manifest.js',import.meta.url],['../v5/mochini-companion.js',import.meta.url]].map(([name,base])=>readFile(new URL(name,base),'utf8')));
+const[index,bootstrap,command,palace,intelligence,manifest,companion]=await Promise.all([['./index.html',import.meta.url],['./bootstrap.js',import.meta.url],['./command-shell.js',import.meta.url],['./palace.css',import.meta.url],['../v5/intelligence-upgrade.js',import.meta.url],['../v5/mochini-face-manifest.js',import.meta.url],['../v5/mochini-companion.js',import.meta.url]].map(([name,base])=>readFile(new URL(name,base),'utf8')));
 
 test('V6 preserves the V5 visual and canonical feature modules',()=>{
  assert.match(index,/KatOS V6/);assert.match(index,/\.\.\/v5\/styles\.css/);assert.match(bootstrap,/\.\.\/v5\/app\.js/);assert.match(bootstrap,/mochini-approved-art\.js/);assert.match(bootstrap,/intelligence-upgrade\.js/);
@@ -14,10 +14,16 @@ test('V6 uses the narrow render lifecycle without an app-wide observer',()=>{
 });
 
 test('V6 has a genuinely new Life Command Center information architecture',()=>{
- for(const label of['Today','My Week','Care & Routines','Work Studio','Money Café','School Lab','Fun Central','Mochini','Memory Box'])assert.match(command,new RegExp(label.replace(/[&]/g,'\\&')));
+ for(const label of['Palace Foyer','Royal Duties','Royal Calendar','Bell Tower','Crown & Career','Scholar’s Tower','Royal Treasury','Rose Garden','Moon Garden','Love Letters','Wishing Tower','Keepsake Chest','Royal Archives','Mochini'])assert.match(command,new RegExp(label.replace(/[&]/g,'\\&')));
  for(const room of['v6-focus-stage','v6-week-board','v6-care-runway','v6-studio-lanes','v6-money-counter','v6-school-bench','v6-fun-picker','v6-memory-shelf'])assert.match(command,new RegExp(room));
  assert.match(command,/integrateSource/);assert.match(command,/data-v6-slot/);assert.match(command,/CARE BOARD/);assert.match(command,/ACTIVE WORK LANE/);
  assert.doesNotMatch(command,/DETAIL_KEY/);assert.doesNotMatch(command,/showDetail/);
+});
+
+test('V6 Palace styling is centralized and scoped away from V5',()=>{
+ assert.match(index,/palace\.css/);assert.match(index,/The Palace/);
+ for(const token of['--v6-pearl:#fff9fd','--v6-ballet:#f8c8dc','--v6-strawberry:#f5afc9','--v6-lavender:#d9c4f5','--v6-violet:#b99be8','--v6-matcha:#bfd6aa'])assert.match(palace,new RegExp(token));
+ assert.match(palace,/html\[data-katos-version="6"\]/);assert.match(command,/FUTURE ROOM · STAGE 1 SHELL/);
 });
 
 test('shared Mochini art resolves from the V5 module instead of the active document',()=>{

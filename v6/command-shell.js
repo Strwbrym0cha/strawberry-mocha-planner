@@ -10,10 +10,24 @@ import{routineFitsNow}from'./routine-timing.js?v=6.2.0-integrated-rooms';
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const money=value=>Number(value||0).toLocaleString([],{style:'currency',currency:'USD',maximumFractionDigits:0});
-const NAV=[['home','🌸','Today'],['time','🗓️','My Week'],['daily','🫧','Care & Routines'],['boss','💼','Work Studio'],['money','☕','Money Café'],['study','🎓','School Lab'],['hobbies','🎨','Fun Central'],['mochini','🍡','Mochini'],['archive','📦','Memory Box'],['settings','⚙️','Settings']];
-const LABELS=Object.fromEntries(NAV.map(([id,,label])=>[id,label]));
+const NAV_GROUPS=[
+ ['EVERYDAY',[['home','🏰','Palace Foyer'],['daily','🎀','Royal Duties'],['time','📅','Royal Calendar'],['bell-tower','🔔','Bell Tower','daily'],['mochini','🍡','Mochini']]],
+ ['BUILD MY KINGDOM',[['boss','👑','Crown & Career'],['study','📚','Scholar’s Tower'],['money','💰','Royal Treasury']]],
+ ['MY WORLD',[['hobbies','🌹','Rose Garden'],['moon-garden','🌙','Moon Garden',null],['love-letters','💌','Love Letters',null],['wishing-tower','✨','Wishing Tower',null]]],
+ ['KEEP & REMEMBER',[['archive','🎁','Keepsake Chest'],['royal-archives','📖','Royal Archives',null]]],
+ ['',[['settings','⚙️','Settings']]]
+];
+const NAV=NAV_GROUPS.flatMap(([,items])=>items),LABELS=Object.fromEntries(NAV.filter(([,,,route])=>route!==null).map(([id,,label,route])=>[route||id,label]));
+const FUTURE_ROOMS={
+ 'moon-garden':['🌙','Moon Garden','A quiet future room for capacity, patterns, and Kat Labs. Its palace shell is ready; no tracking or analysis has been added in Stage 1.'],
+ 'love-letters':['💌','Love Letters','A private future room for relationship reflection. Its palace shell is ready; no relationship records or tracking have been added.'],
+ 'wishing-tower':['✨','Wishing Tower','A future planning room for wishes and long-range goals. This Stage 1 space is intentionally a visual shell only.'],
+ 'royal-archives':['📖','Royal Archives','A future reference room for the notes and knowledge worth keeping close. This Stage 1 space is intentionally a visual shell only.']
+};
+const ROOM_LABELS={motion:'Movement Hall',growth:'Growth Garden',dump:'Brain Inbox'};
+let activeNav=null,activeFuture=null,activeView=app.querySelector('.nav-btn.active[data-view]')?.dataset.view||'home';
 const mode=()=>document.body.classList.contains('mode-tiny')?'tiny':document.body.classList.contains('mode-power')?'power':'normal';
-const currentView=()=>app.querySelector('.nav-btn.active[data-view]')?.dataset.view||'home';
+const currentView=()=>activeView;
 const titleOf=(row,fallback='Untitled')=>text(row?.title||row?.text||row?.name||row?.label||row?.client||row?.clientName)||fallback;
 const timeOf=row=>text(row?.startTime||row?.time),dateOf=row=>text(row?.date||row?.dueDate||row?.startDate);
 const duration=(start,end,fallback=0)=>{if(!/^\d{1,2}:\d{2}$/.test(text(start))||!/^\d{1,2}:\d{2}$/.test(text(end)))return fallback;const[a,b]=[start,end].map(value=>{const[h,m]=value.split(':').map(Number);return h*60+m});return b<a?b+1440-a:b-a};
@@ -87,11 +101,15 @@ function memoryRoom(d){
 
 function roomMarkup(view,d){if(view==='home')return todayRoom(d);if(view==='time')return weekRoom(d);if(view==='daily')return careRoom(d);if(view==='boss')return workRoom(d);if(view==='money')return moneyRoom(d);if(view==='study')return schoolRoom(d);if(view==='hobbies')return funRoom(d);if(view==='archive')return memoryRoom(d);return'';}
 
+function defaultNav(view){return NAV.find(([id,,,route])=>(route||id)===view&&route!==null)?.[0]||null}
+function futureRoomMarkup(id){const[icon,title,copy]=FUTURE_ROOMS[id];return`<section class="v6-future-room"><div class="v6-future-mark">${icon}</div><div class="ey">FUTURE ROOM · STAGE 1 SHELL</div><h1>${esc(title)}</h1><p>${esc(copy)}</p><div class="v6-future-note">Nothing private is being tracked here yet.</div><button type="button" class="btn primary" data-v6-nav="home" data-route-view="home">Return to Palace Foyer</button></section>`}
+function showFutureRoom(id){const page=app.querySelector('.main>.page'),details=FUTURE_ROOMS[id];if(!page||!details)return;activeFuture=id;activeNav=id;sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));page.querySelector('.v6-command-room')?.remove();page.querySelector('.v6-detail-toolbar')?.remove();page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(id)}">${futureRoomMarkup(id)}</div>`);brandShell()}
 function brandShell(){
- document.title='KatOS V6 🍓';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot b');if(brand)brand.textContent='KatOS V6';if(build)build.textContent='Life Command Center';if(foot)foot.textContent='KatOS V6';
- const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));NAV.forEach(([id,icon,label])=>{const button=buttons.get(id);if(!button)return;button.hidden=false;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;nav.append(button)});[...buttons].filter(([id])=>!LABELS[id]).forEach(([,button])=>button.hidden=true)}
- const view=currentView(),title=app.querySelector('.top-title');if(title)title.textContent=LABELS[view]||({motion:'Movement Studio',growth:'Growth Garden',dump:'Brain Inbox'}[view]||'KatOS V6');
+ document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='Stage 1 · Palace';if(foot)foot.innerHTML='<b>KatOS V6</b><br>Dreamy, useful, and still yours.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const view=currentView();if(!activeNav)activeNav=defaultNav(view);
+ const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
+ const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?FUTURE_ROOMS[activeFuture][1]:NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
  app.querySelectorAll('.ey,.room-source').forEach(node=>{if(node.childElementCount===0)node.textContent=node.textContent.replace(/\bV5\b/g,'V6')});
 }
 
@@ -115,10 +133,12 @@ function showOverview(view){
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
  page.querySelector('.v6-command-room')?.remove();page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(view)}">${markup}</div>`);integrateSource(view,page);
 }
-function decorate(){brandShell();const view=currentView();if(LABELS[view]&&!['mochini','settings'].includes(view))showOverview(view)}
+function decorate(){const selected=app.querySelector('.nav-btn.active[data-view]')?.dataset.view;if(selected)activeView=selected;brandShell();const view=currentView();if(activeFuture){showFutureRoom(activeFuture);return}if(LABELS[view]&&!['mochini','settings'].includes(view))showOverview(view)}
 let queued=false;function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;decorate()})}
 
 app.addEventListener('click',event=>{
+ const palaceNav=event.target.closest('[data-v6-nav]');if(palaceNav){activeNav=palaceNav.dataset.v6Nav;activeFuture=null;activeView=palaceNav.dataset.routeView||palaceNav.dataset.view||activeView;if(palaceNav.dataset.v6Future){event.preventDefault();event.stopImmediatePropagation();showFutureRoom(palaceNav.dataset.v6Future);return}}
+ const route=event.target.closest('[data-route-view]');if(route&&!palaceNav){activeView=route.dataset.routeView||activeView;activeNav=defaultNav(activeView);activeFuture=null}
  const jump=event.target.closest('[data-v6-jump]');if(jump){event.preventDefault();app.querySelector(`[data-v6-slot="${jump.dataset.v6Jump}"]`)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
  queue();
 },true);
