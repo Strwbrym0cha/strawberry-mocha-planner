@@ -21,13 +21,13 @@ const daysFrom=(date,count=7)=>Array.from({length:count},(_,index)=>{const value
 const sundayOf=date=>{const value=new Date(`${date}T12:00:00`);value.setDate(value.getDate()-value.getDay());return value.toISOString().slice(0,10)};
 const localClock=()=>{const now=new Date;return now.getHours()*60+now.getMinutes()};
 
-function data(){
- const snapshot=snapshotV4(),date=snapshot.today||localDateKey(),state=snapshot.state||{},daily=selectDailyShit(state,date,{mode:mode()}),health=selectMedicationCabinet(state,date),work=selectWorkHQ(state,date),school=selectStudyNook(state,date),finance=selectV5MoneyGig(date),life=selectLifestyle(state,date),fixed=[],flexible=[],seen=new Set;
+function data(view){
+ const snapshot=snapshotV4(),date=snapshot.today||localDateKey(),state=snapshot.state||{},daily=['home','time','daily'].includes(view)?selectDailyShit(state,date,{mode:mode()}):{today:[],could:[],routines:[],open:[],done:[]},health=['home','daily'].includes(view)?selectMedicationCabinet(state,date):{items:[],taken:[],open:[]},work=['home','time','boss'].includes(view)?selectWorkHQ(state,date):{todaySessions:[],upcoming:[],occurrences:[],weeklyHours:{}},school=['home','study'].includes(view)?selectStudyNook(state,date):{deadlines:[],progress:{}},finance=['home','boss','money'].includes(view)?selectV5MoneyGig(date):{bills:[],goals:[],pendingPayouts:[],hq:{accounts:[]},accountBalances:{},gigWeek:{}},life=['daily','hobbies'].includes(view)?selectLifestyle(state,date):{movement:{},hobbies:{},growth:{}},fixed=[],flexible=[],seen=new Set;
  const addFixed=(kind,row,extra={})=>{const start=timeOf(row),key=`${dateOf(row)}:${start}:${titleOf(row)}`.toLowerCase();if(dateOf(row)!==date||!start||seen.has(key))return;seen.add(key);fixed.push({key,kind,title:extra.title||titleOf(row),startTime:start,endTime:text(row.endTime),duration:Number(row.duration||row.minutes||row.scheduledMinutes)||duration(start,row.endTime,60),prepMinutes:extra.prepMinutes||0,meta:extra.meta||''})};
  list(state?.life?.events).forEach(row=>addFixed('event',row,{prepMinutes:15}));list(state?.work?.gigShifts).filter(row=>!row.archivedAt).forEach(row=>addFixed('gig',row,{title:/flex/i.test(text(row.source))?'Amazon Flex block':titleOf(row,'Gig shift'),prepMinutes:25,meta:row.targetAmount?`${money(row.targetAmount)} expected`:''}));list(work.todaySessions).forEach(row=>addFixed('work',{...row,date},{title:titleOf(row,'Client session'),prepMinutes:30}));
  const addFlex=(kind,row,priority=30)=>{if(!row?.id)return;flexible.push({key:`${kind}:${row.id}`,kind,title:titleOf(row),duration:Math.max(5,Number(row.duration||row.minutes)||15),priority,firstMove:text(row.firstStep||row.tinyStart)||'Open it and choose the smallest move.'})};
  list(daily.today).forEach(row=>addFlex(row.kind,row,row.hard?100:75));list(daily.could).forEach(row=>addFlex(row.kind,row,30));list(daily.routines).filter(row=>!['complete','skipped'].includes(row.status)&&routineFitsNow(row)).forEach(row=>addFlex('routine',row,55));if(school.nextStep)addFlex('study',{...school.nextStep,id:school.nextStep.id||'focus',minutes:30},45);
- return{snapshot,state,date,daily,health,work,school,finance,life,day:buildAdaptiveDay({nowMinutes:localClock(),fixed,flexible})};
+ return{snapshot,state,date,daily,health,work,school,finance,life,day:view==='home'?buildAdaptiveDay({nowMinutes:localClock(),fixed,flexible}):{active:null,next:null,pocketMinutes:0,recommendation:null}};
 }
 
 const routeButton=(label,view,options={})=>`<button type="button" class="btn ${options.primary?'primary':'soft'}" data-route-view="${esc(view)}"${options.lane?` data-route-lane="${esc(options.lane)}"`:''}>${esc(label)}</button>`;
@@ -111,7 +111,7 @@ function integrateSource(view,page){
  room.querySelectorAll('[data-v6-slot]').forEach(slot=>{if(!slot.children.length)slot.innerHTML='<p class="v6-soft-empty">Nothing is waiting in this section.</p>'});
 }
 function showOverview(view){
- const page=app.querySelector('.main>.page');if(!page)return;if(page.querySelector('.v6-command-room')){integrateSource(view,page);return}const markup=roomMarkup(view,data());if(!markup)return;
+ const page=app.querySelector('.main>.page');if(!page)return;if(page.querySelector('.v6-command-room')){integrateSource(view,page);return}const markup=roomMarkup(view,data(view));if(!markup)return;
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
  page.querySelector('.v6-command-room')?.remove();page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(view)}">${markup}</div>`);integrateSource(view,page);
 }
