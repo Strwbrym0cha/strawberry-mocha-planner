@@ -15,7 +15,8 @@ test('V6 uses the narrow render lifecycle without an app-wide observer',()=>{
 test('V6 has a genuinely new Life Command Center information architecture',()=>{
  for(const label of['Today','My Week','Care & Routines','Work Studio','Money Café','School Lab','Fun Central','Mochini','Memory Box'])assert.match(command,new RegExp(label.replace(/[&]/g,'\\&')));
  for(const room of['v6-focus-stage','v6-week-board','v6-care-runway','v6-studio-lanes','v6-money-counter','v6-school-bench','v6-fun-picker','v6-memory-shelf'])assert.match(command,new RegExp(room));
- assert.match(command,/Open full calendar/);assert.match(command,/Enter RBT studio/);assert.match(command,/Enter gig studio/);
+ assert.match(command,/integrateSource/);assert.match(command,/data-v6-slot/);assert.match(command,/CARE BOARD/);assert.match(command,/ACTIVE WORK LANE/);
+ assert.doesNotMatch(command,/DETAIL_KEY/);assert.doesNotMatch(command,/showDetail/);
 });
 
 test('shared Mochini art resolves from the V5 module instead of the active document',()=>{
