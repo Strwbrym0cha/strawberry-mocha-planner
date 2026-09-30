@@ -1,5 +1,5 @@
 export const ROOM_STORAGE_KEY='katos_v6_new_rooms_v1';
-export const ROOM_SCHEMA_VERSION=1;
+export const ROOM_SCHEMA_VERSION=2;
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -8,7 +8,7 @@ const makeId=()=>globalThis.crypto?.randomUUID?.()||`v6-${Date.now().toString(36
 const clone=value=>JSON.parse(JSON.stringify(value));
 
 export function emptyRoomState(){
- return{schemaVersion:ROOM_SCHEMA_VERSION,rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]}};
+ return{schemaVersion:ROOM_SCHEMA_VERSION,rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]},smart:{settings:{capacityOverride:'',contextMode:'Home',recoveryDay:false,recoveryDate:''},openLoops:[],decisions:[],taskMeta:[],resetRecipes:[],prepPacks:[],calendarLinks:[],gigRoutes:[],adaptiveGoals:[],maintenance:[],inventory:[],skills:[],wiki:[],brainRoutes:[],nextHourPlans:[]}};
 }
 
 export function normalizeRoomState(value){
@@ -20,6 +20,7 @@ export function normalizeRoomState(value){
    else if(collection==='settings')base[room].settings={...base[room].settings,...(current.settings||{})};
   }
  }
+ const smart=source.smart&&typeof source.smart==='object'?source.smart:{};base.smart.settings={...base.smart.settings,...(smart.settings||{})};for(const collection of Object.keys(base.smart).filter(key=>key!=='settings'))base.smart[collection]=list(smart[collection]).filter(row=>row&&typeof row==='object');
  return base;
 }
 
@@ -61,7 +62,8 @@ export function boredSuggestions(rose,filters={}){
   ...activeRecords(rose?.projects).filter(row=>!['Finished','Paused'].includes(row.status)).map(row=>({...row,source:row.projectType==='Side Quest'?'Side Quest':'Hobby Project',label:row.name,time:row.timeRange,energy:row.energy,cost:row.cost})),
   ...activeRecords(rose?.ideas).map(row=>({...row,source:'Idea Garden',label:row.idea,time:row.timeRange,energy:row.energy,cost:row.cost}))
  ];
- return candidates.filter(row=>timeRank(row.time||'120')<=maxTime&&energyRank(row.energy||'medium')<=maxEnergy&&costRank(row.cost||'flexible')<=maxCost);
+ const context=String(filters.context||'').toLowerCase(),placeWanted=/out/.test(context)?'outdoor':/home|study|work|bed/.test(context)?'indoor':'';
+ return candidates.filter(row=>timeRank(row.time||'120')<=maxTime&&energyRank(row.energy||'medium')<=maxEnergy&&costRank(row.cost||'flexible')<=maxCost&&(!placeWanted||!row.place||String(row.place).toLowerCase()==='either'||String(row.place).toLowerCase()===placeWanted));
 }
 
 export function convertRoseIdea(store,id,target){

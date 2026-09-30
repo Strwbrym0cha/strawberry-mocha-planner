@@ -23,9 +23,10 @@ test('watch progress respects movies and a known episode total',()=>{
 });
 
 test('Bored Button filters saved comforts by time, energy, and cost',()=>{
- const rose={cozy:[{id:'a',activity:'Color',timeRange:'15',energy:'tiny',cost:'$0'},{id:'b',activity:'Pottery',timeRange:'120',energy:'lots',cost:'flexible'}],projects:[{id:'c',name:'Tiny collage',status:'Doing',timeRange:'30',energy:'medium',cost:'under $10'}],ideas:[]};
+ const rose={cozy:[{id:'a',activity:'Color',timeRange:'15',energy:'tiny',cost:'$0',place:'Indoor'},{id:'b',activity:'Pottery',timeRange:'120',energy:'lots',cost:'flexible',place:'Outdoor'}],projects:[{id:'c',name:'Tiny collage',status:'Doing',timeRange:'30',energy:'medium',cost:'under $10'}],ideas:[]};
  assert.deepEqual(boredSuggestions(rose,{time:'15',energy:'tiny',budget:'$0'}).map(row=>row.label),['Color']);
  assert.equal(boredSuggestions(rose,{time:'120',energy:'lots',budget:'flexible'}).length,3);
+ assert.deepEqual(boredSuggestions(rose,{time:'120',energy:'lots',budget:'flexible',context:'Out & About'}).map(row=>row.label),['Pottery','Tiny collage']);
 });
 
 test('Idea Garden conversion creates one destination and marks the source',()=>{

@@ -23,7 +23,7 @@ test('V6 has a genuinely new Life Command Center information architecture',()=>{
 test('V6 Palace styling is centralized and scoped away from V5',()=>{
  assert.match(index,/palace\.css/);assert.match(index,/The Palace/);
  for(const token of['--v6-pearl:#fff9fd','--v6-ballet:#f8c8dc','--v6-strawberry:#f5afc9','--v6-lavender:#d9c4f5','--v6-violet:#b99be8','--v6-matcha:#bfd6aa'])assert.match(palace,new RegExp(token));
- assert.match(palace,/html\[data-katos-version="6"\]/);assert.match(command,/Stage 2 · New Rooms/);assert.match(command,/renderNewRoom/);
+ assert.match(palace,/html\[data-katos-version="6"\]/);assert.match(command,/Stage 3 · Smart Palace/);assert.match(command,/renderNewRoom/);assert.match(command,/decorateSmartPalace/);
 });
 
 test('shared Mochini art resolves from the V5 module instead of the active document',()=>{
