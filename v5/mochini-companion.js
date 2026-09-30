@@ -10,7 +10,7 @@ const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const since=stamp=>{const value=Date.parse(stamp||'');return Number.isFinite(value)?Date.now()-value:Infinity};
 const physicalSprites={idle:'mochini-canonical-hero.webp',happy:'expressions/happy.webp',excited:'expressions/berry.webp',berry:'expressions/berry.webp',poke:'expressions/poke.webp',surprised:'expressions/surprised.webp',sleepy:'expressions/sleepy.webp',grumpy:'expressions/grumpy.webp',thinking:'expressions/thinking.webp',confused:'expressions/confused.webp',proud:'expressions/proud.webp',love:'expressions/love.webp'};
-const spriteFor=mood=>`./assets/mochini/${physicalSprites[expressionForMood(mood)]||physicalSprites.idle}`;
+const spriteFor=mood=>new URL(`./assets/mochini/${physicalSprites[expressionForMood(mood)]||physicalSprites.idle}`,import.meta.url).href;
 const sceneMap={'tucked-in':['🛏️','sleeping'],'worm-research':['🪱📖','worm-research'],'study-book':['📖','studying'],'car-ride':['🚗','driving'],clipboard:['📋','working'],cats:['🐈🐈','cats'],'money-check':['🧾','money'],calendar:['🗓️','calendar'],stretching:['🌿','movement'],plant:['🪴','growth'],notes:['✏️','notes'],'memory-box':['📦','archive'],gears:['⚙️','settings'],checklist:['🍓✓','daily'],'berry-coma':['🍓💤','sleeping'],'eating-berries':['🍓','berries'],princessing:['👑','princessing'],'reacting-to-pokes':['☝🏽','poked']};
 
 function unwrap(container){let current=container;for(let i=0;i<3;i++){if(current?.data&&typeof current.data==='object'&&!Array.isArray(current.data))current=current.data;else break}return current}

@@ -1,7 +1,7 @@
 // Mochini V5 approved-art atlas rig. Body/tab mode and emotion are independent.
 export const MOCHINI_ATLAS_VERSION='6.5.0-approved-art-atlases';
-export const FACE_ATLAS='./assets/mochini/mochini-face-atlas-v1.webp';
-export const MODE_ATLAS='./assets/mochini/mochini-mode-atlas-v1.webp';
+export const FACE_ATLAS=new URL('./assets/mochini/mochini-face-atlas-v1.webp',import.meta.url).href;
+export const MODE_ATLAS=new URL('./assets/mochini/mochini-mode-atlas-v1.webp',import.meta.url).href;
 export const FACE_KEYS=['content','happy','excited','playful','silly','proud','love','cozy','sleepy','drowsy','tired','bored','restless','curious','inquisitive','focused','thinking','confused','surprised','suspicious','grumpy','annoyed','mad','sulky','overwhelmed','determined','chaotic','shy','stuffed','peaceful'];
 export const MODE_KEYS=['home','daily','schedule','work','money','study','pings','gig','career','settings'];
 const faceIndex=Object.fromEntries(FACE_KEYS.map((key,index)=>[key,index]));

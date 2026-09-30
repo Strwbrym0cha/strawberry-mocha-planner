@@ -1,11 +1,11 @@
 import{FACE_ATLAS,FACE_KEYS,normalizeFace}from'./mochini-atlas-rig.js?v=6.6.0-approved-atlas-final';
-import{legacyFaceFallback}from'./mochini-face-manifest.js?v=6.6.0-approved-atlas-final';
+import{legacyFaceFallback,mochiniAssetPath}from'./mochini-face-manifest.js?v=6.6.0-approved-atlas-final';
 
 const CLOSED_FACE='sleepy';
 let faceReady=false;
 
 const preload=url=>new Promise(resolve=>{const image=new Image();image.onload=()=>resolve(true);image.onerror=()=>resolve(false);image.src=url});
-const heroFacePath=(face,blink=false)=>blink?'./assets/mochini/expressions/closed.webp':legacyFaceFallback(normalizeFace(face));
+const heroFacePath=(face,blink=false)=>blink?mochiniAssetPath('expressions/closed.webp'):legacyFaceFallback(normalizeFace(face));
 
 function heroMood(live){
   return normalizeFace(
@@ -21,7 +21,7 @@ function applyHeroFace(live,face,blink=false){
   if(!art)return;
   const key=normalizeFace(face),src=heroFacePath(key,blink);
   art.dataset.mochiniFace=blink?'closed':key;
-  art.onerror=()=>{art.onerror=null;art.src='./assets/mochini/mochini-canonical-hero.webp'};
+  art.onerror=()=>{art.onerror=null;art.src=mochiniAssetPath('mochini-canonical-hero.webp')};
   if(art.getAttribute('src')!==src)art.src=src;
 }
 

@@ -3,6 +3,7 @@
 // Each mood gets one whole-face asset slot so eyes/nose/mouth are never assembled separately.
 export const MOCHINI_FACE_VERSION='6.4.0-face-slots';
 export const MOCHINI_FACE_KEYS=['content','happy','excited','playful','silly','proud','love','cozy','sleepy','drowsy','tired','bored','restless','curious','inquisitive','focused','thinking','confused','surprised','suspicious','grumpy','annoyed','mad','sulky','overwhelmed','determined','chaotic','shy','stuffed','peaceful'];
+export const mochiniAssetPath=path=>new URL(`./assets/mochini/${path}`,import.meta.url).href;
 
 // Approved reaction-sheet source references. Cell numbers are 1-based, left-to-right then top-to-bottom.
 // These references are deliberately separate from runtime asset paths so the art can be re-cut without touching mood logic.
@@ -39,18 +40,18 @@ export const APPROVED_FACE_SOURCE={
   peaceful:{sheet:3,cell:8,label:'Content / peaceful'}
 };
 
-export const faceAssetPath=mood=>`./assets/mochini/faces/${MOCHINI_FACE_KEYS.includes(mood)?mood:'content'}.webp`;
-export const blinkFaceAssetPath='./assets/mochini/faces/blink.webp';
+export const faceAssetPath=mood=>mochiniAssetPath(`faces/${MOCHINI_FACE_KEYS.includes(mood)?mood:'content'}.webp`);
+export const blinkFaceAssetPath=mochiniAssetPath('faces/blink.webp');
 
 // Legacy full-character fallbacks stay available until every approved face binary is cut and committed.
 const LEGACY={content:'mochini-canonical-hero.webp',happy:'expressions/happy.webp',excited:'expressions/berry.webp',playful:'expressions/poke.webp',silly:'expressions/confused.webp',proud:'expressions/proud.webp',love:'expressions/love.webp',cozy:'expressions/sleepy.webp',sleepy:'expressions/sleepy.webp',drowsy:'expressions/sleepy.webp',tired:'expressions/sleepy.webp',bored:'expressions/thinking.webp',restless:'expressions/confused.webp',curious:'expressions/thinking.webp',inquisitive:'expressions/thinking.webp',focused:'expressions/thinking.webp',thinking:'expressions/thinking.webp',confused:'expressions/confused.webp',surprised:'expressions/surprised.webp',suspicious:'expressions/grumpy.webp',grumpy:'expressions/grumpy.webp',annoyed:'expressions/grumpy.webp',mad:'expressions/grumpy.webp',sulky:'expressions/grumpy.webp',overwhelmed:'expressions/confused.webp',determined:'expressions/proud.webp',chaotic:'expressions/confused.webp',shy:'expressions/love.webp',stuffed:'expressions/sleepy.webp',peaceful:'mochini-canonical-hero.webp'};
-export const legacyFaceFallback=mood=>`./assets/mochini/${LEGACY[mood]||LEGACY.content}`;
+export const legacyFaceFallback=mood=>mochiniAssetPath(LEGACY[mood]||LEGACY.content);
 
 export function setMoodFace(img,mood,{blink=false}={}){
   if(!img)return;
   const key=MOCHINI_FACE_KEYS.includes(mood)?mood:'content';
   const primary=blink?blinkFaceAssetPath:faceAssetPath(key);
-  const fallback=blink?'./assets/mochini/expressions/closed.webp':legacyFaceFallback(key);
+  const fallback=blink?mochiniAssetPath('expressions/closed.webp'):legacyFaceFallback(key);
   img.dataset.mochiniFace=blink?'blink':key;
   img.onerror=()=>{img.onerror=null;if(img.getAttribute('src')!==fallback)img.src=fallback};
   if(img.getAttribute('src')!==primary)img.src=primary;
