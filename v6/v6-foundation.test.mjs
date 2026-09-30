@@ -6,6 +6,7 @@ const[index,bootstrap,command,intelligence,manifest,companion]=await Promise.all
 
 test('V6 preserves the V5 visual and canonical feature modules',()=>{
  assert.match(index,/KatOS V6/);assert.match(index,/\.\.\/v5\/styles\.css/);assert.match(bootstrap,/\.\.\/v5\/app\.js/);assert.match(bootstrap,/mochini-approved-art\.js/);assert.match(bootstrap,/intelligence-upgrade\.js/);
+ assert.ok(bootstrap.indexOf('./command-shell.js')<bootstrap.indexOf('intelligence-upgrade.js'),'V6 shell must mount before optional enhancements');
 });
 
 test('V6 uses the narrow render lifecycle without an app-wide observer',()=>{

@@ -106,7 +106,7 @@ function integrateSource(view,page){
  room.querySelectorAll('[data-v6-slot]').forEach(slot=>{if(!slot.children.length)slot.innerHTML='<p class="v6-soft-empty">Nothing is waiting in this section.</p>'});
 }
 function showOverview(view){
- const page=app.querySelector('.main>.page');if(!page||page.querySelector('.v6-command-room'))return;const markup=roomMarkup(view,data());if(!markup)return;
+ const page=app.querySelector('.main>.page');if(!page)return;if(page.querySelector('.v6-command-room')){integrateSource(view,page);return}const markup=roomMarkup(view,data());if(!markup)return;
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
  page.querySelector('.v6-command-room')?.remove();page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(view)}">${markup}</div>`);integrateSource(view,page);
 }
