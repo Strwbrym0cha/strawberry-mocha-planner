@@ -1,5 +1,5 @@
-import{FACE_ATLAS,FACE_KEYS,normalizeFace}from'./mochini-atlas-rig.js?v=6.6.0-approved-atlas-final';
-import{legacyFaceFallback,mochiniAssetPath}from'./mochini-face-manifest.js?v=6.6.0-approved-atlas-final';
+import{FACE_ATLAS,FACE_KEYS,normalizeFace}from'./mochini-atlas-rig.js?v=6.6.1-v6-assets';
+import{legacyFaceFallback,mochiniAssetPath}from'./mochini-face-manifest.js?v=6.6.1-v6-assets';
 
 const CLOSED_FACE='sleepy';
 let faceReady=false;

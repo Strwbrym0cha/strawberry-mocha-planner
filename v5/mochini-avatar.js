@@ -1,4 +1,4 @@
-import{MOCHINI_FACE_KEYS,setMoodFace}from'./mochini-face-manifest.js?v=6.4.0-face-slots';
+import{MOCHINI_FACE_KEYS,setMoodFace}from'./mochini-face-manifest.js?v=6.4.1-v6-assets';
 
 // V5 Mochini rig: mood/reactions select one complete approved face at a time.
 let active=null,blinkTimer=null,visible=true,reactionTimer=null;

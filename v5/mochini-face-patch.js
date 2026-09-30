@@ -1,4 +1,4 @@
-import{MOCHINI_FACE_KEYS,setMoodFace}from'./mochini-face-manifest.js?v=6.4.0-face-slots';
+import{MOCHINI_FACE_KEYS,setMoodFace}from'./mochini-face-manifest.js?v=6.4.1-v6-assets';
 const key=value=>MOCHINI_FACE_KEYS.includes(value)?value:'content';
 function sync(mood){
   const root=document.querySelector('[data-mc-root]');if(!root)return;
