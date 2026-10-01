@@ -1,5 +1,5 @@
 export const ROOM_STORAGE_KEY='katos_v6_new_rooms_v1';
-export const ROOM_SCHEMA_VERSION=3;
+export const ROOM_SCHEMA_VERSION=4;
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -8,12 +8,12 @@ const makeId=()=>globalThis.crypto?.randomUUID?.()||`v6-${Date.now().toString(36
 const clone=value=>JSON.parse(JSON.stringify(value));
 
 export function emptyRoomState(){
- return{schemaVersion:ROOM_SCHEMA_VERSION,rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]},smart:{settings:{capacityOverride:'',contextMode:'Home',recoveryDay:false,recoveryDate:''},openLoops:[],decisions:[],taskMeta:[],resetRecipes:[],prepPacks:[],calendarLinks:[],gigRoutes:[],adaptiveGoals:[],maintenance:[],inventory:[],skills:[],wiki:[],brainRoutes:[],nextHourPlans:[]},living:{settings:{foyerOrder:['capacity','schedule','focus','context','next-hour'],hiddenWidgets:[]},chapters:[],milestones:[],pins:[]}};
+ return{schemaVersion:ROOM_SCHEMA_VERSION,bell:{settings:{},reminders:[]},rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]},smart:{settings:{capacityOverride:'',contextMode:'Home',recoveryDay:false,recoveryDate:''},openLoops:[],decisions:[],taskMeta:[],resetRecipes:[],prepPacks:[],calendarLinks:[],gigRoutes:[],adaptiveGoals:[],maintenance:[],inventory:[],skills:[],wiki:[],brainRoutes:[],nextHourPlans:[]},living:{settings:{foyerOrder:['capacity','schedule','focus','context','next-hour'],hiddenWidgets:[]},chapters:[],milestones:[],pins:[]}};
 }
 
 export function normalizeRoomState(value){
  const base=emptyRoomState(),source=value&&typeof value==='object'?value:{};
- for(const room of ['rose','moon','love','wishing','living']){
+ for(const room of ['bell','rose','moon','love','wishing','living']){
   const current=source[room]&&typeof source[room]==='object'?source[room]:{};
   for(const collection of Object.keys(base[room])){
    if(Array.isArray(base[room][collection]))base[room][collection]=list(current[collection]).filter(row=>row&&typeof row==='object');
