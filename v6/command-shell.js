@@ -127,7 +127,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.2 · Carriage Refresh';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.3 · Goal Refresh';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
  const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?(NEW_ROOM_LABELS[activeFuture]||FUTURE_ROOMS[activeFuture]?.[1]||'The Palace'):NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
@@ -160,7 +160,7 @@ function integrateSource(view,page){
 function showOverview(view){
  const page=app.querySelector('.main>.page');if(!page)return;if(view==='hobbies'){renderNewRoom('rose-garden',page);return}const identity=view==='money'&&activeNav==='carriage-house'?'carriage':view,existing=page.querySelector('.v6-command-room');
  if(existing){
-  if(identity==='carriage')existing.remove();
+  if(identity==='carriage'||identity==='money')existing.remove();
   else{integrateSource(identity,page);return}
  }
  const markup=roomMarkup(view,data(view));if(!markup)return;
@@ -170,7 +170,7 @@ function showOverview(view){
 function decorate(){const selected=app.querySelector('.nav-btn.active[data-view]')?.dataset.view;if(selected)activeView=selected;brandShell();const view=currentView();if(activeFuture){showFutureRoom(activeFuture);return}if(LABELS[view]&&!['mochini','settings'].includes(view))showOverview(view);decorateSmartPalace();decorateLivingPalace()}
 let queued=false;function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;decorate()})}
 
-app.addEventListener('submit',event=>{if(event.target.closest('[data-flex-shift-form],[data-doordash-shift-form]'))requestAnimationFrame(()=>requestAnimationFrame(queue))},true);
+app.addEventListener('submit',event=>{if(event.target.closest('[data-flex-shift-form],[data-doordash-shift-form],[data-money-form]'))requestAnimationFrame(()=>requestAnimationFrame(queue))},true);
 app.addEventListener('click',event=>{
  const roomsButton=event.target.closest('[data-palace-rooms]');if(roomsButton){event.preventDefault();event.stopImmediatePropagation();roomsOpen=!roomsOpen;palaceDock();return}
  const roomsClose=event.target.closest('[data-palace-rooms-close]');if(roomsClose||event.target.matches('[data-palace-drawer]')){event.preventDefault();roomsOpen=false;palaceDock();return}
