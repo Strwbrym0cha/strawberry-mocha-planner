@@ -127,7 +127,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.10 · Gig Finish No Freeze';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.11 · Interaction Stable';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
  const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?(NEW_ROOM_LABELS[activeFuture]||FUTURE_ROOMS[activeFuture]?.[1]||'The Palace'):NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
@@ -174,15 +174,18 @@ app.addEventListener('submit',event=>{if(event.target.closest('[data-flex-shift-
 app.addEventListener('click',event=>{
  const roomsButton=event.target.closest('[data-palace-rooms]');if(roomsButton){event.preventDefault();event.stopImmediatePropagation();roomsOpen=!roomsOpen;palaceDock();return}
  const roomsClose=event.target.closest('[data-palace-rooms-close]');if(roomsClose||event.target.matches('[data-palace-drawer]')){event.preventDefault();roomsOpen=false;palaceDock();return}
- const palaceNav=event.target.closest('[data-v6-nav]');if(palaceNav){activeNav=palaceNav.dataset.v6Nav;activeFuture=null;activeView=palaceNav.dataset.routeView||palaceNav.dataset.view||activeView;roomsOpen=false;if(palaceNav.dataset.v6Future){event.preventDefault();event.stopImmediatePropagation();showFutureRoom(palaceNav.dataset.v6Future);return}}
+ const palaceNav=event.target.closest('[data-v6-nav]');if(palaceNav){activeNav=palaceNav.dataset.v6Nav;activeFuture=null;activeView=palaceNav.dataset.routeView||palaceNav.dataset.view||activeView;roomsOpen=false;if(palaceNav.dataset.v6Future){event.preventDefault();event.stopImmediatePropagation();showFutureRoom(palaceNav.dataset.v6Future);return}requestAnimationFrame(()=>requestAnimationFrame(queue))}
  if(palaceNav){roomsOpen=false;app.querySelector('[data-palace-drawer]')?.setAttribute('hidden','')}
- const route=event.target.closest('[data-route-view]');if(route&&!palaceNav){activeView=route.dataset.routeView||activeView;activeNav=route.dataset.routeLane==='gig'?'carriage-house':defaultNav(activeView);activeFuture=null}
+ const route=event.target.closest('[data-route-view]');if(route&&!palaceNav){activeView=route.dataset.routeView||activeView;activeNav=route.dataset.routeLane==='gig'?'carriage-house':defaultNav(activeView);activeFuture=null;requestAnimationFrame(()=>requestAnimationFrame(queue))}
  const dutyPanel=event.target.closest('[data-v6-duty-details]');if(dutyPanel){event.preventDefault();const details=app.querySelector(`[data-v6-duty-panel="${CSS.escape(dutyPanel.dataset.v6DutyDetails)}"]`);if(details){details.open=true;details.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}return}
  const jump=event.target.closest('[data-v6-jump]');if(jump){event.preventDefault();app.querySelector(`[data-v6-slot="${jump.dataset.v6Jump}"]`)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
  const archiveGoal=event.target.closest('[data-v6-gig-goal-archive]');if(archiveGoal){event.preventDefault();event.stopImmediatePropagation();if(!window.confirm('Archive this completed gig goal? It will move to Keepsake Chest and can be restored later.'))return;const result=archiveV5Record('work.gig.goals',archiveGoal.dataset.v6GigGoalArchive);if(!result.ok){window.alert(result.error||'That gig goal could not be archived.');return}archiveGoal.closest('[data-money-modal]')?.remove();queue();return}
- const preserveNative=event.target.closest('summary,[data-money-open],[data-money-close],[data-flex-plan-open],[data-doordash-plan-open],[data-gig-checkin-modal],[data-flex-shift-modal],[data-doordash-shift-modal]');
+ const preserveNative=event.target.closest('summary,button,input,select,textarea,a,[data-money-open],[data-money-close],[data-flex-plan-open],[data-doordash-plan-open],[data-gig-checkin-modal],[data-flex-shift-modal],[data-doordash-shift-modal]');
  if(preserveNative)return;
- queue();
 },true);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&roomsOpen){roomsOpen=false;palaceDock()}});
-window.addEventListener('katos:v6-refresh',queue);window.addEventListener('storage',queue);document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()});decorate();
+window.addEventListener('katos:rendered',queue);
+window.addEventListener('katos:v6-refresh',queue);
+window.addEventListener('storage',queue);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()});
+decorate();
