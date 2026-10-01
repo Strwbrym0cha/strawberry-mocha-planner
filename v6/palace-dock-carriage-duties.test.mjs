@@ -61,9 +61,9 @@ test('Carriage House does not rebuild away native details or money modals',()=>{
  assert.match(shell,/preserveNative=event\.target\.closest\('summary,\[data-money-open\],\[data-money-close\]'\)/);
 });
 
-test('Finishing a gig shift routes into the V6 summary flow',()=>{
+test('Finishing a gig shift routes into the V6 summary flow without redraw races',()=>{
  const checkin=source('./gig-shift-checkin.js'),shell=source('./command-shell.js');
- assert.match(checkin,/data-v6-nav="carriage-house"/);assert.match(checkin,/Your shift is finished and saved/);assert.match(checkin,/actualStartTime/);assert.match(checkin,/actualEndTime/);assert.match(checkin,/katos:v6-refresh/);assert.match(shell,/data-flex-plan-open/);assert.match(shell,/data-doordash-plan-open/);
+ assert.match(checkin,/data-v6-nav="carriage-house"/);assert.match(checkin,/\[data-v6-room="carriage"\]/);assert.match(checkin,/Your shift is finished and saved/);assert.match(checkin,/actualStartTime/);assert.match(checkin,/actualEndTime/);assert.match(checkin,/katos:v6-refresh/);assert.doesNotMatch(checkin,/if\(openRow\(current\)\)/);assert.match(shell,/data-gig-checkin-modal/);assert.match(shell,/data-flex-shift-modal/);assert.match(shell,/data-doordash-shift-modal/);
 });
 
 test('Bell Tower remains an independent reminder destination',()=>{
@@ -74,5 +74,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.7\.8-gig-finish-fix/);
+ const html=source('./index.html');assert.match(html,/6\.7\.9-gig-finish-stable/);
 });
