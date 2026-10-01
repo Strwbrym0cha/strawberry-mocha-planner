@@ -125,6 +125,7 @@ app.addEventListener('submit',event=>{
 },true);
 
 window.addEventListener('katos:rendered',queueDecorate);
-new MutationObserver(queueDecorate).observe(app,{childList:true});
+window.addEventListener('katos:v6-refresh',queueDecorate);
+window.addEventListener('storage',queueDecorate);
 decorate();
 
