@@ -52,18 +52,18 @@ function updateResult(form){
  output.innerHTML=miles<0?'<span>Ending miles must be at least the starting miles.</span>':`<b>${esc(miles)} miles</b><span>${esc(durationLabel(minutes))} actually worked</span>`;
 }
 
+function clearGigOverlays(){
+ app.querySelectorAll('[data-gig-checkin-modal],[data-flex-shift-modal],[data-doordash-shift-modal]').forEach(node=>node.remove());
+}
+function finishToast(plan){
+ app.querySelector('[data-gig-finish-toast]')?.remove();
+ const toast=document.createElement('div');toast.dataset.gigFinishToast='';toast.setAttribute('role','status');toast.textContent=`✓ ${planName(plan)} saved. Tap the completed shift in Carriage House to add pay, packages/stops, and expenses.`;app.append(toast);setTimeout(()=>toast.remove(),5500);
+}
 function openSummary(plan){
- close();
- const selector=isFlex(plan)?`[data-flex-plan-open="${CSS.escape(String(plan.id))}"]`:`[data-doordash-plan-open="${CSS.escape(String(plan.id))}"]`;
- const openStableRow=(remaining=48)=>{
-  const carriageRoom=app.querySelector('[data-v6-room="carriage"]'),row=carriageRoom?.querySelector(selector);
-  if(row){row.click();requestAnimationFrame(()=>requestAnimationFrame(hydrateSummary));return}
-  if(remaining>0){requestAnimationFrame(()=>openStableRow(remaining-1));return}
-  window.alert('Your shift is finished and saved. Tap the completed shift in Carriage House to add the summary.');
- };
+ clearGigOverlays();
  const carriage=app.querySelector('[data-v6-nav="carriage-house"]');
- if(carriage){carriage.click();requestAnimationFrame(()=>requestAnimationFrame(()=>openStableRow()));return}
- window.dispatchEvent(new Event('katos:v6-refresh'));requestAnimationFrame(()=>openStableRow());
+ if(carriage)carriage.click();else window.dispatchEvent(new Event('katos:v6-refresh'));
+ requestAnimationFrame(()=>requestAnimationFrame(()=>finishToast(plan)));
 }
 
 function setIfBlank(form,name,value){const input=form?.elements?.namedItem(name);if(!input||value==null||value===''||text(input.value))return;input.value=String(value)}
@@ -121,7 +121,7 @@ app.addEventListener('submit',event=>{
  if(!Number.isFinite(first)||!Number.isFinite(last)||last<first){error.textContent='Ending miles must be at least the starting miles.';return}
  const actualMinutes=Math.max(0,Math.round((end-start)/60000)),mileage=rounded(last-first),result=updateV5Record('work.gigShifts',plan.id,{checkInStatus:'finished',actualEndAt:end.toISOString(),actualEndLocal:data.actualEndLocal,endOdometer:rounded(last),actualMinutes,mileage});
  if(!result.ok){error.textContent=result.error||'KatOS could not finish this shift.';return}
- close();window.dispatchEvent(new Event('katos:v6-refresh'));requestAnimationFrame(()=>openSummary(result.entry));
+ clearGigOverlays();window.dispatchEvent(new Event('katos:v6-refresh'));requestAnimationFrame(()=>openSummary(result.entry));
 },true);
 
 window.addEventListener('katos:rendered',queueDecorate);
