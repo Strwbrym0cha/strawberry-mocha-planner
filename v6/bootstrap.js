@@ -3,7 +3,7 @@ ensureSingleDeviceIpadMode(localStorage);
 const{ensureDeviceBootstrapState}=await import('../v5/sync/sync-device-bootstrap.js?v=7.0.12-ipad-only');
 ensureDeviceBootstrapState(localStorage);
 await import('../v5/app.js?v=7.5.0-rbt-hub');
-try{await import('./command-shell.js?v=6.8.1-palace-batch1-parity')}catch(error){console.error('KatOS V6 shell failed to mount.',error);document.body.insertAdjacentHTML('afterbegin',`<div role="alert" style="position:fixed;z-index:9999;inset:8px 8px auto;padding:10px;border:1px solid #b65780;border-radius:12px;background:#fff7fb;color:#6b4352;font:12px system-ui">V6 shell error: ${String(error?.message||error)}</div>`)}
+try{await import('./command-shell.js?v=6.8.2-treasury-cash-only')}catch(error){console.error('KatOS V6 shell failed to mount.',error);document.body.insertAdjacentHTML('afterbegin',`<div role="alert" style="position:fixed;z-index:9999;inset:8px 8px auto;padding:10px;border:1px solid #b65780;border-radius:12px;background:#fff7fb;color:#6b4352;font:12px system-ui">V6 shell error: ${String(error?.message||error)}</div>`)}
 await import('../v5/sync/sync-lab.js?v=7.0.12-ipad-only');
 await import('../v5/daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('../v5/money-budgets.js?v=5.6.6-spending-budgets');
