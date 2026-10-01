@@ -127,7 +127,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.4 · Goal Display';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.5 · Carriage Controls';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
  const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?(NEW_ROOM_LABELS[activeFuture]||FUTURE_ROOMS[activeFuture]?.[1]||'The Palace'):NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
@@ -179,6 +179,8 @@ app.addEventListener('click',event=>{
  const route=event.target.closest('[data-route-view]');if(route&&!palaceNav){activeView=route.dataset.routeView||activeView;activeNav=route.dataset.routeLane==='gig'?'carriage-house':defaultNav(activeView);activeFuture=null}
  const dutyPanel=event.target.closest('[data-v6-duty-details]');if(dutyPanel){event.preventDefault();const details=app.querySelector(`[data-v6-duty-panel="${CSS.escape(dutyPanel.dataset.v6DutyDetails)}"]`);if(details){details.open=true;details.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}return}
  const jump=event.target.closest('[data-v6-jump]');if(jump){event.preventDefault();app.querySelector(`[data-v6-slot="${jump.dataset.v6Jump}"]`)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
+ const preserveNative=event.target.closest('summary,[data-money-open],[data-money-close]');
+ if(preserveNative)return;
  queue();
 },true);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&roomsOpen){roomsOpen=false;palaceDock()}});
