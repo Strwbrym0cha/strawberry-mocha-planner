@@ -46,6 +46,11 @@ test('Carriage House rebuilds after Flex or DoorDash scheduling',()=>{
  assert.match(shell,/\[data-flex-shift-form\],\[data-doordash-shift-form\],\[data-money-form\]/);
 });
 
+test('Carriage House does not rebuild away native details or money modals',()=>{
+ const shell=source('./command-shell.js');
+ assert.match(shell,/preserveNative=event\.target\.closest\('summary,\[data-money-open\],\[data-money-close\]'\)/);
+});
+
 test('Bell Tower remains an independent reminder destination',()=>{
  const shell=source('./command-shell.js'),bell=source('./bell-tower.js');
  assert.match(shell,/if\(id==='bell-tower'\)renderBellTower\(page\)/);
@@ -54,5 +59,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.7\.4-goal-display/);
+ const html=source('./index.html');assert.match(html,/6\.7\.5-carriage-controls/);
 });
