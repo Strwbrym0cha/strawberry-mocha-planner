@@ -3,7 +3,7 @@ ensureSingleDeviceIpadMode(localStorage);
 const{ensureDeviceBootstrapState}=await import('../v5/sync/sync-device-bootstrap.js?v=7.0.12-ipad-only');
 ensureDeviceBootstrapState(localStorage);
 await import('../v5/app.js?v=7.5.0-rbt-hub');
-try{await import('./command-shell.js?v=6.7.10-gig-finish-no-freeze')}catch(error){console.error('KatOS V6 shell failed to mount.',error);document.body.insertAdjacentHTML('afterbegin',`<div role="alert" style="position:fixed;z-index:9999;inset:8px 8px auto;padding:10px;border:1px solid #b65780;border-radius:12px;background:#fff7fb;color:#6b4352;font:12px system-ui">V6 shell error: ${String(error?.message||error)}</div>`)}
+try{await import('./command-shell.js?v=6.7.11-interaction-stable')}catch(error){console.error('KatOS V6 shell failed to mount.',error);document.body.insertAdjacentHTML('afterbegin',`<div role="alert" style="position:fixed;z-index:9999;inset:8px 8px auto;padding:10px;border:1px solid #b65780;border-radius:12px;background:#fff7fb;color:#6b4352;font:12px system-ui">V6 shell error: ${String(error?.message||error)}</div>`)}
 await import('../v5/sync/sync-lab.js?v=7.0.12-ipad-only');
 await import('../v5/daily-step-popup-fix.js?v=5.6.5-routine-step-modal');
 await import('../v5/money-budgets.js?v=5.6.6-spending-budgets');
@@ -17,7 +17,7 @@ await import('../v5/doordash-shift-modal.js?v=7.0.22-odometer-sunday-payout');
 await import('../v5/flex-shift-modal.js?v=7.4.0-intelligence-pass');
 await import('../v5/flex-hours.js?v=7.4.0-intelligence-pass');
 await import('../v5/unified-gig-planner.js?v=7.0.19-flex-hours');
-await import('./gig-shift-checkin.js?v=6.7.10-gig-finish-no-freeze');
+await import('./gig-shift-checkin.js?v=6.7.11-interaction-stable');
 await import('../v5/gig-archive-display-fix.js?v=5.8.5-gig-archive-filter');
 await import('../v5/routine-player.js?v=7.0.20-daily-routines');
 await import('../v5/routine-builder-layout-fix.js?v=6.15.1-routine-builder-layout');
