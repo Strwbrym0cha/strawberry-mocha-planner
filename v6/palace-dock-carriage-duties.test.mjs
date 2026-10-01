@@ -10,7 +10,7 @@ test('Palace Dock replaces the visible rail and reaches every room',()=>{
  for(const token of ['data-palace-dock','data-palace-rooms','palace-rooms-drawer','carriage-house','Palace Foyer','Royal Calendar','Bell Tower','Royal Archives'])assert.match(js,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  assert.match(css,/\.sidebar\{display:none!important\}/);
  assert.match(css,/grid-template-columns:repeat\(7/);
- assert.match(css,/padding:16px clamp\(14px,2\.4vw,32px\) calc\(104px/);
+ assert.match(css,/padding:16px clamp\(14px,2\.4vw,32px\) calc\(150px/);
 });
 
 test('Royal Duties is an action surface with collapsed Later and Done',()=>{
@@ -33,6 +33,12 @@ test('Carriage House uses canonical planned shifts, orders, goals, and payouts',
  assert.equal(model.planned.length,1);assert.equal(model.completed.length,1);assert.equal(model.remaining,28);assert.match(html,/41 packages <i>•<\/i> 23 stops/);assert.match(html,/data-flex-add/);assert.match(html,/data-doordash-add/);assert.match(html,/data-doordash-plan-open="dash-1"/);assert.match(html,/data-money-open="new-gig-goal"/);assert.match(html,/data-money-form="gig-goal-save"/);assert.match(html,/data-money-open="new-payout"/);assert.match(html,/data-money-form="payout-save"/);assert.deepEqual({state,finance},input,'building the room must not change canonical data');
 });
 
+test('Carriage House rebuilds after Flex or DoorDash scheduling',()=>{
+ const shell=source('./command-shell.js');
+ assert.match(shell,/identity==='carriage'\)existing\.remove\(\)/);
+ assert.match(shell,/\[data-flex-shift-form\],\[data-doordash-shift-form\]/);
+});
+
 test('Bell Tower remains an independent reminder destination',()=>{
  const shell=source('./command-shell.js'),bell=source('./bell-tower.js');
  assert.match(shell,/if\(id==='bell-tower'\)renderBellTower\(page\)/);
@@ -41,5 +47,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.7\.0-palace-dock-carriage-duties/);
+ const html=source('./index.html');assert.match(html,/6\.7\.2-carriage-live-refresh/);
 });
