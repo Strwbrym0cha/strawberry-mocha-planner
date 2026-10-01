@@ -1,0 +1,45 @@
+import test from'node:test';
+import assert from'node:assert/strict';
+import{readFileSync}from'node:fs';
+import{buildCarriageModel,carriageHouseMarkup,carriageShiftMetrics}from'./carriage-house.js';
+
+const source=name=>readFileSync(new URL(name,import.meta.url),'utf8');
+
+test('Palace Dock replaces the visible rail and reaches every room',()=>{
+ const js=source('./command-shell.js'),css=source('./room-identity.css');
+ for(const token of ['data-palace-dock','data-palace-rooms','palace-rooms-drawer','carriage-house','Palace Foyer','Royal Calendar','Bell Tower','Royal Archives'])assert.match(js,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ assert.match(css,/\.sidebar\{display:none!important\}/);
+ assert.match(css,/grid-template-columns:repeat\(7/);
+ assert.match(css,/padding:16px clamp\(14px,2\.4vw,32px\) calc\(104px/);
+});
+
+test('Royal Duties is an action surface with collapsed Later and Done',()=>{
+ const js=source('./command-shell.js');
+ for(const token of ['v6-duty-command-strip','v6-duty-now','v6-duty-next','data-duty-later','data-duty-done','TODAY’S RHYTHM','MEDICATION CABINET','data-v6-duty-panel="medication"','data-smart-action="energy"'])assert.equal(js.includes(token),true,`${token} should be present`);
+ assert.equal(js.includes('<h2>Must Do</h2>'),false);
+ assert.equal(js.includes('<h2>Should Do</h2>'),false);
+ assert.doesNotMatch(js,/data-duty-later[^>]*\sopen(?:\s|>)/);
+ assert.doesNotMatch(js,/data-duty-done[^>]*\sopen(?:\s|>)/);
+});
+
+test('Carriage House metrics preserve separate Flex route facts',()=>{
+ const shift={id:'flex-1',source:'Amazon Flex',status:'completed',targetAmount:63,actualAmount:72,actualStartTime:'14:35',actualEndTime:'18:05',startOdometer:1200.2,endOdometer:1241.7,packageCount:41,stopCount:23,gasExpense:5,foodExpense:3,tollsParkingExpense:2,otherShiftExpense:1};
+ const before=structuredClone(shift),metrics=carriageShiftMetrics(shift);
+ assert.equal(metrics.packages,41);assert.equal(metrics.stops,23);assert.equal(metrics.mileage,41.5);assert.equal(metrics.expenses,11);assert.equal(metrics.net,61);assert.equal(metrics.profitPerHour,17.43);assert.equal(metrics.profitPerMile,1.47);assert.deepEqual(shift,before,'metric calculation must not mutate the saved shift');
+});
+
+test('Carriage House uses canonical planned shifts, orders, goals, and payouts',()=>{
+ const shift={id:'flex-1',source:'Amazon Flex',date:'2026-09-30',startTime:'14:30',endTime:'18:00',targetAmount:63,status:'completed',summaryOrderId:'order-1',packageCount:41,stopCount:23,actualAmount:72,actualMinutes:210,mileage:41.5},planned={id:'dash-1',source:'DoorDash',date:'2026-10-01',startTime:'17:00',endTime:'20:00',targetAmount:55,status:'planned'},state={work:{gigShifts:[shift,planned]}},finance={gig:{orders:[{id:'order-1',basePay:72,packageCount:41,stopCount:23}]},dailyGigGoal:{targetAmount:100,name:'Today'},gigToday:{gross:72},gigWeek:{gross:180,simpleNet:154,count:7},gigComparison:[],pendingPayouts:[{id:'pay-1',amount:72}]},input=structuredClone({state,finance}),model=buildCarriageModel({today:'2026-09-30',state,finance}),html=carriageHouseMarkup(model);
+ assert.equal(model.planned.length,1);assert.equal(model.completed.length,1);assert.equal(model.remaining,28);assert.match(html,/41 packages <i>•<\/i> 23 stops/);assert.match(html,/data-flex-add/);assert.match(html,/data-doordash-add/);assert.match(html,/data-doordash-plan-open="dash-1"/);assert.match(html,/data-money-open="new-gig-goal"/);assert.match(html,/data-money-form="gig-goal-save"/);assert.match(html,/data-money-open="new-payout"/);assert.match(html,/data-money-form="payout-save"/);assert.deepEqual({state,finance},input,'building the room must not change canonical data');
+});
+
+test('Bell Tower remains an independent reminder destination',()=>{
+ const shell=source('./command-shell.js'),bell=source('./bell-tower.js');
+ assert.match(shell,/if\(id==='bell-tower'\)renderBellTower\(page\)/);
+ assert.match(bell,/bell\.reminders/);
+ assert.doesNotMatch(bell,/life\.tasks\.push|daily-action="complete"/);
+});
+
+test('release build identifier is updated without V5 versioning changes',()=>{
+ const html=source('./index.html');assert.match(html,/6\.7\.0-palace-dock-carriage-duties/);
+});
