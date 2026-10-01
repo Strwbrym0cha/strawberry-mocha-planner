@@ -20,7 +20,7 @@ function durationLabel(minutes){
  const total=Math.max(0,Math.round(Number(minutes)||0)),hours=Math.floor(total/60),rest=total%60;
  return[hours?`${hours} hr`:'',rest?`${rest} min`:''].filter(Boolean).join(' ')||'0 min';
 }
-function checkinState(plan){return plan?.actualEndAt?'finished':plan?.actualStartAt?'started':'ready'}
+function checkinState(plan){return plan?.summaryOrderId||plan?.status==='completed'||plan?.actualEndAt||plan?.checkInStatus==='finished'?'finished':plan?.actualStartAt?'started':'ready'}
 function planName(plan){return isFlex(plan)?'Amazon Flex block':'DoorDash shift'}
 function actionLabel(plan){return checkinState(plan)==='finished'?'Add summary':checkinState(plan)==='started'?'Finish shift':'Start shift'}
 
@@ -34,7 +34,7 @@ function startForm(plan){
 }
 function finishForm(plan){
  const start=plan.actualStartLocal||localDateTime(plan.actualStartAt),end=plan.actualEndLocal||localDateTime(plan.actualEndAt||new Date());
- return`<form data-gig-checkin-form="finish" data-plan-id="${esc(plan.id)}"><section class="gig-checkin-stage"><div class="gig-checkin-callout on-shift"><b>Finish the real shift</b><span>Started ${esc(timeLabel(plan.actualStartAt))}${Number.isFinite(Number(plan.startOdometer))?` · ${esc(plan.startOdometer)} miles`:''}</span></div><div class="room-detail-fields"><label class="money-field"><span>Actual end</span><input name="actualEndLocal" type="datetime-local" value="${esc(end)}" data-gig-checkin-end required></label><label class="money-field"><span>Ending odometer</span><input name="endOdometer" type="number" min="${esc(plan.startOdometer??0)}" step="0.1" inputmode="decimal" value="${esc(plan.endOdometer??'')}" placeholder="Your odometer now" data-gig-checkin-odometer required></label></div><div class="gig-checkin-result" data-gig-checkin-result data-start="${esc(start)}" data-start-odometer="${esc(plan.startOdometer??'')}"><span>Enter the ending odometer to calculate the trip.</span></div><p class="gig-checkin-error" data-gig-checkin-error aria-live="polite"></p><div class="button-row daily-actions"><button class="btn primary">✓ Finish + add summary</button><button type="button" class="btn soft" data-gig-checkin-close>Keep shift open</button></div></section></form>`;
+ return`<form data-gig-checkin-form="finish" data-plan-id="${esc(plan.id)}"><section class="gig-checkin-stage"><div class="gig-checkin-callout on-shift"><b>Finish the real shift</b><span>Started ${esc(timeLabel(plan.actualStartAt))}${Number.isFinite(Number(plan.startOdometer))?` · ${esc(plan.startOdometer)} miles`:''}</span></div><div class="room-detail-fields"><label class="money-field"><span>Actual end</span><input name="actualEndLocal" type="datetime-local" value="${esc(end)}" data-gig-checkin-end required></label><label class="money-field"><span>Ending odometer</span><input name="endOdometer" type="number" min="${esc(plan.startOdometer??0)}" step="0.1" inputmode="decimal" value="${esc(plan.endOdometer??'')}" placeholder="Your odometer now" data-gig-checkin-odometer required></label></div><div class="gig-checkin-result" data-gig-checkin-result data-start="${esc(start)}" data-start-odometer="${esc(plan.startOdometer??'')}"><span>Enter the ending odometer to calculate the trip.</span></div><p class="gig-checkin-error" data-gig-checkin-error aria-live="polite"></p><div class="button-row daily-actions"><button class="btn primary">✓ Finish shift</button><button type="button" class="btn soft" data-gig-checkin-close>Keep shift open</button></div></section></form>`;
 }
 function openCheckin(plan){
  if(!plan)return;app.querySelector('[data-gig-checkin-modal]')?.remove();
@@ -59,11 +59,19 @@ function finishToast(plan){
  app.querySelector('[data-gig-finish-toast]')?.remove();
  const toast=document.createElement('div');toast.dataset.gigFinishToast='';toast.setAttribute('role','status');toast.textContent=`✓ ${planName(plan)} saved. Tap the completed shift in Carriage House to add pay, packages/stops, and expenses.`;app.append(toast);setTimeout(()=>toast.remove(),5500);
 }
-function openSummary(plan){
+function returnToCarriage(){
  clearGigOverlays();
  const carriage=app.querySelector('[data-v6-nav="carriage-house"]');
  if(carriage)carriage.click();else window.dispatchEvent(new Event('katos:v6-refresh'));
- requestAnimationFrame(()=>requestAnimationFrame(()=>finishToast(plan)));
+}
+function openSummary(plan){
+ const selector=`.v6-command-room[data-v6-room="carriage"] [${isFlex(plan)?'data-flex-plan-open':'data-doordash-plan-open'}="${CSS.escape(String(plan.id))}"]`;
+ const row=app.querySelector(selector);
+ if(row){clearGigOverlays();row.click();hydrateSummary();return}
+ returnToCarriage();
+ let attempts=0;
+ function openWhenReady(){const target=app.querySelector(selector);if(target){target.click();hydrateSummary();return}if(++attempts<6)requestAnimationFrame(openWhenReady)}
+ requestAnimationFrame(openWhenReady);
 }
 
 function setIfBlank(form,name,value){const input=form?.elements?.namedItem(name);if(!input||value==null||value===''||text(input.value))return;input.value=String(value)}
@@ -104,6 +112,7 @@ let queued=false;function queueDecorate(){if(queued)return;queued=true;requestAn
 
 app.addEventListener('click',event=>{
  const action=event.target.closest?.('[data-gig-checkin-action]');if(action&&app.contains(action)){event.preventDefault();event.stopPropagation();openCheckin(planById(action.dataset.planId));return}
+ if(event.target.closest?.('[data-flex-plan-open],[data-doordash-plan-open]'))requestAnimationFrame(hydrateSummary);
  if(event.target.closest?.('[data-gig-checkin-close]')||event.target.matches?.('[data-gig-checkin-modal]')){event.preventDefault();event.stopPropagation();close()}
 },true);
 app.addEventListener('input',event=>{const form=event.target.closest?.('[data-gig-checkin-form="finish"]');if(form)updateResult(form)},true);
@@ -114,18 +123,19 @@ app.addEventListener('submit',event=>{
   const start=new Date(data.actualStartLocal),odometer=Number(data.startOdometer);if(Number.isNaN(start.getTime())||!Number.isFinite(odometer)||odometer<0){error.textContent='Add the actual start and starting odometer.';return}
   const result=updateV5Record('work.gigShifts',plan.id,{checkInStatus:'started',actualStartAt:start.toISOString(),actualStartLocal:data.actualStartLocal,startOdometer:rounded(odometer),actualEndAt:'',actualEndLocal:'',endOdometer:'',actualMinutes:0,mileage:0});
   if(!result.ok){error.textContent=result.error||'KatOS could not start this shift.';return}
-  runV5LaunchAction({type:'launch-start',key:`gig:${plan.id}`,kind:'gig',id:plan.id,date:plan.date||localDateKey()});close();queueDecorate();return;
+  runV5LaunchAction({type:'launch-start',key:`gig:${plan.id}`,kind:'gig',id:plan.id,date:plan.date||localDateKey()});close();window.dispatchEvent(new Event('katos:v6-refresh'));queueDecorate();return;
  }
  const start=new Date(plan.actualStartAt||plan.actualStartLocal),end=new Date(data.actualEndLocal),first=Number(plan.startOdometer),last=Number(data.endOdometer);
  if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime())||end<start){error.textContent='The finish time must be after the start time.';return}
  if(!Number.isFinite(first)||!Number.isFinite(last)||last<first){error.textContent='Ending miles must be at least the starting miles.';return}
  const actualMinutes=Math.max(0,Math.round((end-start)/60000)),mileage=rounded(last-first),result=updateV5Record('work.gigShifts',plan.id,{checkInStatus:'finished',actualEndAt:end.toISOString(),actualEndLocal:data.actualEndLocal,endOdometer:rounded(last),actualMinutes,mileage});
  if(!result.ok){error.textContent=result.error||'KatOS could not finish this shift.';return}
- clearGigOverlays();window.dispatchEvent(new Event('katos:v6-refresh'));requestAnimationFrame(()=>openSummary(result.entry));
+ returnToCarriage();requestAnimationFrame(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>finishToast(result.entry))));
 },true);
+
+document.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
 
 window.addEventListener('katos:rendered',queueDecorate);
 window.addEventListener('katos:v6-refresh',queueDecorate);
 window.addEventListener('storage',queueDecorate);
 decorate();
-

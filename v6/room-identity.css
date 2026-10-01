@@ -239,3 +239,6 @@ html[data-katos-version="6"] .v6-carriage-side>section>p{font-size:10px;color:va
  html[data-katos-version="6"] .v6-carriage-hero{align-items:stretch;flex-direction:column}html[data-katos-version="6"] .v6-carriage-actions{justify-content:start}
  html[data-katos-version="6"] .v6-ride-row{grid-template-columns:minmax(110px,1fr) minmax(100px,1fr)}html[data-katos-version="6"] .v6-ride-row em{justify-self:start}
 }
+
+html[data-katos-version="6"] .v6-carriage-summary-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;border:1px solid rgba(185,155,232,.42);border-radius:16px;background:rgba(255,255,255,.8)}html[data-katos-version="6"] .v6-carriage-summary-row div{min-width:0}html[data-katos-version="6"] .v6-carriage-summary-row b,html[data-katos-version="6"] .v6-carriage-summary-row small{display:block}html[data-katos-version="6"] .v6-carriage-summary-row small{margin-top:4px;color:var(--v6-muted);font-size:11px}html[data-katos-version="6"] .v6-carriage-summary-row .btn{flex-shrink:0}
+@media(max-width:760px){html[data-katos-version="6"] .v6-carriage-summary-row{align-items:stretch;flex-direction:column}}
