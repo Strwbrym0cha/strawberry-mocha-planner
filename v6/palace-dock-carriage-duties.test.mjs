@@ -46,6 +46,11 @@ test('Carriage House rebuilds after Flex or DoorDash scheduling',()=>{
  assert.match(shell,/\[data-flex-shift-form\],\[data-doordash-shift-form\],\[data-money-form\]/);
 });
 
+test('Saved gig goals can be archived into Keepsake Chest',()=>{
+ const shell=source('./command-shell.js'),html=carriageHouseMarkup(buildCarriageModel({today:'2026-10-01',state:{work:{gigShifts:[]}},finance:{gig:{orders:[],goals:[{id:'goal-1',name:'Rent sprint',period:'day',targetAmount:100,startDate:'2026-10-01',endDate:'2026-10-01'}]},dailyGigGoal:{goal:{id:'goal-1',name:'Rent sprint',period:'day',targetAmount:100,startDate:'2026-10-01',endDate:'2026-10-01'},earned:100,remaining:0,percent:100},gigToday:{gross:100},gigWeek:{},gigComparison:[],pendingPayouts:[]}}));
+ assert.match(html,/data-v6-gig-goal-archive="goal-1"/);assert.match(html,/Done — Archive goal/);assert.match(shell,/archiveV5Record\('work\.gig\.goals'/);assert.match(shell,/Keepsake Chest/);
+});
+
 test('Carriage House does not rebuild away native details or money modals',()=>{
  const shell=source('./command-shell.js');
  assert.match(shell,/preserveNative=event\.target\.closest\('summary,\[data-money-open\],\[data-money-close\]'\)/);
@@ -59,5 +64,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.7\.5-carriage-controls/);
+ const html=source('./index.html');assert.match(html,/6\.7\.6-goal-archive/);
 });
