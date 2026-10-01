@@ -33,6 +33,13 @@ test('Carriage House uses canonical planned shifts, orders, goals, and payouts',
  assert.equal(model.planned.length,1);assert.equal(model.completed.length,1);assert.equal(model.remaining,28);assert.match(html,/41 packages <i>•<\/i> 23 stops/);assert.match(html,/data-flex-add/);assert.match(html,/data-doordash-add/);assert.match(html,/data-doordash-plan-open="dash-1"/);assert.match(html,/data-money-open="new-gig-goal"/);assert.match(html,/data-money-form="gig-goal-save"/);assert.match(html,/data-money-open="new-payout"/);assert.match(html,/data-money-form="payout-save"/);assert.deepEqual({state,finance},input,'building the room must not change canonical data');
 });
 
+test('Carriage House surfaces active, saved, and adaptive goals',()=>{
+ const base={work:{gigShifts:[]}},finance={gig:{orders:[],goals:[{id:'week-1',name:'Bill money',period:'week',targetAmount:400,startDate:'2026-09-27',endDate:'2026-10-03'}]},gigWeek:{gross:125},weeklyGigGoal:{goal:{id:'week-1',name:'Bill money',period:'week',targetAmount:400,startDate:'2026-09-27',endDate:'2026-10-03'},earned:125,remaining:275,percent:31},gigToday:{gross:0},gigComparison:[],pendingPayouts:[]},today:'2026-10-01'};
+ const active=buildCarriageModel(base);assert.equal(active.goal.id,'week-1');assert.equal(active.goalLabel,'THIS WEEK’S GOAL');assert.equal(active.goalValue,'$400.00');assert.equal(active.remaining,275);
+ const stale=buildCarriageModel({...base,today:'2026-10-08',finance:{...base.finance,weeklyGigGoal:null}});assert.equal(stale.goal.id,'week-1');assert.equal(stale.goalLabel,'LATEST GIG GOAL');assert.match(stale.goalNote,/ended/);
+ const adaptive=buildCarriageModel({today:'2026-10-01',state:{work:{gigShifts:[]}},finance:{gig:{orders:[],goals:[]},gigToday:{gross:0},gigWeek:{},gigComparison:[],pendingPayouts:[]},adaptiveGoals:[{id:'adaptive-1',name:'Rent sprint',remaining:180,targetDate:'2026-10-04'}]});assert.equal(adaptive.goal,null);assert.equal(adaptive.adaptive.id,'adaptive-1');assert.equal(adaptive.goalLabel,'EARNING PLAN');assert.equal(adaptive.goalValue,'$180.00 left');
+});
+
 test('Carriage House rebuilds after Flex or DoorDash scheduling',()=>{
  const shell=source('./command-shell.js');
  assert.match(shell,/identity==='carriage'\|\|identity==='money'/);
@@ -47,5 +54,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.7\.3-goal-live-refresh/);
+ const html=source('./index.html');assert.match(html,/6\.7\.4-goal-display/);
 });
