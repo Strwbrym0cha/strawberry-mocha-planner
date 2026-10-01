@@ -10,12 +10,12 @@ import{installNewRooms,isNewRoom,renderNewRoom}from'./new-rooms.js?v=6.6.1-room-
 import{decorateSmartPalace,installSmartPalace,renderRoyalArchives}from'./smart-palace.js?v=6.7.7-adaptive-goal-archive';
 import{decorateLivingPalace,installLivingPalace}from'./living-palace.js?v=6.6.0-living-palace';
 import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout';
-import{createRoomStore}from'./room-store.js?v=6.8.0-palace-batch1';
-import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.8.0-palace-batch1';
-import{renderRoyalDuties}from'./rooms/royal-duties.js?v=6.8.0-palace-batch1';
-import{renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.8.0-palace-batch1';
-import{renderCrownCareer}from'./rooms/crown-career.js?v=6.8.0-palace-batch1';
-import{installRoyalKitchen,renderRoyalKitchen}from'./rooms/royal-kitchen.js?v=6.8.0-palace-batch1';
+import{createRoomStore}from'./room-store.js?v=6.8.1-palace-batch1-parity';
+import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.8.1-palace-batch1-parity';
+import{renderRoyalDuties}from'./rooms/royal-duties.js?v=6.8.1-palace-batch1-parity';
+import{installRoyalCalendar,renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.8.1-palace-batch1-parity';
+import{renderCrownCareer}from'./rooms/crown-career.js?v=6.8.1-palace-batch1-parity';
+import{installRoyalKitchen,renderRoyalKitchen}from'./rooms/royal-kitchen.js?v=6.8.1-palace-batch1-parity';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -41,6 +41,7 @@ installSmartPalace(app);
 installLivingPalace(app);
 installBellTower(app);
 installRoyalKitchen(roomStore);
+installRoyalCalendar();
 const mode=()=>document.body.classList.contains('mode-tiny')?'tiny':document.body.classList.contains('mode-power')?'power':'normal';
 const currentView=()=>activeView;
 function recoverInteractivity(){

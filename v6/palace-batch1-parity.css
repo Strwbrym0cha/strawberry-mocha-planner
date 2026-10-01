@@ -1,0 +1,137 @@
+html[data-katos-version="6"]{
+ --v6-parity-gap:9px;
+ --v6-parity-pad:11px;
+ --v6-parity-line:rgba(207,150,179,.24);
+ --v6-parity-card:rgba(255,252,253,.96);
+}
+
+html[data-katos-version="6"] .v6-native-details{margin-top:7px;border-top:1px solid var(--v6-parity-line);font-size:9px;color:#8c6275}
+html[data-katos-version="6"] .v6-native-details>summary{padding:6px 2px;cursor:pointer;font:600 10px var(--v6-serif);color:#8c4967}
+html[data-katos-version="6"] .v6-native-details[open]{padding:8px;border:1px solid var(--v6-parity-line);border-radius:12px;background:#fffafd}
+html[data-katos-version="6"] .v6-link-button{padding:4px 7px;border:0;background:transparent;color:#9657aa;font:600 9px var(--v6-serif)}
+html[data-katos-version="6"] .v6-room-affirmation{margin:9px 0 0;padding:8px;border-radius:10px;background:linear-gradient(90deg,#fff1f6,#fbf5ff);text-align:center;color:#a34770;font:italic 11px var(--v6-serif)}
+html[data-katos-version="6"] .v6-progress{height:8px;border-radius:99px;background:#eee9ed;overflow:hidden}
+html[data-katos-version="6"] .v6-progress i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#79bf83,#54ac6a)}
+
+/* Royal Duties: the approved command-center proportions without inflating empty data. */
+html[data-katos-version="6"] .v6-duties-board{grid-template-columns:minmax(0,1.45fr) minmax(350px,1fr)}
+html[data-katos-version="6"] .v6-duties-plan>section{min-height:310px}
+html[data-katos-version="6"] .v6-duties-side{grid-template-columns:1.25fr .75fr}
+html[data-katos-version="6"] .v6-duties-side>section:first-child{grid-column:1/-1}
+html[data-katos-version="6"] .v6-duties-lower{grid-template-columns:1fr 1fr 1.35fr}
+html[data-katos-version="6"] .v6-duties-lower>details{min-height:88px}
+
+/* Royal Calendar: a real hourly week board using only canonical events. */
+html[data-katos-version="6"] .v6-calendar-room{grid-template-columns:minmax(0,3.2fr) minmax(225px,.78fr)}
+html[data-katos-version="6"] .v6-calendar-board{padding:9px}
+html[data-katos-version="6"] .v6-calendar-grid{grid-template-columns:43px repeat(7,minmax(0,1fr));height:420px;min-height:0;overflow:hidden}
+html[data-katos-version="6"] .v6-calendar-times{display:grid;grid-template-rows:42px repeat(14,1fr);background:#fffafd;border-right:1px solid var(--v6-parity-line)}
+html[data-katos-version="6"] .v6-calendar-times time{padding:2px 4px;text-align:right;font-size:7px;color:#8c7180;border-top:1px solid rgba(207,150,179,.16)}
+html[data-katos-version="6"] .v6-calendar-day{display:grid;grid-template-rows:42px 1fr;overflow:hidden;position:relative}
+html[data-katos-version="6"] .v6-calendar-day header{height:auto;padding:4px;align-content:center}
+html[data-katos-version="6"] .v6-calendar-day header b{font-size:9px}
+html[data-katos-version="6"] .v6-calendar-day header span{font-size:8px;color:#876471}
+html[data-katos-version="6"] .v6-calendar-track{position:relative!important;padding:0!important;display:block!important;background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(7.142% - 1px),rgba(207,150,179,.16) calc(7.142% - 1px),rgba(207,150,179,.16) 7.142%)}
+html[data-katos-version="6"] .v6-calendar-track>button{position:absolute;z-index:1;top:var(--event-top);left:3px;right:3px;height:max(25px,var(--event-height));padding:4px!important;overflow:hidden;border:1px solid rgba(203,143,177,.22)!important;border-radius:7px!important;background:linear-gradient(145deg,#fff0f6,#f7effd)!important;display:grid!important;align-content:start}
+html[data-katos-version="6"] .v6-calendar-track>button:nth-child(3n+2){background:linear-gradient(145deg,#f3f9ed,#fff)!important}
+html[data-katos-version="6"] .v6-calendar-track>button:nth-child(3n){background:linear-gradient(145deg,#f3edfb,#fff)!important}
+html[data-katos-version="6"] .v6-calendar-track>button time{font-size:6.5px}
+html[data-katos-version="6"] .v6-calendar-track>button b{font-size:7.5px;white-space:normal;line-height:1.1}
+html[data-katos-version="6"] .v6-segmented span{padding:5px 11px;background:#fff}
+html[data-katos-version="6"] .v6-segmented .active{background:#f5e5f6;color:#8a4a9d}
+html[data-katos-version="6"] .v6-calendar-controls{display:flex;align-items:center;gap:4px}
+html[data-katos-version="6"] .v6-calendar-controls>button{width:24px;height:24px;border:1px solid var(--v6-parity-line);border-radius:8px;background:#fffafd;color:#a44b72}
+html[data-katos-version="6"] .v6-calendar-controls>b{min-width:115px;text-align:center;font:600 9px var(--v6-serif);color:#8b4c67}
+html[data-katos-version="6"] .v6-calendar-bottom{grid-template-columns:1fr 1.1fr}
+
+/* Crown & Career: feature/schedule row, then four purpose-built work panels. */
+html[data-katos-version="6"] .v6-career-top{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(330px,1fr);gap:var(--v6-parity-gap)}
+html[data-katos-version="6"] .v6-career-top>section,html[data-katos-version="6"] .v6-career-lower>section,html[data-katos-version="6"] .v6-career-native,html[data-katos-version="6"] .v6-career-status{padding:var(--v6-parity-pad);border:1px solid var(--v6-parity-line);border-radius:14px;background:var(--v6-parity-card);box-shadow:var(--v6-room-shadow)}
+html[data-katos-version="6"] .v6-career-next{min-height:245px!important}
+html[data-katos-version="6"] .v6-career-next-body{display:grid;grid-template-columns:42% 1fr;gap:13px;align-items:center}
+html[data-katos-version="6"] .v6-career-next-body h2{margin:0 0 5px;font:600 22px var(--v6-serif);color:#8f365e}
+html[data-katos-version="6"] .v6-career-next-body p{font-size:9px;color:var(--v6-muted)}
+html[data-katos-version="6"] .v6-career-next-body dl{display:grid;gap:5px;margin:9px 0}
+html[data-katos-version="6"] .v6-career-next-body dl div{display:flex;gap:7px;font-size:8px}
+html[data-katos-version="6"] .v6-career-next-body dt{color:#ad476f}html[data-katos-version="6"] .v6-career-next-body dd{margin:0;color:#664f59}
+html[data-katos-version="6"] .v6-career-scene{min-height:176px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border-radius:12px;background-image:linear-gradient(90deg,rgba(255,246,250,.08),rgba(255,246,250,.28)),url('./assets/career-prep-scene.png');background-position:center;background-size:cover;box-shadow:inset 0 0 0 1px rgba(207,150,179,.22)}
+html[data-katos-version="6"] .v6-career-scene span{display:none}
+html[data-katos-version="6"] .v6-career-lower{display:grid;grid-template-columns:1fr 1.05fr 1.15fr .9fr;gap:var(--v6-parity-gap)}
+html[data-katos-version="6"] .v6-career-lower>section{min-height:218px}
+html[data-katos-version="6"] .v6-tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+html[data-katos-version="6"] .v6-tool-grid button{min-height:42px;padding:5px;border:1px solid var(--v6-parity-line);border-radius:9px;background:linear-gradient(145deg,#fff7fa,#f7f0fd);font:600 8px var(--v6-serif);color:#765267}
+html[data-katos-version="6"] .v6-skill-row{width:100%;padding:6px;border:0;border-bottom:1px solid var(--v6-parity-line);background:none;text-align:left;display:grid;gap:4px}
+html[data-katos-version="6"] .v6-skill-row span{display:grid}html[data-katos-version="6"] .v6-skill-row b{font:600 9px var(--v6-serif)}html[data-katos-version="6"] .v6-skill-row small{font-size:7px;color:var(--v6-muted)}
+html[data-katos-version="6"] .v6-skill-row i{height:5px;border-radius:9px;background:linear-gradient(90deg,#d786c2 var(--skill),#eee8ef var(--skill))}
+html[data-katos-version="6"] .v6-career-native{margin-top:9px}
+html[data-katos-version="6"] .v6-career-status{margin-top:9px;display:flex;gap:9px}
+html[data-katos-version="6"] .v6-career-status span{flex:1;display:grid;padding:5px 8px;border-radius:9px;background:#fff6fa}
+html[data-katos-version="6"] .v6-career-status small{font-size:7px;color:var(--v6-muted)}html[data-katos-version="6"] .v6-career-status b{font:600 11px var(--v6-serif);color:#7f4b62}
+
+/* Carriage House: route operations on the left, earnings and payouts on the right. */
+html[data-katos-version="6"] .v6-carriage-parity{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(350px,1fr);gap:var(--v6-parity-gap)}
+html[data-katos-version="6"] .v6-carriage-parity main,html[data-katos-version="6"] .v6-carriage-parity aside{display:grid;gap:var(--v6-parity-gap);align-content:start}
+html[data-katos-version="6"] .v6-carriage-parity section{padding:var(--v6-parity-pad);border:1px solid var(--v6-parity-line);border-radius:14px;background:var(--v6-parity-card);box-shadow:var(--v6-room-shadow)}
+html[data-katos-version="6"] .v6-carriage-parity aside{grid-template-columns:1fr 1fr}
+html[data-katos-version="6"] .v6-carriage-parity aside>section:nth-child(n+4){grid-column:span 1}
+html[data-katos-version="6"] .v6-carriage-next{grid-column:auto;background:linear-gradient(135deg,#fff8fb,#f7effc)!important}
+html[data-katos-version="6"] .v6-carriage-next>header,html[data-katos-version="6"] .v6-carriage-parity section>header{display:flex;justify-content:space-between;align-items:start}
+html[data-katos-version="6"] .v6-carriage-next-body{display:grid;grid-template-columns:1fr 42%;gap:10px;align-items:center}
+html[data-katos-version="6"] .v6-carriage-next-body h2{margin:8px 0 0;font:600 20px var(--v6-serif);color:#8d355d}html[data-katos-version="6"] .v6-carriage-next-body h3{margin:3px 0;font:600 16px var(--v6-serif);color:#a83e69}html[data-katos-version="6"] .v6-carriage-next-body p{font-size:8px;color:var(--v6-muted)}
+html[data-katos-version="6"] .v6-carriage-scene{min-height:116px;border-radius:12px;display:grid;place-items:center;background-image:linear-gradient(90deg,rgba(255,246,250,.04),rgba(255,246,250,.14)),url('./assets/carriage-road-scene.png');background-position:center;background-size:cover;font-size:0}
+html[data-katos-version="6"] .v6-carriage-plan-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:7px}
+html[data-katos-version="6"] .v6-carriage-plan-actions button{padding:8px;border:0;border-radius:10px;background:#f1e7fb;color:#77518d;font:600 9px var(--v6-serif)}html[data-katos-version="6"] .v6-carriage-plan-actions button:last-child{background:#ffe8f0;color:#9a4165}
+html[data-katos-version="6"] .v6-carriage-tools>div{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+html[data-katos-version="6"] .v6-carriage-tools button{min-height:44px;padding:6px;border:1px solid var(--v6-parity-line);border-radius:10px;background:#fffafd;font:600 8px var(--v6-serif);color:#704e5c}
+html[data-katos-version="6"] .v6-carriage-goal h2,html[data-katos-version="6"] .v6-carriage-week-card h2,html[data-katos-version="6"] .v6-carriage-today-card h2{margin:6px 0;font:600 25px var(--v6-serif);color:#9e3561}
+html[data-katos-version="6"] .v6-carriage-parity aside p{margin:4px 0;font-size:8px;color:var(--v6-muted)}
+html[data-katos-version="6"] .v6-carriage-parity .v6-work-grid{grid-template-columns:1fr}
+html[data-katos-version="6"] .v6-carriage-parity .v6-gig-work-card{min-height:0}
+
+/* Royal Kitchen: approved seven-day prep board and compact support stack. */
+html[data-katos-version="6"] .v6-kitchen-room{grid-template-columns:minmax(0,1.55fr) minmax(360px,1fr)}
+html[data-katos-version="6"] .v6-kitchen-board{min-height:420px}
+html[data-katos-version="6"] .v6-kitchen-meal-grid{display:grid!important;grid-template-columns:1fr!important;gap:0!important;border:1px solid var(--v6-parity-line);border-radius:11px;overflow:hidden;background:#fff}
+html[data-katos-version="6"] .v6-kitchen-week-head,html[data-katos-version="6"] .v6-kitchen-week-row{display:grid;grid-template-columns:64px repeat(4,minmax(0,1fr));align-items:stretch}
+html[data-katos-version="6"] .v6-kitchen-week-head{min-height:28px;background:#fff8fb;border-bottom:1px solid var(--v6-parity-line)}
+html[data-katos-version="6"] .v6-kitchen-week-head>*{padding:7px;border-right:1px solid var(--v6-parity-line);font:600 8px var(--v6-serif);text-align:center;color:#734c5e}
+html[data-katos-version="6"] .v6-kitchen-week-row{min-height:47px;border-bottom:1px solid var(--v6-parity-line)}html[data-katos-version="6"] .v6-kitchen-week-row:last-child{border-bottom:0}html[data-katos-version="6"] .v6-kitchen-week-row.is-today{background:#fff7fa}
+html[data-katos-version="6"] .v6-kitchen-week-row>time{padding:6px;display:grid;align-content:center;border-right:1px solid var(--v6-parity-line);text-align:center}html[data-katos-version="6"] .v6-kitchen-week-row>time b{font:600 9px var(--v6-serif);color:#a43f68}html[data-katos-version="6"] .v6-kitchen-week-row>time small{font-size:7px;color:var(--v6-muted)}
+html[data-katos-version="6"] .v6-kitchen-week-row>.v6-kitchen-meal,html[data-katos-version="6"] .v6-kitchen-empty-slot{min-height:46px;padding:5px;border:0;border-right:1px solid var(--v6-parity-line);border-radius:0;background:transparent;text-align:left}
+html[data-katos-version="6"] .v6-kitchen-week-row>.v6-kitchen-meal{display:grid;gap:1px}html[data-katos-version="6"] .v6-kitchen-week-row>.v6-kitchen-meal small{font-size:6px}html[data-katos-version="6"] .v6-kitchen-week-row>.v6-kitchen-meal b{font-size:8px}html[data-katos-version="6"] .v6-kitchen-week-row>.v6-kitchen-meal span{font-size:6px}
+html[data-katos-version="6"] .v6-kitchen-empty-slot{display:grid;place-content:center;text-align:center;color:#b79aa7}html[data-katos-version="6"] .v6-kitchen-empty-slot span{font-size:13px}html[data-katos-version="6"] .v6-kitchen-empty-slot small{font-size:7px}
+html[data-katos-version="6"] .v6-kitchen-room aside{grid-template-columns:1fr 1fr}
+html[data-katos-version="6"] .v6-kitchen-room aside>.v6-kitchen-prep{grid-column:1/-1;min-height:190px;background-image:linear-gradient(90deg,rgba(255,248,251,.98) 0 48%,rgba(255,248,251,.72) 66%,rgba(255,248,251,.08)),url('./assets/kitchen-prep-scene.png')!important;background-position:center right!important;background-size:cover!important}
+html[data-katos-version="6"] .v6-kitchen-recipes>div:last-child{grid-template-columns:repeat(4,minmax(0,1fr))}
+html[data-katos-version="6"] .v6-kitchen-bottom{display:grid;grid-template-columns:2.15fr 1fr;gap:var(--v6-parity-gap);margin-top:var(--v6-parity-gap)}
+html[data-katos-version="6"] .v6-kitchen-bottom>section{min-width:0;margin:0;padding:var(--v6-room-pad);border:1px solid var(--v6-room-border);border-radius:var(--v6-room-radius);background:rgba(255,252,249,.95);box-shadow:var(--v6-room-shadow)}
+html[data-katos-version="6"] .v6-kitchen-quick>div:last-child{grid-template-columns:repeat(2,minmax(0,1fr))}
+html[data-katos-version="6"] .v6-kitchen-quick>div>button{min-height:34px}
+
+/* The approved companion stays canonical, gains the quiet minimized state, and never covers the Dock. */
+html[data-katos-version="6"] .mochini-companion.is-minimized{width:58px!important;min-height:62px!important;right:max(8px,env(safe-area-inset-right))!important;bottom:calc(var(--v6-dock-height) + 6px)!important}
+html[data-katos-version="6"] .mochini-companion.is-minimized .mc-body{width:58px!important;min-height:58px!important;padding:2px!important;border-radius:50%!important}
+html[data-katos-version="6"] .mochini-companion.is-minimized .mc-art{max-width:52px!important}
+html[data-katos-version="6"] .mochini-companion.is-minimized .mc-scene-prop,html[data-katos-version="6"] .mochini-companion.is-minimized .mc-mood-chip,html[data-katos-version="6"] .mochini-companion.is-minimized .mc-bubble{display:none!important}
+
+@media(max-width:900px){
+ html[data-katos-version="6"] .v6-duties-board,html[data-katos-version="6"] .v6-calendar-room,html[data-katos-version="6"] .v6-career-top,html[data-katos-version="6"] .v6-carriage-parity,html[data-katos-version="6"] .v6-kitchen-room{grid-template-columns:1fr}
+ html[data-katos-version="6"] .v6-calendar-room,html[data-katos-version="6"] .v6-calendar-room>main,html[data-katos-version="6"] .v6-calendar-board{min-width:0;width:100%;max-width:100%}
+ html[data-katos-version="6"] .v6-calendar-board{overflow:hidden}
+ html[data-katos-version="6"] .v6-duties-side{grid-template-columns:1fr 1fr}
+ html[data-katos-version="6"] .v6-career-lower{grid-template-columns:1fr 1fr}
+ html[data-katos-version="6"] .v6-calendar-grid{grid-template-columns:43px repeat(7,minmax(105px,1fr));max-width:100%;overflow-x:auto}
+ html[data-katos-version="6"] .v6-carriage-parity aside{grid-template-columns:1fr 1fr}
+ html[data-katos-version="6"] .v6-kitchen-room aside{grid-template-columns:1fr 1fr}
+ html[data-katos-version="6"] .v6-kitchen-bottom{grid-template-columns:1.65fr 1fr}
+}
+
+@media(max-width:640px){
+ html[data-katos-version="6"] .v6-duties-side,html[data-katos-version="6"] .v6-duties-lower,html[data-katos-version="6"] .v6-career-lower,html[data-katos-version="6"] .v6-carriage-parity aside,html[data-katos-version="6"] .v6-kitchen-room aside{grid-template-columns:1fr}
+ html[data-katos-version="6"] .v6-duties-side>section:first-child,html[data-katos-version="6"] .v6-carriage-parity aside>section,html[data-katos-version="6"] .v6-kitchen-room aside>.v6-kitchen-prep{grid-column:auto}
+ html[data-katos-version="6"] .v6-career-next-body{grid-template-columns:1fr}
+ html[data-katos-version="6"] .v6-career-scene{min-height:110px}
+ html[data-katos-version="6"] .v6-kitchen-board{overflow-x:auto}
+ html[data-katos-version="6"] .v6-kitchen-meal-grid{min-width:660px}
+ html[data-katos-version="6"] .v6-kitchen-bottom{grid-template-columns:1fr}
+}

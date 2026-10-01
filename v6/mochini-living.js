@@ -8,7 +8,7 @@ const obj=value=>value&&typeof value==='object'&&!Array.isArray(value)?value:{};
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const since=stamp=>{const value=Date.parse(stamp||'');return Number.isFinite(value)?Date.now()-value:Infinity};
 const reduced=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
-let root=null,layers=null,open=false,eventTimer=null,blinkTimer=null,tickTimer=null,blinking=false,lastRoom='';
+let root=null,layers=null,open=false,compact=false,eventTimer=null,blinkTimer=null,tickTimer=null,blinking=false,lastRoom='';
 
 function unwrap(container){let value=container;for(let i=0;i<3&&value?.data&&typeof value.data==='object'&&!Array.isArray(value.data);i++)value=value.data;return value}
 function parse(key){try{const container=JSON.parse(localStorage.getItem(key)||'null'),state=unwrap(container);return state&&typeof state==='object'?{key,container,state}:null}catch{return null}}
@@ -42,6 +42,8 @@ document.addEventListener('click',event=>{const legacy=event.target.closest?.('[
 document.addEventListener('change',event=>{const select=event.target.closest?.('[data-mc-manual-mood]');if(!select)return;layers=select.value?setManualMood(layers,select.value,MOCHINI_MOODS,{line:`Manual ${moodLabel(select.value).toLowerCase()} mood is temporary. Autonomous Mochini is still living underneath.`}):clearManualMood(layers);sync()},true);
 window.addEventListener('katos:rendered',()=>{ensure();const room=roomId();if(room!==lastRoom){lastRoom=room;layers={...layers,autonomousLife:{...layers.autonomousLife,currentContext:contextFor(room)}}}sync()});
 window.addEventListener('katos:mochini-open',()=>{ensure();open=true;sync()});
+window.addEventListener('katos:mochini-minimize',()=>{ensure();open=false;compact=true;sync();root?.classList.add('is-minimized')});
+window.addEventListener('katos:mochini-display',()=>root?.classList.toggle('is-minimized',compact));
 window.addEventListener('katos:mochini-state',event=>react(obj(event.detail),Number(event.detail?.duration)||2200));
 window.addEventListener('katos:v6-room-reaction',event=>react(obj(event.detail),Number(event.detail?.duration)||1500));
 window.addEventListener('katos:mochini',event=>{const detail=obj(event.detail);if(detail.autonomous&&detail.life){layers=setAutonomousMood(layers,detail.life,MOCHINI_MOODS);writeAutonomous('external-autonomy');sync();return}const reaction={...detail,...obj(detail.life),mood:detail.mood||detail.reaction||detail.expression||detail.life?.mood,line:detail.line||detail.life?.currentLine};if(reaction.mood)react(reaction,Number(detail.duration)||1800)});
@@ -49,4 +51,5 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeo
 window.addEventListener('focus',()=>{sync();if(since(layers.autonomousLife.lastAutonomyAt)>120_000)tick(true)});
 
 ensure();sync();scheduleBlink();setTimeout(()=>tick(since(layers.autonomousLife.lastAutonomyAt)>240_000),1200);
-window.KatOSV6Mochini={snapshot:()=>publicMoodState(layers),setAutonomous:mood=>{layers=setAutonomousMood(layers,{...layers.autonomousLife,mood,autonomousMood:mood,lastAutonomyAt:new Date().toISOString()},MOCHINI_MOODS);writeAutonomous('qa-autonomy');sync();return publicMoodState(layers)},setManual:mood=>{layers=mood?setManualMood(layers,mood,MOCHINI_MOODS):clearManualMood(layers);sync();return publicMoodState(layers)},react:(mood,duration=600)=>{react({mood,open:false},duration);return publicMoodState(layers)},blink:()=>blink(),open:()=>{open=true;sync();return publicMoodState(layers)}};
+document.addEventListener('click',event=>{if(event.target.closest?.('[data-mc-close]')){compact=true;queueMicrotask(()=>root?.classList.add('is-minimized'));return}if(event.target.closest?.('[data-mc-toggle]')&&compact){compact=false;queueMicrotask(()=>root?.classList.remove('is-minimized'))}},true);
+window.KatOSV6Mochini={snapshot:()=>({...publicMoodState(layers),compact}),setAutonomous:mood=>{layers=setAutonomousMood(layers,{...layers.autonomousLife,mood,autonomousMood:mood,lastAutonomyAt:new Date().toISOString()},MOCHINI_MOODS);writeAutonomous('qa-autonomy');sync();return publicMoodState(layers)},setManual:mood=>{layers=mood?setManualMood(layers,mood,MOCHINI_MOODS):clearManualMood(layers);sync();return publicMoodState(layers)},react:(mood,duration=600)=>{react({mood,open:false},duration);return publicMoodState(layers)},blink:()=>blink(),open:()=>{compact=false;open=true;sync();return publicMoodState(layers)},minimize:()=>{open=false;compact=true;sync();return{...publicMoodState(layers),compact}}};

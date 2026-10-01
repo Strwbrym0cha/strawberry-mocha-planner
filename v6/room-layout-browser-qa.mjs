@@ -17,7 +17,7 @@ const ready=await evaluate(`document.querySelector('#app')&&!document.querySelec
 await evaluate(`localStorage.removeItem('katos_v6_new_rooms_v1');location.reload()`);await wait(3500);
 
 const rooms=[
- ['home','.v6-foyer-primary'],['daily','.v6-duties-board'],['time','.v6-calendar-room'],['bell-tower','.v6-bell-layout'],['boss','.v6-career-room'],['carriage-house','.v6-carriage-layout'],['royal-kitchen','.v6-kitchen-room'],['study','.v6-scholar-columns'],['money','.v6-treasury-band'],['hobbies','.v6-rose-board'],['moon-garden','.v6-moon-flow'],['love-letters','.v6-love-home'],['wishing-tower','.v6-wish-horizon'],['archive','.v6-memory-shelf'],['royal-archives','.v6-archive-library']
+ ['home','.v6-foyer-primary'],['daily','.v6-duties-board'],['time','.v6-calendar-room'],['bell-tower','.v6-bell-layout'],['boss','.v6-career-top'],['carriage-house','.v6-carriage-parity'],['royal-kitchen','.v6-kitchen-room'],['study','.v6-scholar-columns'],['money','.v6-treasury-band'],['hobbies','.v6-rose-board'],['moon-garden','.v6-moon-flow'],['love-letters','.v6-love-home'],['wishing-tower','.v6-wish-horizon'],['archive','.v6-memory-shelf'],['royal-archives','.v6-archive-library']
 ];
 const sizes=[['landscape',1180,820],['portrait',820,1180]],results=[];
 for(const[size,width,height]of sizes){
@@ -80,12 +80,19 @@ if(!kitchenTools.buildMeal||!kitchenTools.buildMealInside||!kitchenTools.rotatio
 await evaluate(`document.querySelector('[data-mc-toggle]')?.click()`);await wait(100);
 const mochini=await evaluate(`(()=>{const bubble=document.querySelector('[data-mc-bubble].is-open'),body=document.querySelector('[data-mc-toggle]'),inside=node=>{const r=node?.getBoundingClientRect();return!!r&&r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight};return{bubble:!!bubble,bubbleInside:inside(bubble),bodyInside:inside(body),concierge:document.querySelectorAll('[data-mc-concierge]').length}})()`);
 if(!mochini.bubble||!mochini.bubbleInside||!mochini.bodyInside||mochini.concierge!==10)throw new Error(`Mochini Concierge escaped or is incomplete: ${JSON.stringify(mochini)}`);
+await evaluate(`document.querySelector('[data-mc-close]')?.click()`);await wait(60);
+const mochiniMinimized=await evaluate(`(()=>{const root=document.querySelector('[data-mc-root]'),body=root?.querySelector('[data-mc-toggle]'),r=body?.getBoundingClientRect();return{minimized:root?.classList.contains('is-minimized'),inside:!!r&&r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight}})()`);
+await evaluate(`document.querySelector('[data-mc-toggle]')?.click()`);await wait(60);
+const mochiniRestored=await evaluate(`(()=>{const root=document.querySelector('[data-mc-root]');return{minimized:root?.classList.contains('is-minimized'),open:root?.querySelector('[data-mc-bubble]')?.classList.contains('is-open')}})()`);
+if(!mochiniMinimized.minimized||!mochiniMinimized.inside||mochiniRestored.minimized||!mochiniRestored.open)throw new Error(`Mochini minimize/restore failed: ${JSON.stringify({mochiniMinimized,mochiniRestored})}`);
 await evaluate(`document.querySelector('[data-mc-close]')?.click()`);
 await evaluate(`document.querySelector('[data-palace-dock] [data-v6-nav="carriage-house"]')?.click()`);await wait(120);
-const prepAlias=await evaluate(`(()=>{const control=document.querySelector('[data-smart-action="prep-manager"]');control?.click();const modal=document.querySelector('[data-smart-modal]');return{control:!!control,normalized:control?.dataset.smartAction==='pack-manager',modal:!!modal&&modal.textContent.includes('Prep Pack')}})()`);
+const prepAlias=await evaluate(`(()=>{const control=document.querySelector('[data-smart-action="pack-manager"],[data-smart-action="prep-manager"]');control?.click();const modal=document.querySelector('[data-smart-modal]');return{control:!!control,normalized:control?.dataset.smartAction==='pack-manager',modal:!!modal&&modal.textContent.includes('Prep Pack')}})()`);
 if(!prepAlias.control||!prepAlias.normalized||!prepAlias.modal)throw new Error(`Get Ready did not open canonical Prep Packs: ${JSON.stringify(prepAlias)}`);
 await evaluate(`document.querySelector('[data-smart-close]')?.click();document.querySelector('[data-palace-dock] [data-v6-nav="time"]')?.click()`);await wait(120);
 const leaveAlias=await evaluate(`(()=>{const control=document.querySelector('[data-smart-action="calendar-link"]');control?.click();return{control:!!control,normalized:control?.dataset.v6Jump==='calendar'&&!control?.dataset.smartAction,calendar:!!document.querySelector('[data-v6-slot="calendar"]')}})()`);
 if(!leaveAlias.control||!leaveAlias.normalized||!leaveAlias.calendar)throw new Error(`Leave By did not route to canonical calendar details: ${JSON.stringify(leaveAlias)}`);
-console.log(JSON.stringify({checks:results.length*5+39,screenshots:out,drawerState,dutyIdentity,bellIdentity,popup,reminderState,completedState,carriage,kitchen,kitchenTools,mochini,prepAlias,leaveAlias,scholar,results},null,2));
+const calendarPaging=await evaluate(`(()=>{const room=document.querySelector('.v6-command-room'),before=document.querySelector('[data-v6-calendar-range]')?.textContent;document.querySelector('[data-v6-calendar-shift="7"]')?.click();const after=document.querySelector('[data-v6-calendar-range]')?.textContent;return{control:!!document.querySelector('[data-v6-calendar-shift="7"]'),changed:before!==after,sameRoom:room===document.querySelector('.v6-command-room'),dock:!!document.querySelector('[data-palace-dock]')}})()`);
+if(!calendarPaging.control||!calendarPaging.changed||!calendarPaging.sameRoom||!calendarPaging.dock)throw new Error(`Calendar paging rebuilt the room or did not move the week: ${JSON.stringify(calendarPaging)}`);
+console.log(JSON.stringify({checks:results.length*5+47,screenshots:out,drawerState,dutyIdentity,bellIdentity,popup,reminderState,completedState,carriage,kitchen,kitchenTools,mochini,mochiniMinimized,mochiniRestored,prepAlias,leaveAlias,calendarPaging,scholar,results},null,2));
 ws.close();
