@@ -33,7 +33,7 @@ test('Bell timeline and reminder group classification stay date-oriented',()=>{
 });
 
 test('major rooms expose unique structural compositions',()=>{
- for(const region of['v6-foyer-layout','v6-calendar-primary','v6-duty-command-strip','v6-duty-main','v6-career-layout','v6-treasury-band','v6-scholar-focus','v6-scholar-columns','v6-course-path','v6-study-desk'])assert.match(command,new RegExp(region));
+ for(const region of['v6-foyer-primary','v6-foyer-secondary','v6-calendar-primary','v6-duty-command-strip','v6-duty-main','v6-career-layout','v6-treasury-band','v6-scholar-focus','v6-scholar-columns','v6-course-path','v6-study-desk'])assert.match(command,new RegExp(region));
  for(const region of['v6-rose-board','v6-moon-flow','v6-love-home','v6-wish-horizon'])assert.match(rooms,new RegExp(region));
  for(const region of['v6-bell-layout','v6-archive-library'])assert.match(styles,new RegExp(region));
  assert.match(index,/room-identity\.css/);

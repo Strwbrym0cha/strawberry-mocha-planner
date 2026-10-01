@@ -17,7 +17,7 @@ const ready=await evaluate(`document.querySelector('#app')&&!document.querySelec
 await evaluate(`localStorage.removeItem('katos_v6_new_rooms_v1');location.reload()`);await wait(3500);
 
 const rooms=[
- ['home','.v6-foyer-layout'],['daily','.v6-duty-main'],['time','.v6-calendar-primary'],['bell-tower','.v6-bell-layout'],['boss','.v6-career-layout'],['carriage-house','.v6-carriage-layout'],['study','.v6-scholar-columns'],['money','.v6-treasury-band'],['hobbies','.v6-rose-board'],['moon-garden','.v6-moon-flow'],['love-letters','.v6-love-home'],['wishing-tower','.v6-wish-horizon'],['archive','.v6-memory-shelf'],['royal-archives','.v6-archive-library']
+ ['home','.v6-foyer-primary'],['daily','.v6-duty-main'],['time','.v6-calendar-primary'],['bell-tower','.v6-bell-layout'],['boss','.v6-career-layout'],['carriage-house','.v6-carriage-layout'],['study','.v6-scholar-columns'],['money','.v6-treasury-band'],['hobbies','.v6-rose-board'],['moon-garden','.v6-moon-flow'],['love-letters','.v6-love-home'],['wishing-tower','.v6-wish-horizon'],['archive','.v6-memory-shelf'],['royal-archives','.v6-archive-library']
 ];
 const sizes=[['landscape',1180,820],['portrait',820,1180]],results=[];
 for(const[size,width,height]of sizes){
