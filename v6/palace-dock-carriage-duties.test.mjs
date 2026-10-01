@@ -56,9 +56,11 @@ test('Saved gig goals can be archived into Keepsake Chest',()=>{
  assert.match(html,/data-v6-gig-goal-archive="goal-1"/);assert.match(html,/Done — Archive goal/);assert.match(shell,/archiveV5Record\('work\.gig\.goals'/);assert.match(shell,/Keepsake Chest/);
 });
 
-test('Carriage House does not rebuild away native details or money modals',()=>{
- const shell=source('./command-shell.js');
- assert.match(shell,/preserveNative=event\.target\.closest\('summary,\[data-money-open\],\[data-money-close\]'\)/);
+test('V6 does not rebuild the room on ordinary interactive clicks',()=>{
+ const shell=source('./command-shell.js'),checkin=source('./gig-shift-checkin.js');
+ assert.match(shell,/preserveNative=event\.target\.closest\('summary,button,input,select,textarea,a/);
+ assert.doesNotMatch(shell,/if\(preserveNative\)return;\s*queue\(\)/);
+ assert.match(shell,/katos:rendered/);assert.doesNotMatch(checkin,/MutationObserver/);
 });
 
 test('Finishing a gig shift closes overlays and does not auto-open another modal',()=>{
@@ -74,5 +76,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.7\.10-gig-finish-no-freeze/);
+ const html=source('./index.html');assert.match(html,/6\.7\.11-interaction-stable/);
 });
