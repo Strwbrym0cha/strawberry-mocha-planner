@@ -38,6 +38,11 @@ installLivingPalace(app);
 installBellTower(app);
 const mode=()=>document.body.classList.contains('mode-tiny')?'tiny':document.body.classList.contains('mode-power')?'power':'normal';
 const currentView=()=>activeView;
+function recoverInteractivity(){
+ document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';document.body.style.overflow='';app.style.pointerEvents='';app.removeAttribute('inert');app.removeAttribute('aria-hidden');
+ app.querySelectorAll('.sidebar-backdrop').forEach(node=>node.remove());
+ app.querySelectorAll('.detail-modal-backdrop').forEach(node=>{if(node.hidden)return;const dialog=node.querySelector('[role="dialog"]');if(!dialog||dialog.hidden||getComputedStyle(dialog).display==='none')node.remove()});
+}
 const titleOf=(row,fallback='Untitled')=>text(row?.title||row?.text||row?.name||row?.label||row?.client||row?.clientName)||fallback;
 const timeOf=row=>text(row?.startTime||row?.time),dateOf=row=>text(row?.date||row?.dueDate||row?.startDate);
 const duration=(start,end,fallback=0)=>{if(!/^\d{1,2}:\d{2}$/.test(text(start))||!/^\d{1,2}:\d{2}$/.test(text(end)))return fallback;const[a,b]=[start,end].map(value=>{const[h,m]=value.split(':').map(Number);return h*60+m});return b<a?b+1440-a:b-a};
@@ -167,7 +172,7 @@ function showOverview(view){
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
  page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(identity)}">${markup}</div>`);if(identity!=='carriage')integrateSource(identity,page);
 }
-function decorate(){const selected=app.querySelector('.nav-btn.active[data-view]')?.dataset.view;if(selected)activeView=selected;brandShell();const view=currentView();if(activeFuture){showFutureRoom(activeFuture);return}if(LABELS[view]&&!['mochini','settings'].includes(view))showOverview(view);decorateSmartPalace();decorateLivingPalace()}
+function decorate(){recoverInteractivity();const selected=app.querySelector('.nav-btn.active[data-view]')?.dataset.view;if(selected)activeView=selected;brandShell();const view=currentView();if(activeFuture){showFutureRoom(activeFuture);return}if(LABELS[view]&&!['mochini','settings'].includes(view))showOverview(view);decorateSmartPalace();decorateLivingPalace()}
 let queued=false;function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;decorate()})}
 
 app.addEventListener('submit',event=>{if(event.target.closest('[data-flex-shift-form],[data-doordash-shift-form],[data-money-form],[data-smart-form="adaptive"]'))requestAnimationFrame(()=>requestAnimationFrame(queue))},true);
@@ -185,6 +190,7 @@ app.addEventListener('click',event=>{
 },true);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&roomsOpen){roomsOpen=false;palaceDock()}});
 window.addEventListener('katos:rendered',queue);
+window.addEventListener('pageshow',()=>{recoverInteractivity();queue()});
 window.addEventListener('katos:v6-refresh',queue);
 window.addEventListener('storage',queue);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)queue()});
