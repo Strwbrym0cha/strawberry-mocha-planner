@@ -11,7 +11,7 @@ import{decorateSmartPalace,installSmartPalace,renderRoyalArchives}from'./smart-p
 import{decorateLivingPalace,installLivingPalace}from'./living-palace.js?v=6.6.0-living-palace';
 import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout';
 import{createRoomStore}from'./room-store.js?v=6.6.0-living-palace';
-import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.7.13-treasury-controls';
+import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.7.14-treasury-editing';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -132,7 +132,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.13 · Treasury Controls';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.14 · Treasury Editing';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
  const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?(NEW_ROOM_LABELS[activeFuture]||FUTURE_ROOMS[activeFuture]?.[1]||'The Palace'):NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
@@ -186,6 +186,7 @@ app.addEventListener('click',event=>{
  const dutyPanel=event.target.closest('[data-v6-duty-details]');if(dutyPanel){event.preventDefault();const details=app.querySelector(`[data-v6-duty-panel="${CSS.escape(dutyPanel.dataset.v6DutyDetails)}"]`);if(details){details.open=true;details.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}return}
  const jump=event.target.closest('[data-v6-jump]');if(jump){event.preventDefault();app.querySelector(`[data-v6-slot="${jump.dataset.v6Jump}"]`)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
  const archiveGoal=event.target.closest('[data-v6-gig-goal-archive]');if(archiveGoal){event.preventDefault();event.stopImmediatePropagation();if(!window.confirm('Archive this completed gig goal? It will move to Keepsake Chest and can be restored later.'))return;const result=archiveV5Record('work.gig.goals',archiveGoal.dataset.v6GigGoalArchive);if(!result.ok){window.alert(result.error||'That gig goal could not be archived.');return}archiveGoal.closest('[data-money-modal]')?.remove();queue();return}
+ const treasuryOpen=event.target.closest('[data-v6-room="money"] [data-money-open]');if(treasuryOpen){const modal=[...app.querySelectorAll('[data-money-modal]')].find(node=>node.dataset.moneyModal===treasuryOpen.dataset.moneyOpen);if(modal){event.preventDefault();event.stopImmediatePropagation();app.append(modal);modal.hidden=false;modal.querySelector('input,select,textarea')?.focus();return}}
  const preserveNative=event.target.closest('summary,button,input,select,textarea,a,[data-money-open],[data-money-close],[data-flex-plan-open],[data-doordash-plan-open],[data-gig-checkin-modal],[data-flex-shift-modal],[data-doordash-shift-modal]');
  if(preserveNative)return;
 },true);
