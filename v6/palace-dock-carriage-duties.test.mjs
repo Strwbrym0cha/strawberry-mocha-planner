@@ -35,8 +35,8 @@ test('Carriage House uses canonical planned shifts, orders, goals, and payouts',
 
 test('Carriage House rebuilds after Flex or DoorDash scheduling',()=>{
  const shell=source('./command-shell.js');
- assert.match(shell,/identity==='carriage'\)existing\.remove\(\)/);
- assert.match(shell,/\[data-flex-shift-form\],\[data-doordash-shift-form\]/);
+ assert.match(shell,/identity==='carriage'\|\|identity==='money'/);
+ assert.match(shell,/\[data-flex-shift-form\],\[data-doordash-shift-form\],\[data-money-form\]/);
 });
 
 test('Bell Tower remains an independent reminder destination',()=>{
@@ -47,5 +47,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.7\.2-carriage-live-refresh/);
+ const html=source('./index.html');assert.match(html,/6\.7\.3-goal-live-refresh/);
 });
