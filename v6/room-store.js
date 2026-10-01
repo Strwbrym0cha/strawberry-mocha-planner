@@ -1,5 +1,5 @@
 export const ROOM_STORAGE_KEY='katos_v6_new_rooms_v1';
-export const ROOM_SCHEMA_VERSION=4;
+export const ROOM_SCHEMA_VERSION=5;
 
 const list=value=>Array.isArray(value)?value:[];
 const text=value=>String(value??'').trim();
@@ -8,12 +8,12 @@ const makeId=()=>globalThis.crypto?.randomUUID?.()||`v6-${Date.now().toString(36
 const clone=value=>JSON.parse(JSON.stringify(value));
 
 export function emptyRoomState(){
- return{schemaVersion:ROOM_SCHEMA_VERSION,bell:{settings:{},reminders:[]},rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]},smart:{settings:{capacityOverride:'',contextMode:'Home',recoveryDay:false,recoveryDate:''},openLoops:[],decisions:[],taskMeta:[],resetRecipes:[],prepPacks:[],calendarLinks:[],gigRoutes:[],adaptiveGoals:[],maintenance:[],inventory:[],skills:[],wiki:[],brainRoutes:[],nextHourPlans:[]},living:{settings:{foyerOrder:['capacity','schedule','focus','context','next-hour'],hiddenWidgets:[]},chapters:[],milestones:[],pins:[]}};
+ return{schemaVersion:ROOM_SCHEMA_VERSION,bell:{settings:{},reminders:[]},rose:{watches:[],games:[],projects:[],ideas:[],cozy:[],obsessions:[]},moon:{cycles:[],checkins:[],experiments:[]},love:{settings:{privacyMode:false},profiles:[],plans:[],dateIdeas:[],topics:[],gifts:[],memories:[],velvet:[]},wishing:{plans:[],messages:[]},kitchen:{settings:{weekDays:5},recipes:[],mealPlans:[],groceries:[],freezer:[],useSoon:[],components:[],prepRuns:[]},smart:{settings:{capacityOverride:'',contextMode:'Home',recoveryDay:false,recoveryDate:''},openLoops:[],decisions:[],taskMeta:[],resetRecipes:[],prepPacks:[],calendarLinks:[],gigRoutes:[],adaptiveGoals:[],maintenance:[],inventory:[],skills:[],wiki:[],brainRoutes:[],nextHourPlans:[]},living:{settings:{foyerOrder:['capacity','schedule','focus','context','next-hour'],hiddenWidgets:[]},chapters:[],milestones:[],pins:[]}};
 }
 
 export function normalizeRoomState(value){
  const base=emptyRoomState(),source=value&&typeof value==='object'?value:{};
- for(const room of ['bell','rose','moon','love','wishing','living']){
+ for(const room of ['bell','rose','moon','love','wishing','kitchen','living']){
   const current=source[room]&&typeof source[room]==='object'?source[room]:{};
   for(const collection of Object.keys(base[room])){
    if(Array.isArray(base[room][collection]))base[room][collection]=list(current[collection]).filter(row=>row&&typeof row==='object');
@@ -115,4 +115,29 @@ export function dueFutureMessages(messages,today=new Date().toISOString().slice(
 
 export function concealedLabel(record,privacyMode){
  return privacyMode&&record?.private!==false?'Private Entry 🔒':text(record?.title||record?.plan||record?.idea||record?.gift||record?.whatHappened||record?.message)||'Private Entry';
+}
+
+export function parseKitchenIngredients(value){
+ const rows=Array.isArray(value)?value:String(value||'').split(/\r?\n|,/);
+ return rows.map(row=>typeof row==='string'?{name:row.trim(),amount:''}:{name:text(row?.name),amount:text(row?.amount),unit:text(row?.unit)}).filter(row=>row.name);
+}
+
+export function kitchenWeekProposal(kitchen,options={}){
+ const wanted=Math.max(1,Math.min(21,Number(options.count)||Number(options.breakfasts||0)+Number(options.lunches||0)+Number(options.dinners||0)+Number(options.snacks||0)||7)),tags=String(options.tags||'').toLowerCase().split(',').map(value=>value.trim()).filter(Boolean),use=String(options.useIngredients||'').toLowerCase().split(',').map(value=>value.trim()).filter(Boolean),effort=text(options.effort).toLowerCase(),recipes=activeRecords(kitchen?.recipes).filter(recipe=>{
+  const haystack=`${recipe.name} ${list(recipe.tags).join(' ')} ${parseKitchenIngredients(recipe.ingredients).map(row=>row.name).join(' ')}`.toLowerCase();
+  return(!tags.length||tags.some(tag=>haystack.includes(tag)))&&(!use.length||use.some(item=>haystack.includes(item)))&&(!effort||effort==='any'||haystack.includes(effort)||Number(recipe.prepTime||0)+Number(recipe.cookTime||0)<=20);
+ });
+ const pool=recipes.length?recipes:activeRecords(kitchen?.recipes),types=[...Array(Number(options.breakfasts)||0).fill('Breakfast'),...Array(Number(options.lunches)||0).fill('Lunch'),...Array(Number(options.dinners)||0).fill('Dinner'),...Array(Number(options.snacks)||0).fill('Snack')];
+ return Array.from({length:Math.min(wanted,Math.max(types.length,pool.length?1:0))},(_,index)=>{const recipe=pool[index%pool.length];return recipe?{proposalId:`proposal-${index}`,recipeId:recipe.id,name:recipe.name,mealType:types[index]||recipe.mealType||'Meal',servings:Number(recipe.servings)||1}:{proposalId:`proposal-${index}`,name:'Choose a saved recipe',mealType:types[index]||'Meal',servings:1}});
+}
+
+export function generateKitchenGroceries(kitchen,mealPlans=activeRecords(kitchen?.mealPlans)){
+ const recipes=new Map(activeRecords(kitchen?.recipes).map(row=>[row.id,row])),map=new Map;
+ for(const plan of mealPlans){const recipe=recipes.get(plan.recipeId);if(!recipe)continue;const scale=(Number(plan.servings)||Number(recipe.servings)||1)/(Number(recipe.servings)||1);for(const ingredient of parseKitchenIngredients(recipe.ingredients)){const key=ingredient.name.toLowerCase().replace(/\s+/g,' ').trim(),amount=Number(ingredient.amount);const current=map.get(key)||{ingredient:ingredient.name,amount:0,unit:ingredient.unit||'',sourceRecipeIds:[]};if(Number.isFinite(amount)&&amount>0)current.amount=Math.round((current.amount+amount*scale)*100)/100;current.sourceRecipeIds.push(recipe.id);map.set(key,current)}}
+ return[...map.values()];
+}
+
+export function scaleKitchenIngredients(recipe,desiredServings){
+ const scale=Math.max(.01,Number(desiredServings)||1)/Math.max(.01,Number(recipe?.servings)||1);
+ return parseKitchenIngredients(recipe?.ingredients).map(row=>({...row,amount:Number(row.amount)?Math.round(Number(row.amount)*scale*100)/100:row.amount}));
 }

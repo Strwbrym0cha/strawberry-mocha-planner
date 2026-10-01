@@ -39,10 +39,10 @@ for(const[name,width,height]of sizes){
 }
 
 await send('Emulation.setDeviceMetricsOverride',{width:1180,height:820,deviceScaleFactor:1,mobile:false});
-await evaluate(`document.querySelector('[data-foyer-preview="kitchen"]')?.click()`);await wait(80);
-const kitchenOpen=await evaluate(`!!document.querySelector('[data-foyer-preview-modal] [role="dialog"]')`);
-await evaluate(`document.querySelector('[data-foyer-preview-close]')?.click()`);await wait(50);
-const kitchenClosed=await evaluate(`!document.querySelector('[data-foyer-preview-modal]')`);
+await evaluate(`document.querySelector('[data-v6-room="home"] [data-v6-nav="royal-kitchen"]')?.click()`);await wait(160);
+const kitchenOpen=await evaluate(`document.querySelector('.v6-command-room')?.dataset.v6Room==='royal-kitchen'`);
+await evaluate(`document.querySelector('[data-palace-dock] [data-v6-nav="home"]')?.click()`);await wait(160);
+const kitchenClosed=await evaluate(`document.querySelector('.v6-command-room')?.dataset.v6Room==='home'`);
 await evaluate(`document.querySelector('[data-foyer-tiny-win]')?.click()`);await wait(80);
 const winPopup=await evaluate(`!!document.querySelector('[data-foyer-win-modal] [role="dialog"]')`);
 await evaluate(`document.querySelector('[data-foyer-win-close]')?.click()`);await wait(50);
