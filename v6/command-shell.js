@@ -11,7 +11,7 @@ import{decorateSmartPalace,installSmartPalace,renderRoyalArchives}from'./smart-p
 import{decorateLivingPalace,installLivingPalace}from'./living-palace.js?v=6.6.0-living-palace';
 import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout';
 import{createRoomStore}from'./room-store.js?v=6.6.0-living-palace';
-import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.7.0-palace-dock';
+import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.7.6-goal-archive';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
