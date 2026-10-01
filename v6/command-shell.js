@@ -7,7 +7,7 @@ import{selectLifestyle}from'../v5/lifestyle.js?v=7.0.22-odometer-sunday-payout';
 import{buildAdaptiveDay,formatClock,formatMinutes}from'./adaptive-engine.js?v=6.1.0-life-command';
 import{routineFitsNow}from'./routine-timing.js?v=6.2.0-integrated-rooms';
 import{installNewRooms,isNewRoom,renderNewRoom}from'./new-rooms.js?v=6.6.1-room-layout-correction';
-import{decorateSmartPalace,installSmartPalace,renderRoyalArchives}from'./smart-palace.js?v=6.6.0-living-palace';
+import{decorateSmartPalace,installSmartPalace,renderRoyalArchives}from'./smart-palace.js?v=6.7.7-adaptive-goal-archive';
 import{decorateLivingPalace,installLivingPalace}from'./living-palace.js?v=6.6.0-living-palace';
 import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout';
 import{createRoomStore}from'./room-store.js?v=6.6.0-living-palace';
@@ -127,7 +127,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.6 · Goal Archive';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.7 · Adaptive Goal Archive';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
  const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?(NEW_ROOM_LABELS[activeFuture]||FUTURE_ROOMS[activeFuture]?.[1]||'The Palace'):NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
