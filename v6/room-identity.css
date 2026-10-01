@@ -182,6 +182,7 @@ html[data-katos-version="6"] .palace-dock>button{min-width:0;min-height:48px;pad
 html[data-katos-version="6"] .palace-dock>button span{font-size:18px;line-height:1}html[data-katos-version="6"] .palace-dock>button small{max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:9px;font-weight:700;white-space:nowrap}
 html[data-katos-version="6"] .palace-dock>button.active{color:var(--v6-text);background:linear-gradient(105deg,rgba(248,200,220,.72),rgba(217,196,245,.62));box-shadow:inset 0 0 0 1px rgba(185,155,232,.26)}
 html[data-katos-version="6"] .palace-dock>button:focus-visible{outline:3px solid rgba(185,155,232,.42);outline-offset:2px}
+html[data-katos-version="6"] [data-gig-finish-toast]{position:fixed;z-index:1200;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(620px,calc(100vw - 28px));padding:11px 14px;border:1px solid rgba(185,155,232,.42);border-radius:16px;background:linear-gradient(110deg,rgba(255,252,254,.98),rgba(248,238,249,.98));box-shadow:0 12px 34px rgba(73,58,78,.18);color:var(--v6-text);font-size:11px;font-weight:700;text-align:center;pointer-events:none}
 html[data-katos-version="6"]{scroll-padding-bottom:calc(150px + env(safe-area-inset-bottom))}
 html[data-katos-version="6"] .mochini-companion{right:max(16px,env(safe-area-inset-right))!important;bottom:max(92px,calc(env(safe-area-inset-bottom) + 88px))!important;z-index:76}
 html[data-katos-version="6"] .mochini-companion .mc-body{width:102px;height:116px}
