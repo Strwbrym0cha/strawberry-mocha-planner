@@ -41,7 +41,7 @@ const currentView=()=>activeView;
 function recoverInteractivity(){
  document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';document.body.style.overflow='';app.style.pointerEvents='';app.removeAttribute('inert');app.removeAttribute('aria-hidden');
  app.querySelectorAll('.sidebar-backdrop').forEach(node=>node.remove());
- app.querySelectorAll('.detail-modal-backdrop').forEach(node=>{if(node.hidden)return;const dialog=node.querySelector('[role="dialog"]');if(!dialog||dialog.hidden||getComputedStyle(dialog).display==='none')node.remove()});
+ app.querySelectorAll('.detail-modal-backdrop').forEach(node=>{if(node.hidden)return;const dialog=node.querySelector('[role="dialog"]');if(!dialog||dialog.hidden||getComputedStyle(dialog).display==='none'||!dialog.getClientRects().length)node.remove()});
 }
 const titleOf=(row,fallback='Untitled')=>text(row?.title||row?.text||row?.name||row?.label||row?.client||row?.clientName)||fallback;
 const timeOf=row=>text(row?.startTime||row?.time),dateOf=row=>text(row?.date||row?.dueDate||row?.startDate);
