@@ -55,14 +55,15 @@ function updateResult(form){
 function openSummary(plan){
  close();
  const selector=isFlex(plan)?`[data-flex-plan-open="${CSS.escape(String(plan.id))}"]`:`[data-doordash-plan-open="${CSS.escape(String(plan.id))}"]`;
- const openRow=row=>{if(!row)return false;row.click();requestAnimationFrame(()=>requestAnimationFrame(hydrateSummary));return true};
- const current=app.querySelector(selector);if(openRow(current)){window.dispatchEvent(new Event('katos:v6-refresh'));return}
- const tryOpen=(remaining=36)=>{const row=app.querySelector(selector);if(openRow(row)){window.dispatchEvent(new Event('katos:v6-refresh'));return}if(remaining>0){requestAnimationFrame(()=>tryOpen(remaining-1));return}window.alert('Your shift is finished and saved. Open Carriage House and tap the block to add the summary.')};
+ const openStableRow=(remaining=48)=>{
+  const carriageRoom=app.querySelector('[data-v6-room="carriage"]'),row=carriageRoom?.querySelector(selector);
+  if(row){row.click();requestAnimationFrame(()=>requestAnimationFrame(hydrateSummary));return}
+  if(remaining>0){requestAnimationFrame(()=>openStableRow(remaining-1));return}
+  window.alert('Your shift is finished and saved. Tap the completed shift in Carriage House to add the summary.');
+ };
  const carriage=app.querySelector('[data-v6-nav="carriage-house"]');
- if(carriage){carriage.click();requestAnimationFrame(()=>requestAnimationFrame(()=>tryOpen()));return}
- const route=app.querySelector('[data-route-view="boss"][data-route-lane="gig"]')||app.querySelector('[data-view="boss"]');
- if(route){route.click();requestAnimationFrame(()=>tryOpen());return}
- window.dispatchEvent(new Event('katos:v6-refresh'));tryOpen();
+ if(carriage){carriage.click();requestAnimationFrame(()=>requestAnimationFrame(()=>openStableRow()));return}
+ window.dispatchEvent(new Event('katos:v6-refresh'));requestAnimationFrame(()=>openStableRow());
 }
 
 function setIfBlank(form,name,value){const input=form?.elements?.namedItem(name);if(!input||value==null||value===''||text(input.value))return;input.value=String(value)}
@@ -119,7 +120,8 @@ app.addEventListener('submit',event=>{
  if(Number.isNaN(start.getTime())||Number.isNaN(end.getTime())||end<start){error.textContent='The finish time must be after the start time.';return}
  if(!Number.isFinite(first)||!Number.isFinite(last)||last<first){error.textContent='Ending miles must be at least the starting miles.';return}
  const actualMinutes=Math.max(0,Math.round((end-start)/60000)),mileage=rounded(last-first),result=updateV5Record('work.gigShifts',plan.id,{checkInStatus:'finished',actualEndAt:end.toISOString(),actualEndLocal:data.actualEndLocal,endOdometer:rounded(last),actualMinutes,mileage});
- if(!result.ok){error.textContent=result.error||'KatOS could not finish this shift.';return}openSummary(result.entry);
+ if(!result.ok){error.textContent=result.error||'KatOS could not finish this shift.';return}
+ close();window.dispatchEvent(new Event('katos:v6-refresh'));requestAnimationFrame(()=>openSummary(result.entry));
 },true);
 
 window.addEventListener('katos:rendered',queueDecorate);
