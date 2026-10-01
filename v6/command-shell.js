@@ -11,7 +11,7 @@ import{decorateSmartPalace,installSmartPalace,renderRoyalArchives}from'./smart-p
 import{decorateLivingPalace,installLivingPalace}from'./living-palace.js?v=6.6.0-living-palace';
 import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout';
 import{createRoomStore}from'./room-store.js?v=6.6.0-living-palace';
-import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.7.12-gig-lifecycle';
+import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.7.13-treasury-controls';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -132,7 +132,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.12 · Gig Lifecycle';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.7.13 · Treasury Controls';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
  const title=app.querySelector('.top-title');if(title)title.textContent=activeFuture?(NEW_ROOM_LABELS[activeFuture]||FUTURE_ROOMS[activeFuture]?.[1]||'The Palace'):NAV.find(([id,,,route])=>id===(activeNav||defaultNav(view))&&route!==null)?.[2]||ROOM_LABELS[view]||'The Palace';
@@ -158,15 +158,16 @@ function integrateSource(view,page){
   if(view==='study'){if(/assignment|learning queue|deadline|study session/.test(heading))return'assignments';if(/course|program|degree/.test(heading))return'courses'}
   return'tools';
  };
- cards.forEach(card=>{const slot=room.querySelector(`[data-v6-slot="${targetFor(card)}"]`)||room.querySelector('[data-v6-slot="tools"]');if(!slot)return;card.classList.add('v6-native-card');slot.append(card)});
+ cards.forEach(card=>{const target=targetFor(card),slot=room.querySelector(`[data-v6-slot="${target}"]`)||room.querySelector('[data-v6-slot="tools"]');if(!slot)return;card.classList.add('v6-native-card');if(view==='money'&&['accounts','goals','ledger'].includes(target))card.classList.remove('tiny-hide');slot.append(card)});
  const tools=room.querySelector('[data-v6-slot="tools"]');if(tools)sources.filter(node=>!node.matches('.hero,.stat-grid,.room-stat-grid,.grid')&&!node.querySelector('.card')&&text(node.textContent)).forEach(node=>{node.classList.remove('v6-source-section');node.classList.add('v6-native-panel');tools.append(node)});
  room.querySelectorAll('[data-v6-slot]').forEach(slot=>{if(!slot.children.length)slot.innerHTML='<p class="v6-soft-empty">Nothing is waiting in this section.</p>'});
 }
 function showOverview(view){
  const page=app.querySelector('.main>.page');if(!page)return;if(view==='hobbies'){renderNewRoom('rose-garden',page);return}const identity=view==='money'&&activeNav==='carriage-house'?'carriage':view,existing=page.querySelector('.v6-command-room');
  if(existing){
-  if(identity==='carriage'||identity==='money')existing.remove();
-  else{integrateSource(identity,page);return}
+  if(identity==='carriage')existing.remove();
+  else if(existing.dataset.v6Room===identity){integrateSource(identity,page);return}
+  else existing.remove();
  }
  const markup=roomMarkup(view,data(view));if(!markup)return;
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
