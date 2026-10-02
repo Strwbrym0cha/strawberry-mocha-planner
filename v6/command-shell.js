@@ -13,9 +13,10 @@ import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout
 import{createRoomStore}from'./room-store.js?v=6.8.1-palace-batch1-parity';
 import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.8.1-palace-batch1-parity';
 import{installRoyalDuties,renderRoyalDuties}from'./rooms/royal-duties.js?v=6.9.2-career-unfreeze';
-import{installRoyalCalendar,renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.9.2-career-unfreeze';
+import{installRoyalCalendar,renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.9.5-palace-stability-audit';
 import{installCrownCareer,renderCrownCareer}from'./rooms/crown-career.js?v=6.9.4-career-interaction-stability';
 import{installRoyalKitchen,renderRoyalKitchen}from'./rooms/royal-kitchen.js?v=6.8.1-palace-batch1-parity';
+import{closeNativeModal,openNativeModal}from'./rooms/native-modal.js?v=6.9.2-career-unfreeze';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
 const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -57,6 +58,20 @@ function closeTransientSurfaces(){
  app.querySelector('.sidebar')?.classList.remove('open');
  app.querySelector('[data-palace-drawer]')?.setAttribute('hidden','');
  roomsOpen=false;recoverInteractivity();
+}
+function openMochiniConcierge(){
+ closeTransientSurfaces();
+ if(window.KatOSV6Mochini?.open){window.KatOSV6Mochini.open();return}
+ window.dispatchEvent(new Event('katos:mochini-open'));
+}
+function palaceStorageInfo(){let keys=0,bytes=0;try{for(let index=0;index<localStorage.length;index++){const key=localStorage.key(index);if(!key?.startsWith('sm_')&&!key?.startsWith('katos_'))continue;keys++;bytes+=(localStorage.getItem(key)||'').length}}catch{}return{keys,bytes}}
+function downloadPalaceBackup(){
+ const items={};try{for(let index=0;index<localStorage.length;index++){const key=localStorage.key(index);if(key?.startsWith('sm_')||key?.startsWith('katos_'))items[key]=localStorage.getItem(key)}}catch{}
+ const payload={format:'katos-v6-device-backup',version:1,exportedAt:new Date().toISOString(),device:'iPad local planner',items},url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download=`KatOS-V6-backup-${localDateKey()}.json`;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function openPalaceSettings(){
+ closeTransientSurfaces();const storage=palaceStorageInfo(),current=mode();
+ openNativeModal({id:'palace-settings',icon:'⚙️',eyebrow:'PALACE SETTINGS',title:'A few useful controls',copy:'V6 settings stay compact and local to this device.',body:`<div class="v6-palace-settings"><section><h3>Capacity display</h3><p>Choose the visual density that helps right now.</p><div class="v6-settings-mode" role="group" aria-label="Capacity display">${[['normal','🍓','Normal'],['tiny','🫧','Tiny'],['power','⚡','Power']].map(([value,icon,label])=>`<button type="button" class="${current===value?'active':''}" data-v6-settings-mode="${value}">${icon}<b>${label}</b></button>`).join('')}</div></section><section><h3>Local-first data</h3><p>${storage.keys} KatOS storage sections · approximately ${(storage.bytes/1024).toFixed(1)} KB on this device.</p><button type="button" class="btn soft" data-v6-settings-backup>Download local backup</button></section></div><div class="button-row"><button type="button" class="btn primary" data-v6-native-close>Done</button></div>`,onOpen:backdrop=>backdrop.addEventListener('click',event=>{const setting=event.target.closest('[data-v6-settings-mode]');if(setting){event.preventDefault();const control=app.querySelector(`.mode-btn[data-mode="${CSS.escape(setting.dataset.v6SettingsMode)}"]`);closeNativeModal();control?.click();return}const backup=event.target.closest('[data-v6-settings-backup]');if(backup){event.preventDefault();downloadPalaceBackup();backup.textContent='Backup downloaded ✓'}})});
 }
 let lastForwardedContact=0;
 function recoverOnContact(event){
@@ -212,7 +227,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.9.4 · Career Stability';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.9.5 · Palace Stability';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  document.documentElement.dataset.v6ActiveRoom=activeFuture||activeNav||defaultNav(view)||view;
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
@@ -259,6 +274,8 @@ app.addEventListener('click',event=>{
  const previewClose=event.target.closest('[data-foyer-preview-close]');if(previewClose||event.target.matches('[data-foyer-preview-modal]')){event.preventDefault();event.target.closest('[data-foyer-preview-modal]')?.remove();return}
  const roomsButton=event.target.closest('[data-palace-rooms]');if(roomsButton){event.preventDefault();event.stopImmediatePropagation();roomsOpen=!roomsOpen;palaceDock();return}
  const roomsClose=event.target.closest('[data-palace-rooms-close]');if(roomsClose||event.target.matches('[data-palace-drawer]')){event.preventDefault();roomsOpen=false;palaceDock();return}
+ const conciergeRoute=event.target.closest('[data-v6-nav="mochini"],[data-route-view="mochini"]');if(conciergeRoute){event.preventDefault();event.stopImmediatePropagation();openMochiniConcierge();return}
+ const settingsRoute=event.target.closest('[data-v6-nav="settings"],[data-route-view="settings"]');if(settingsRoute){event.preventDefault();event.stopImmediatePropagation();openPalaceSettings();return}
  const retryRoom=event.target.closest('[data-v6-retry-room]');if(retryRoom){event.preventDefault();closeTransientSurfaces();forceNativeRefresh=true;queue();return}
  const palaceNav=event.target.closest('[data-v6-nav]');if(palaceNav){closeTransientSurfaces();activeNav=palaceNav.dataset.v6Nav;activeFuture=null;activeView=palaceNav.dataset.routeView||palaceNav.dataset.view||activeView;if(palaceNav.dataset.v6Future){event.preventDefault();event.stopImmediatePropagation();showFutureRoom(palaceNav.dataset.v6Future);return}requestAnimationFrame(()=>requestAnimationFrame(queue))}
  if(palaceNav){roomsOpen=false;app.querySelector('[data-palace-drawer]')?.setAttribute('hidden','')}

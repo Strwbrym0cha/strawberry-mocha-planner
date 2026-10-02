@@ -25,11 +25,11 @@ const go=async id=>{
  await wait(180);
 };
 const open=async selector=>{
- const opened=await evaluate(`(()=>{const button=document.querySelector(${JSON.stringify(selector)});button?.click();return!!button})()`);
+ const opened=await evaluate(`(()=>{const button=[...document.querySelectorAll(${JSON.stringify(selector)})].find(node=>{const style=getComputedStyle(node),rect=node.getBoundingClientRect();return style.display!=='none'&&style.visibility!=='hidden'&&rect.width>0&&rect.height>0});button?.click();return!!button})()`);
  if(!opened)throw new Error(`Missing modal opener: ${selector}`);
  await wait(100);
 };
-const close=async()=>{await evaluate(`document.querySelector('.detail-modal-backdrop:not([hidden]) .detail-modal-close,[data-v6-native-close],[data-kitchen-close],[data-room-close],[data-money-close],[data-smart-close],[data-bell-close]')?.click()`);await wait(60)};
+const close=async()=>{await evaluate(`([...document.querySelectorAll('[data-foyer-win-close],[data-v6-native-close],[data-kitchen-close],[data-room-close],[data-money-close],[data-smart-close],[data-bell-close],[data-flex-shift-close],[data-doordash-shift-close],[data-gig-checkin-close],[data-living-close],.detail-modal-backdrop:not([hidden]) .detail-modal-close')].find(node=>{const style=getComputedStyle(node),rect=node.getBoundingClientRect();return style.display!=='none'&&style.visibility!=='hidden'&&rect.width>0&&rect.height>0}))?.click()`);await wait(60)};
 const inspect=async(label)=>{
  const metrics=await evaluate(`(()=>{
   const dialog=[...document.querySelectorAll('.detail-modal-backdrop:not([hidden]) .detail-modal,.v6-room-modal-backdrop:not([hidden]) .v6-room-modal,[data-bell-modal] .v6-room-modal')].find(node=>getComputedStyle(node).display!=='none');
@@ -50,17 +50,36 @@ const inspect=async(label)=>{
 
 const cases=[
  {room:'home',name:'Foyer · Tiny Win',open:'[data-foyer-tiny-win]'},
+ {room:'home',name:'Foyer · Brain Dump',open:'[data-smart-action="brain"]'},
  {room:'daily',name:'Royal Duties · Add Task',open:'[data-v6-duty-open="task-new"]'},
+ {room:'daily',name:'Royal Duties · Routines',open:'[data-v6-duty-open="routines"]'},
+ {room:'daily',name:'Royal Duties · Medication',open:'[data-v6-duty-open="medications"]'},
  {room:'time',name:'Royal Calendar · Add Event',open:'[data-v6-calendar-open="event-new"]'},
+ {room:'time',name:'Royal Calendar · Leave By',open:'[data-smart-action="calendar-link"]'},
+ {room:'boss',name:'Crown & Career · Add Session',open:'[data-v6-career-open="session-new"]'},
+ {room:'boss',name:'Crown & Career · Clients',open:'[data-v6-career-open="clients"]'},
  {room:'boss',name:'Crown & Career · History',open:'[data-v6-career-open="history"]'},
+ {room:'boss',name:'Crown & Career · Resources',open:'[data-v6-career-open="resources"]'},
  {room:'carriage-house',name:'Carriage House · Goal',open:'[data-money-open="new-gig-goal"]'},
+ {room:'carriage-house',name:'Carriage House · Payout',open:'[data-money-open="new-payout"]'},
+ {room:'carriage-house',name:'Carriage House · Flex Block',open:'[data-flex-add]'},
+ {room:'carriage-house',name:'Carriage House · DoorDash Shift',open:'[data-doordash-add]'},
  {room:'royal-kitchen',name:'Royal Kitchen · Plan Meal',open:'[data-kitchen-open="meal"]'},
  {room:'royal-kitchen',name:'Royal Kitchen · Recipe',open:'[data-kitchen-open="recipe"]'},
  {room:'royal-kitchen',name:'Royal Kitchen · Build Week',open:'[data-kitchen-open="build-week"]'},
+ {room:'royal-kitchen',name:'Royal Kitchen · Build a Meal',open:'[data-kitchen-open="build-meal"]'},
+ {room:'royal-kitchen',name:'Royal Kitchen · Batch Calculator',open:'[data-kitchen-open="batch"]'},
+ {room:'royal-kitchen',name:'Royal Kitchen · Prep Day',open:'[data-kitchen-open="prep"]'},
+ {room:'royal-kitchen',name:'Royal Kitchen · Leftovers',open:'[data-kitchen-open="leftovers"]'},
+ {room:'royal-kitchen',name:'Royal Kitchen · Freezer',open:'[data-kitchen-open="freezer"]'},
+ {room:'royal-kitchen',name:'Royal Kitchen · Use It Soon',open:'[data-kitchen-open="use-soon"]'},
+ {room:'royal-kitchen',name:'Royal Kitchen · Rotation',open:'[data-kitchen-open="rotation"]'},
  {room:'hobbies',name:'Rose Garden · Add',open:'[data-room-add]'},
+ {room:'hobbies',name:'Rose Garden · Bored Button',open:'[data-bored-open]'},
  {room:'moon-garden',name:'Moon Garden · Add',open:'[data-room-add]'},
  {room:'love-letters',name:'Love Letters · Add',open:'[data-room-add]'},
  {room:'wishing-tower',name:'Wishing Tower · Add',open:'[data-room-add]'},
+ {room:'royal-archives',name:'Royal Archives · Add',open:'[data-smart-action="wiki-add"]'},
  {room:'bell-tower',name:'Bell Tower · Add Reminder',open:'[data-bell-action="add"]'}
 ];
 const sizes=[['landscape',1180,820],['reported-ipad',1280,840],['portrait',820,1180]],results=[];
@@ -72,5 +91,5 @@ for(const[size,width,height]of sizes){
   await close();
  }
 }
-console.log(JSON.stringify({checks:results.length*7,modals:results.length,screenshots:output,results:results.map(({size,label,box,grids,controls})=>({size,label,box,gridWidths:grids.map(row=>row.box.width),controlWidths:controls.map(row=>row.box.width)}))},null,2));
+console.log(JSON.stringify({checks:results.length*7,modals:results.length,families:cases.length,viewports:sizes.map(([name,width,height])=>({name,width,height})),screenshots:output},null,2));
 socket.close();

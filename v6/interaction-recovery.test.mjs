@@ -51,3 +51,12 @@ test('Crown and Career rejects malformed legacy display rows without locking the
  assert.doesNotMatch(career,/work\.hq\.clients\.find/);
  assert.doesNotMatch(career,/row\.label\|\|row/);
 });
+
+test('Rooms drawer tools route to working V6 interactions instead of stale rooms',()=>{
+ assert.match(source,/function openMochiniConcierge\(\)/);
+ assert.match(source,/function openPalaceSettings\(\)/);
+ assert.match(source,/data-v6-nav="mochini".*data-route-view="mochini"/);
+ assert.match(source,/data-v6-nav="settings".*data-route-view="settings"/);
+ assert.match(source,/data-v6-settings-mode/);
+ assert.match(source,/data-v6-settings-backup/);
+});

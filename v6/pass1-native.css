@@ -97,6 +97,13 @@ html[data-katos-version="6"] .v6-room-modal{width:min(760px,calc(100vw - 28px))!
 html[data-katos-version="6"] .v6-room-modal.v6-room-modal-small{width:min(560px,calc(100vw - 28px))!important;max-width:560px!important}
 html[data-katos-version="6"] .v6-smart-modal{width:min(680px,calc(100vw - 28px))!important;max-width:680px!important}
 html[data-katos-version="6"] .v6-smart-modal.is-wide{width:min(940px,calc(100vw - 28px))!important;max-width:940px!important}
+html[data-katos-version="6"] .v6-palace-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
+html[data-katos-version="6"] .v6-palace-settings>section{min-width:0;padding:14px;border:1px solid rgba(181,117,157,.18);border-radius:15px;background:rgba(255,250,253,.82)}
+html[data-katos-version="6"] .v6-palace-settings h3{margin:0 0 5px;color:#783a59;font:600 1.05rem/1.2 var(--v6-serif,Georgia,serif)}
+html[data-katos-version="6"] .v6-palace-settings p{margin:0 0 11px;color:#7c6878;font-size:.8rem;line-height:1.4}
+html[data-katos-version="6"] .v6-settings-mode{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+html[data-katos-version="6"] .v6-settings-mode button{display:grid;place-items:center;gap:4px;min-height:64px;padding:8px;border:1px solid rgba(181,117,157,.18);border-radius:12px;background:#fff;color:#6b4f64}
+html[data-katos-version="6"] .v6-settings-mode button.active{border-color:rgba(205,85,138,.38);background:linear-gradient(135deg,#ffeaf2,#f3eaff);box-shadow:0 7px 18px rgba(141,74,113,.1)}
 
 @media(max-width:680px){
   html[data-katos-version="6"] .detail-modal{--v6-modal-gutter:13px}
@@ -106,5 +113,6 @@ html[data-katos-version="6"] .v6-smart-modal.is-wide{width:min(940px,calc(100vw 
   html[data-katos-version="6"] .v6-room-form-grid{grid-template-columns:1fr}
   html[data-katos-version="6"] .v6-room-form-grid>label.wide{grid-column:auto}
   html[data-katos-version="6"] .detail-modal :is(input:not([type=checkbox]):not([type=radio]),select,textarea){font-size:16px}
+  html[data-katos-version="6"] .v6-palace-settings{grid-template-columns:1fr}
 }
 @media(max-width:760px){html[data-katos-version="6"] .v6-native-form,html[data-katos-version="6"] .v6-career-resource-columns{grid-template-columns:1fr}html[data-katos-version="6"] .v6-calendar-month{grid-template-columns:repeat(2,minmax(0,1fr))}html[data-katos-version="6"] .v6-session-hours{grid-template-columns:1fr}}

@@ -52,7 +52,21 @@ await expect(`!!document.querySelector('[data-palace-drawer]:not([hidden])')`,'R
 await tap('[data-palace-rooms-close]');
 await expect(`!document.querySelector('[data-palace-drawer]:not([hidden])')`,'Rooms drawer remained after close.');
 
+await tap('[data-palace-rooms]');
+await tap('[data-palace-drawer] [data-v6-nav="settings"]');
+await expect(`document.querySelector('[data-v6-native-modal]')?.dataset.v6NativeModal==='palace-settings'`,'Settings did not open a native V6 popup.');
+await tap('[data-v6-settings-mode="tiny"]');
+await expect(`document.body.classList.contains('mode-tiny')`,'Settings mode control did not update KatOS.');
+await expect(`!document.querySelector('[data-v6-native-modal]')`,'Settings popup left a stale backdrop.');
+await tap('[data-palace-rooms]');
+const roomBeforeMochini=await evaluate(`document.querySelector('.v6-command-room')?.dataset.v6Room`);
+await tap('[data-palace-drawer] [data-v6-nav="mochini"]');
+await expect(`document.querySelector('[data-mc-bubble]')?.classList.contains('is-open')`,'Mochini room entry did not open the Concierge.');
+await expect(`document.querySelector('.v6-command-room')?.dataset.v6Room===${JSON.stringify(roomBeforeMochini)}`,'Mochini replaced the active room with a stale surface.');
+await tap('[data-mc-close]');
+await evaluate(`document.querySelector('.mode-btn[data-mode="normal"]')?.click()`);await wait(180);
+
 const final=await evaluate(`({build:document.querySelector('meta[name="sm-build"]')?.content,modalCount:document.querySelectorAll('.detail-modal-backdrop:not([hidden])').length,bodyPointer:getComputedStyle(document.body).pointerEvents,appPointer:getComputedStyle(document.querySelector('#app')).pointerEvents,dockPointer:getComputedStyle(document.querySelector('[data-palace-dock]')).pointerEvents})`);
 if(final.modalCount||final.bodyPointer==='none'||final.appPointer==='none'||final.dockPointer==='none')throw new Error(`Interaction locks remain: ${JSON.stringify(final)}`);
-console.log(JSON.stringify({checks:22,rooms:['daily','time','boss','carriage'],orphanBackdropRecovered:true,navigationBackdropRecovered:true,touchLockRecovered:true,final},null,2));
+console.log(JSON.stringify({checks:30,rooms:['daily','time','boss','carriage'],orphanBackdropRecovered:true,navigationBackdropRecovered:true,touchLockRecovered:true,settingsPopup:true,mochiniRoute:true,final},null,2));
 ws.close();
