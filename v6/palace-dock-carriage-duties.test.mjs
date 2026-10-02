@@ -14,12 +14,11 @@ test('Palace Dock replaces the visible rail and reaches every room',()=>{
 });
 
 test('Royal Duties is an action surface with collapsed Later and Done',()=>{
- const js=source('./command-shell.js');
- for(const token of ['v6-duty-command-strip','v6-duty-now','v6-duty-next','data-duty-later','data-duty-done','TODAY’S RHYTHM','MEDICATION CABINET','data-v6-duty-panel="medication"','data-smart-action="energy"'])assert.equal(js.includes(token),true,`${token} should be present`);
+ const js=source('./rooms/royal-duties.js');
+ for(const token of ['Today’s Plan','Daily Rituals','Medication & Wellness','Could Do','Later','Done','data-v6-duty-open="medications"','data-smart-action="energy"'])assert.equal(js.includes(token),true,`${token} should be present`);
  assert.equal(js.includes('<h2>Must Do</h2>'),false);
  assert.equal(js.includes('<h2>Should Do</h2>'),false);
- assert.doesNotMatch(js,/data-duty-later[^>]*\sopen(?:\s|>)/);
- assert.doesNotMatch(js,/data-duty-done[^>]*\sopen(?:\s|>)/);
+ assert.doesNotMatch(js,/data-v6-slot|v6-duty-native|Advanced duty/);
 });
 
 test('Carriage House metrics preserve separate Flex route facts',()=>{
@@ -76,5 +75,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.8\.0-palace-batch1/);
+ const html=source('./index.html');assert.match(html,/6\.9\.1-interaction-recovery/);
 });

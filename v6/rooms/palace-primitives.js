@@ -19,10 +19,10 @@ export function softEmpty(title,copy=''){
  return`<div class="v6-palace-empty"><span aria-hidden="true">♡</span><div><b>${esc(title)}</b>${copy?`<p>${esc(copy)}</p>`:''}</div></div>`;
 }
 
-// Normalize the two legacy labels still emitted by Batch 1 markup before the
-// canonical Smart Palace and shell click handlers inspect the same event.
+// Normalize the one remaining Prep alias before the canonical Smart Palace
+// handler inspects the same event. Calendar timing is now owned by its native room.
 if(typeof document!=='undefined')document.addEventListener('click',event=>{
- const control=event.target.closest?.('[data-smart-action="prep-manager"],[data-smart-action="calendar-link"],[data-v6-slot-open]');
+ const control=event.target.closest?.('[data-smart-action="prep-manager"],[data-v6-slot-open]');
  if(!control)return;
  if(control.dataset.smartAction==='prep-manager')control.dataset.smartAction='pack-manager';
  else{delete control.dataset.smartAction;control.dataset.v6Jump=control.dataset.v6SlotOpen||'calendar';delete control.dataset.v6SlotOpen}

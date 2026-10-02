@@ -12,9 +12,9 @@ import{decorateLivingPalace,installLivingPalace}from'./living-palace.js?v=6.6.0-
 import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout';
 import{createRoomStore}from'./room-store.js?v=6.8.1-palace-batch1-parity';
 import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.8.1-palace-batch1-parity';
-import{renderRoyalDuties}from'./rooms/royal-duties.js?v=6.8.1-palace-batch1-parity';
-import{installRoyalCalendar,renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.8.1-palace-batch1-parity';
-import{renderCrownCareer}from'./rooms/crown-career.js?v=6.8.1-palace-batch1-parity';
+import{installRoyalDuties,renderRoyalDuties}from'./rooms/royal-duties.js?v=6.9.1-interaction-recovery';
+import{installRoyalCalendar,renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.9.1-interaction-recovery';
+import{installCrownCareer,renderCrownCareer}from'./rooms/crown-career.js?v=6.9.1-interaction-recovery';
 import{installRoyalKitchen,renderRoyalKitchen}from'./rooms/royal-kitchen.js?v=6.8.1-palace-batch1-parity';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
@@ -34,7 +34,8 @@ const FUTURE_ROOMS={
 const NEW_ROOM_LABELS={'bell-tower':'Bell Tower','royal-kitchen':'Royal Kitchen','moon-garden':'Moon Garden','love-letters':'Love Letters','wishing-tower':'Wishing Tower'};
 const ROOM_LABELS={motion:'Movement Hall',growth:'Growth Garden',dump:'Brain Inbox'};
 let activeNav=null,activeFuture=null,activeView=app.querySelector('.nav-btn.active[data-view]')?.dataset.view||'home';
-let roomsOpen=false;
+let roomsOpen=false,forceNativeRefresh=false;
+const LEGACY_PRESENTATION_VIEWS=new Set(['money','study']);
 const roomStore=createRoomStore();
 installNewRooms(app);
 installSmartPalace(app);
@@ -42,12 +43,14 @@ installLivingPalace(app);
 installBellTower(app);
 installRoyalKitchen(roomStore);
 installRoyalCalendar();
+installRoyalDuties();
+installCrownCareer();
 const mode=()=>document.body.classList.contains('mode-tiny')?'tiny':document.body.classList.contains('mode-power')?'power':'normal';
 const currentView=()=>activeView;
 function recoverInteractivity(){
  document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';document.body.style.overflow='';app.style.pointerEvents='';app.removeAttribute('inert');app.removeAttribute('aria-hidden');
- app.querySelectorAll('.sidebar-backdrop').forEach(node=>node.remove());
- app.querySelectorAll('.detail-modal-backdrop').forEach(node=>{if(node.hidden)return;const dialog=node.querySelector('[role="dialog"]');if(!dialog||dialog.hidden||getComputedStyle(dialog).display==='none'||!dialog.getClientRects().length)node.remove()});
+ document.querySelectorAll('.sidebar-backdrop').forEach(node=>node.remove());
+ document.querySelectorAll('.detail-modal-backdrop').forEach(node=>{const layerStyle=getComputedStyle(node);if(node.hidden||node.getAttribute('aria-hidden')==='true'||layerStyle.display==='none'||layerStyle.visibility==='hidden'||layerStyle.opacity==='0'){node.style.pointerEvents='none';return}const dialog=node.querySelector('[role="dialog"]'),dialogStyle=dialog&&getComputedStyle(dialog),rect=dialog?.getBoundingClientRect();if(!dialog||dialog.hidden||dialogStyle.display==='none'||dialogStyle.visibility==='hidden'||!dialog.getClientRects().length||rect.bottom<=0||rect.top>=innerHeight||rect.right<=0||rect.left>=innerWidth)node.remove()});
 }
 const titleOf=(row,fallback='Untitled')=>text(row?.title||row?.text||row?.name||row?.label||row?.client||row?.clientName)||fallback;
 const timeOf=row=>text(row?.startTime||row?.time),dateOf=row=>text(row?.date||row?.dueDate||row?.startDate);
@@ -179,7 +182,7 @@ function memoryRoom(d){
  return hero('📦 MEMORY BOX · V6','Put it away without losing it.','Finished chapters stay searchable, restorable, and safely out of the everyday rooms.',`<div class="v6-hero-stats">${stat('SAVED AWAY',String(archived.length))}${stat('COLLECTIONS',String(groups.size))}</div>`)+`<section class="v6-memory-shelf">${recent.length?recent.map(item=>`<article><span>📦</span><div><b>${esc(titleOf(item,'Saved memory'))}</b><small>${esc(text(item.kind).replaceAll('.',' · '))}</small></div></article>`).join(''):empty('Your Memory Box is quiet.')}</section>`+workspace('📦 RESTORE SHELF','Everything archived, with its real restore controls','tools');
 }
 
-function roomMarkup(view,d){if(view==='home')return todayRoom(d);if(view==='time')return renderRoyalCalendar(d);if(view==='daily')return renderRoyalDuties(d,{capacity:currentCapacityLabel(),maintenance:roomStore.load().smart.maintenance});if(view==='boss')return renderCrownCareer({...d,roomState:roomStore.load()});if(view==='money'&&activeNav==='carriage-house')return carriageHouseMarkup(buildCarriageModel({today:d.date,state:d.state,finance:d.finance,adaptiveGoals:list(roomStore.load()?.smart?.adaptiveGoals)}));if(view==='money')return moneyRoom(d);if(view==='study')return schoolRoom(d);if(view==='hobbies')return funRoom(d);if(view==='archive')return memoryRoom(d);return'';}
+function roomMarkup(view,d){if(view==='home')return todayRoom(d);if(view==='time')return renderRoyalCalendar(d);if(view==='daily')return renderRoyalDuties(d,{capacity:currentCapacityLabel(),maintenance:roomStore.load().smart.maintenance});if(view==='boss')return renderCrownCareer({...d,roomState:roomStore.load()});if(view==='money'&&activeNav==='carriage-house')return carriageHouseMarkup(buildCarriageModel({today:d.date,state:d.state,finance:d.finance,adaptiveGoals:list(roomStore.load()?.smart?.adaptiveGoals)})).replace(/<details class="v6-native-details">[\s\S]*?<\/details>/,'');if(view==='money')return moneyRoom(d);if(view==='study')return schoolRoom(d);if(view==='hobbies')return funRoom(d);if(view==='archive')return memoryRoom(d);return'';}
 
 function defaultNav(view){return NAV.find(([id,,,route])=>id===view&&route!==null)?.[0]||NAV.find(([, , ,route])=>route===view)?.[0]||null}
 function futureRoomMarkup(id){const[icon,title,copy]=FUTURE_ROOMS[id];return`<section class="v6-future-room"><div class="v6-future-mark">${icon}</div><div class="ey">FUTURE ROOM · STAGE 1 SHELL</div><h1>${esc(title)}</h1><p>${esc(copy)}</p><div class="v6-future-note">Nothing private is being tracked here yet.</div><button type="button" class="btn primary" data-v6-nav="home" data-route-view="home">Return to Palace Foyer</button></section>`}
@@ -192,7 +195,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.8.2 · Treasury Cash Only';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.9.1 · Interaction Recovery';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  document.documentElement.dataset.v6ActiveRoom=activeFuture||activeNav||defaultNav(view)||view;
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
@@ -207,15 +210,7 @@ function integrateSource(view,page){
  const sources=sourceSections(page),cards=[];sources.forEach(source=>source.querySelectorAll('.card').forEach(candidate=>{if(!candidate.parentElement?.closest('.card')&&!cards.includes(candidate))cards.push(candidate)}));
  const targetFor=card=>{
   const heading=text(card.querySelector('h2')?.textContent).toLowerCase(),marker=`${text(card.querySelector('.ey')?.textContent)} ${heading} ${text(card.className)}`.toLowerCase();
-  if(view==='daily'){
-   if(/medication/.test(heading))return'medication';
-   if(/routine|progress that still counts/.test(heading))return'routines';
-   return'tasks';
-  }
-  if(view==='time'&&/calendar|week|schedule|event/.test(heading))return'calendar';
-  if(view==='boss'){if(/skill/.test(heading))return'skills';if(/schedule|session|client|rbt/.test(heading))return'schedule';if(/open loop/.test(heading))return'loops'}
   if(view==='money'){if(/account|money right now|balance/.test(marker))return'accounts';if(/goal|saving|fund|money with a purpose/.test(marker))return'goals';if(/real money ledger|ledger|transaction|actual paper trail|recent activity/.test(marker))return'ledger';if(/bill|subscription|budget|cash flow|liabilit|work estimate|spending|gig snapshot/.test(marker))return'tools'}
-  if(view==='carriage'){if(/shift planner|amazon flex planner|doordash/.test(heading))return'planner';if(/goal/.test(heading))return'goals';if(/payout/.test(heading))return'payouts';if(/comparison|ratio|this week/.test(heading))return'comparison';if(/recent order|gig work|route/.test(heading))return'activity'}
   if(view==='study'){if(/assignment|learning queue|deadline|study session/.test(heading))return'assignments';if(/course|program|degree/.test(heading))return'courses'}
   return'tools';
  };
@@ -227,15 +222,16 @@ function showOverview(view){
  const page=app.querySelector('.main>.page');if(!page)return;if(view==='hobbies'){renderNewRoom('rose-garden',page);return}const identity=view==='money'&&activeNav==='carriage-house'?'carriage':view,existing=page.querySelector('.v6-command-room');
  if(existing){
   if(identity==='carriage')existing.remove();
-  else if(existing.dataset.v6Room===identity){integrateSource(identity,page);return}
+  else if(existing.dataset.v6Room===identity&&!forceNativeRefresh){if(LEGACY_PRESENTATION_VIEWS.has(identity))integrateSource(identity,page);return}
   else existing.remove();
  }
  const markup=roomMarkup(view,data(view));if(!markup)return;
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
- page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(identity)}">${markup}</div>`);if(identity!=='carriage')integrateSource(identity,page);
+ page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(identity)}">${markup}</div>`);forceNativeRefresh=false;if(LEGACY_PRESENTATION_VIEWS.has(identity))integrateSource(identity,page);
 }
 function decorate(){recoverInteractivity();const selected=app.querySelector('.nav-btn.active[data-view]')?.dataset.view;if(selected)activeView=selected;brandShell();const view=currentView();if(activeFuture){showFutureRoom(activeFuture);return}if(LABELS[view]&&!['mochini','settings'].includes(view))showOverview(view);decorateSmartPalace();decorateLivingPalace()}
 let queued=false;function queue(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;decorate()})}
+window.addEventListener('katos:v6-native-refresh',()=>{forceNativeRefresh=true;queue()});
 
 app.addEventListener('submit',event=>{const winForm=event.target.closest('[data-foyer-win-form]');if(winForm){event.preventDefault();event.stopImmediatePropagation();const values=new FormData(winForm),result=runV5LifestyleAction({type:'growth-win-save',title:text(values.get('title')),date:localDateKey(),areaId:'',notes:''});if(!result.ok){winForm.querySelector('[data-foyer-win-error]').textContent=result.error||'That win could not be saved.';return}winForm.closest('[data-foyer-win-modal]')?.remove();window.dispatchEvent(new Event('katos:v6-refresh'));return}if(event.target.closest('[data-flex-shift-form],[data-doordash-shift-form],[data-money-form],[data-smart-form="adaptive"]'))requestAnimationFrame(()=>requestAnimationFrame(queue))},true);
 app.addEventListener('click',event=>{
