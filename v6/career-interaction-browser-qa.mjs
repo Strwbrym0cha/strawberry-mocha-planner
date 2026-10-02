@@ -41,9 +41,14 @@ for(const[selector,id]of nativeCases){
  await tap(selector);
  await expect(`document.querySelector('[data-v6-native-modal]')?.dataset.v6NativeModal===${JSON.stringify(id)}`,`${id} did not open from a real touch.`);
  await expect(`(()=>{const d=document.querySelector('[data-v6-native-modal] [role="dialog"]'),r=d?.getBoundingClientRect();return !!r&&r.left>=0&&r.top>=0&&r.right<=innerWidth&&r.bottom<=innerHeight})()`,`${id} is outside the iPad viewport.`);
+ await tap('[data-v6-native-modal] .v6-native-action-body');
+ await expect(`!!document.querySelector('[data-v6-native-modal]')`,`${id} disappeared or froze when its popup body was touched.`);
  if(id==='career-session'&&await evaluate(`!!document.querySelector('[data-v6-career-open="client-new"]')`)){
   await tap('[data-v6-career-open="client-new"]');
   await expect(`document.querySelector('[data-v6-native-modal]')?.dataset.v6NativeModal==='career-client'`,'Client alias transition froze inside the session popup.');
+  await tap('[data-v6-career-form="client"] input[name="alias"]');
+  await send('Input.insertText',{text:`T${Date.now().toString().slice(-4)}`});
+  await expect(`document.activeElement?.matches('[data-v6-career-form="client"] input[name="alias"]')`,'The client popup field did not accept touch focus.');
  }
  await tap('[data-v6-native-close]');
  await expectUnlocked(id);
@@ -55,6 +60,13 @@ let smartChecks=0;
 for(const action of smartCases){
  await tap(`[data-smart-action="${action}"]`);
  await expect(`!!document.querySelector('[data-smart-modal]')`,`${action} did not open its Palace popup.`);
+ await tap('[data-smart-modal] .v6-smart-modal-body');
+ await expect(`!!document.querySelector('[data-smart-modal]')`,`${action} froze when the popup body was touched.`);
+ if(action==='loop-add'){
+  await tap('[data-smart-modal] input[name="title"]');
+  await send('Input.insertText',{text:'Touch QA'});
+  await expect(`document.activeElement?.matches('[data-smart-modal] input[name="title"]')`,'The Palace popup field did not accept touch focus.');
+ }
  await tap('[data-smart-close]');
  await expectUnlocked(action);
  smartChecks++;
@@ -65,5 +77,5 @@ await expect(`document.querySelector('.v6-command-room')?.dataset.v6Room==='home
 await expectUnlocked('Career exit');
 if(exceptions.length)throw new Error(`Browser exceptions during Career touch QA: ${exceptions.join(' | ')}`);
 const final=await evaluate(`({build:document.querySelector('meta[name="sm-build"]')?.content,room:document.querySelector('.v6-command-room')?.dataset.v6Room,bodyPointer:getComputedStyle(document.body).pointerEvents,dockPointer:getComputedStyle(document.querySelector('[data-palace-dock]')).pointerEvents})`);
-console.log(JSON.stringify({checks:31,nativeChecks,smartChecks,exceptions:exceptions.length,final},null,2));
+console.log(JSON.stringify({checks:49,nativeChecks,smartChecks,exceptions:exceptions.length,final},null,2));
 ws.close();
