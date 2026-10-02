@@ -12,9 +12,9 @@ import{decorateLivingPalace,installLivingPalace}from'./living-palace.js?v=6.6.0-
 import{installBellTower,renderBellTower}from'./bell-tower.js?v=6.6.1-room-layout';
 import{createRoomStore}from'./room-store.js?v=6.8.1-palace-batch1-parity';
 import{buildCarriageModel,carriageHouseMarkup}from'./carriage-house.js?v=6.8.1-palace-batch1-parity';
-import{installRoyalDuties,renderRoyalDuties}from'./rooms/royal-duties.js?v=6.9.1-interaction-recovery';
-import{installRoyalCalendar,renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.9.1-interaction-recovery';
-import{installCrownCareer,renderCrownCareer}from'./rooms/crown-career.js?v=6.9.1-interaction-recovery';
+import{installRoyalDuties,renderRoyalDuties}from'./rooms/royal-duties.js?v=6.9.2-career-unfreeze';
+import{installRoyalCalendar,renderRoyalCalendar}from'./rooms/royal-calendar.js?v=6.9.2-career-unfreeze';
+import{installCrownCareer,renderCrownCareer}from'./rooms/crown-career.js?v=6.9.2-career-unfreeze';
 import{installRoyalKitchen,renderRoyalKitchen}from'./rooms/royal-kitchen.js?v=6.8.1-palace-batch1-parity';
 
 const app=document.getElementById('app'),list=value=>Array.isArray(value)?value:[],text=value=>String(value??'').trim();
@@ -51,6 +51,23 @@ function recoverInteractivity(){
  document.documentElement.style.pointerEvents='';document.body.style.pointerEvents='';document.body.style.overflow='';app.style.pointerEvents='';app.removeAttribute('inert');app.removeAttribute('aria-hidden');
  document.querySelectorAll('.sidebar-backdrop').forEach(node=>node.remove());
  document.querySelectorAll('.detail-modal-backdrop').forEach(node=>{const layerStyle=getComputedStyle(node);if(node.hidden||node.getAttribute('aria-hidden')==='true'||layerStyle.display==='none'||layerStyle.visibility==='hidden'||layerStyle.opacity==='0'){node.style.pointerEvents='none';return}const dialog=node.querySelector('[role="dialog"]'),dialogStyle=dialog&&getComputedStyle(dialog),rect=dialog?.getBoundingClientRect();if(!dialog||dialog.hidden||dialogStyle.display==='none'||dialogStyle.visibility==='hidden'||!dialog.getClientRects().length||rect.bottom<=0||rect.top>=innerHeight||rect.right<=0||rect.left>=innerWidth)node.remove()});
+}
+function closeTransientSurfaces(){
+ document.querySelectorAll('.detail-modal-backdrop,.sidebar-backdrop').forEach(node=>node.remove());
+ app.querySelector('.sidebar')?.classList.remove('open');
+ app.querySelector('[data-palace-drawer]')?.setAttribute('hidden','');
+ roomsOpen=false;recoverInteractivity();
+}
+let lastForwardedContact=0;
+function recoverOnContact(event){
+ const target=event.target instanceof Element?event.target:null,blocked=getComputedStyle(document.documentElement).pointerEvents==='none'||getComputedStyle(document.body).pointerEvents==='none'||getComputedStyle(app).pointerEvents==='none',backdrop=target?.closest('.detail-modal-backdrop,.sidebar-backdrop');
+ if(blocked||backdrop)recoverInteractivity();
+ if(!backdrop||target?.closest('[role="dialog"]'))return;
+ const contact=event.touches?.[0]||event.changedTouches?.[0]||event,{clientX,clientY}=contact,now=Date.now();
+ backdrop.remove();recoverInteractivity();
+ const underneath=Number.isFinite(clientX)&&Number.isFinite(clientY)?document.elementFromPoint(clientX,clientY):null,control=underneath?.closest?.('[data-palace-dock] button,[data-v6-nav],[data-palace-rooms]');
+ if(!control||now-lastForwardedContact<250)return;
+ lastForwardedContact=now;event.preventDefault?.();queueMicrotask(()=>control.isConnected&&control.click());
 }
 const titleOf=(row,fallback='Untitled')=>text(row?.title||row?.text||row?.name||row?.label||row?.client||row?.clientName)||fallback;
 const timeOf=row=>text(row?.startTime||row?.time),dateOf=row=>text(row?.date||row?.dueDate||row?.startDate);
@@ -195,7 +212,7 @@ function palaceDock(){
 }
 function brandShell(){
  document.title='KatOS V6 · The Palace';document.documentElement.dataset.katosVersion='6';
- const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.9.1 · Interaction Recovery';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
+ const brand=app.querySelector('.brand h1'),build=app.querySelector('.brand .build'),foot=app.querySelector('.sidebar-foot'),scribble=app.querySelector('.brand .scribble');if(brand)brand.textContent='The Palace';if(build)build.textContent='6.9.2 · Career Unfreeze';if(foot)foot.innerHTML='<b>KatOS V6</b><br>The Living Palace, room by room.';if(scribble)scribble.textContent='a softer way to hold a life';
  const view=currentView();if(!activeNav)activeNav=defaultNav(view);
  document.documentElement.dataset.v6ActiveRoom=activeFuture||activeNav||defaultNav(view)||view;
  const nav=app.querySelector('.nav');if(nav){const buttons=new Map([...nav.querySelectorAll('.nav-btn[data-view]')].map(button=>[button.dataset.view,button]));nav.replaceChildren();NAV_GROUPS.forEach(([group,items])=>{if(group){const heading=document.createElement('div');heading.className='v6-nav-group-label';heading.textContent=group;nav.append(heading)}items.forEach(([id,icon,label,route,lane])=>{let button=route===undefined?buttons.get(id):null;if(!button){button=document.createElement('button');button.type='button';button.className='nav-btn';button.innerHTML='<span class="nav-icon"></span><span></span>';if(route)button.dataset.routeView=route;else button.dataset.v6Future=id}button.hidden=false;button.dataset.v6Nav=id;if(lane)button.dataset.routeLane=lane;button.querySelector('.nav-icon').textContent=icon;button.querySelector(':scope > span:last-child').textContent=label;button.classList.toggle('active',id===(activeFuture||activeNav||defaultNav(view)));nav.append(button)})})}
@@ -225,7 +242,7 @@ function showOverview(view){
   else if(existing.dataset.v6Room===identity&&!forceNativeRefresh){if(LEGACY_PRESENTATION_VIEWS.has(identity))integrateSource(identity,page);return}
   else existing.remove();
  }
- const markup=roomMarkup(view,data(view));if(!markup)return;
+ let markup;try{markup=roomMarkup(view,data(view))}catch(error){console.error(`KatOS V6 could not render ${identity}.`,error);recoverInteractivity();markup=`${hero('🌸 PALACE RECOVERY','This room hit a display snag.','Your data was not changed. The Palace stayed interactive so you can retry or return to the Foyer.')}<section class="v6-command-card"><div class="ey">SAFE RECOVERY</div><h2>${esc(identity==='boss'?'Crown & Career is still here.':'The room is still here.')}</h2><p>Close any leftover popup and rebuild this room from its canonical records.</p><div class="button-row"><button type="button" class="btn primary" data-v6-retry-room>Retry room</button><button type="button" class="btn soft" data-v6-nav="home" data-route-view="home">Return to Foyer</button></div></section>`}if(!markup)return;
  page.classList.remove('v6-detail-mode');page.classList.add('v6-overview-mode');sourceSections(page).forEach(node=>node.classList.add('v6-source-section'));
  page.querySelector('.v6-detail-toolbar')?.remove();page.insertAdjacentHTML('beforeend',`<div class="v6-command-room" data-v6-room="${esc(identity)}">${markup}</div>`);forceNativeRefresh=false;if(LEGACY_PRESENTATION_VIEWS.has(identity))integrateSource(identity,page);
 }
@@ -242,9 +259,10 @@ app.addEventListener('click',event=>{
  const previewClose=event.target.closest('[data-foyer-preview-close]');if(previewClose||event.target.matches('[data-foyer-preview-modal]')){event.preventDefault();event.target.closest('[data-foyer-preview-modal]')?.remove();return}
  const roomsButton=event.target.closest('[data-palace-rooms]');if(roomsButton){event.preventDefault();event.stopImmediatePropagation();roomsOpen=!roomsOpen;palaceDock();return}
  const roomsClose=event.target.closest('[data-palace-rooms-close]');if(roomsClose||event.target.matches('[data-palace-drawer]')){event.preventDefault();roomsOpen=false;palaceDock();return}
- const palaceNav=event.target.closest('[data-v6-nav]');if(palaceNav){activeNav=palaceNav.dataset.v6Nav;activeFuture=null;activeView=palaceNav.dataset.routeView||palaceNav.dataset.view||activeView;roomsOpen=false;if(palaceNav.dataset.v6Future){event.preventDefault();event.stopImmediatePropagation();showFutureRoom(palaceNav.dataset.v6Future);return}requestAnimationFrame(()=>requestAnimationFrame(queue))}
+ const retryRoom=event.target.closest('[data-v6-retry-room]');if(retryRoom){event.preventDefault();closeTransientSurfaces();forceNativeRefresh=true;queue();return}
+ const palaceNav=event.target.closest('[data-v6-nav]');if(palaceNav){closeTransientSurfaces();activeNav=palaceNav.dataset.v6Nav;activeFuture=null;activeView=palaceNav.dataset.routeView||palaceNav.dataset.view||activeView;if(palaceNav.dataset.v6Future){event.preventDefault();event.stopImmediatePropagation();showFutureRoom(palaceNav.dataset.v6Future);return}requestAnimationFrame(()=>requestAnimationFrame(queue))}
  if(palaceNav){roomsOpen=false;app.querySelector('[data-palace-drawer]')?.setAttribute('hidden','')}
- const route=event.target.closest('[data-route-view]');if(route&&!palaceNav){activeView=route.dataset.routeView||activeView;activeNav=route.dataset.routeLane==='gig'?'carriage-house':defaultNav(activeView);activeFuture=null;requestAnimationFrame(()=>requestAnimationFrame(queue))}
+ const route=event.target.closest('[data-route-view]');if(route&&!palaceNav){closeTransientSurfaces();activeView=route.dataset.routeView||activeView;activeNav=route.dataset.routeLane==='gig'?'carriage-house':defaultNav(activeView);activeFuture=null;requestAnimationFrame(()=>requestAnimationFrame(queue))}
  const dutyPanel=event.target.closest('[data-v6-duty-details]');if(dutyPanel){event.preventDefault();const details=app.querySelector(`[data-v6-duty-panel="${CSS.escape(dutyPanel.dataset.v6DutyDetails)}"]`);if(details){details.open=true;details.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}return}
  const jump=event.target.closest('[data-v6-jump]');if(jump){event.preventDefault();app.querySelector(`[data-v6-slot="${jump.dataset.v6Jump}"]`)?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
  const archiveGoal=event.target.closest('[data-v6-gig-goal-archive]');if(archiveGoal){event.preventDefault();event.stopImmediatePropagation();if(!window.confirm('Archive this completed gig goal? It will move to Keepsake Chest and can be restored later.'))return;const result=archiveV5Record('work.gig.goals',archiveGoal.dataset.v6GigGoalArchive);if(!result.ok){window.alert(result.error||'That gig goal could not be archived.');return}archiveGoal.closest('[data-money-modal]')?.remove();queue();return}
@@ -253,6 +271,8 @@ app.addEventListener('click',event=>{
  if(preserveNative)return;
 },true);
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&roomsOpen){roomsOpen=false;palaceDock()}});
+document.addEventListener('pointerdown',recoverOnContact,true);
+document.addEventListener('touchstart',recoverOnContact,{capture:true,passive:false});
 window.addEventListener('katos:rendered',queue);
 window.addEventListener('pageshow',()=>{recoverInteractivity();queue()});
 window.addEventListener('katos:v6-refresh',queue);

@@ -75,5 +75,5 @@ test('Bell Tower remains an independent reminder destination',()=>{
 });
 
 test('release build identifier is updated without V5 versioning changes',()=>{
- const html=source('./index.html');assert.match(html,/6\.9\.1-interaction-recovery/);
+ const html=source('./index.html');assert.match(html,/6\.9\.2-career-unfreeze/);
 });

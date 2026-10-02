@@ -1,5 +1,6 @@
 html[data-katos-version="6"] .v6-native-action-backdrop{z-index:1900;padding:clamp(14px,3vw,34px)}
 html[data-katos-version="6"] .detail-modal-backdrop[hidden],html[data-katos-version="6"] .detail-modal-backdrop[aria-hidden="true"],html[data-katos-version="6"] .palace-rooms-backdrop[hidden]{display:none!important;pointer-events:none!important}
+html[data-katos-version="6"] .v6-overview-mode>.v6-source-section,html[data-katos-version="6"] .v6-overview-mode>.v6-source-section *{pointer-events:none!important}
 html[data-katos-version="6"] .mochini-companion .mc-bubble:not(.is-open){pointer-events:none!important}
 html[data-katos-version="6"] .v6-native-action-modal{width:min(650px,calc(100vw - 28px));max-height:min(82vh,760px);overflow:auto;background:linear-gradient(165deg,#fffdfc 0%,#fff7fa 58%,#faf5ff 100%);border:1px solid rgba(184,102,145,.22);box-shadow:0 22px 60px rgba(86,48,80,.2)}
 html[data-katos-version="6"] .v6-native-action-modal.is-wide{width:min(860px,calc(100vw - 28px))}

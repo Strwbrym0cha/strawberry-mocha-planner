@@ -18,6 +18,7 @@ async function point(selector){
  return value;
 }
 async function tap(selector){const value=await point(selector);await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:value.x,y:value.y}]});await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await wait(180);return value}
+async function tapThroughBlocker(selector){const value=await evaluate(`(()=>{const node=document.querySelector(${JSON.stringify(selector)});if(!node)return null;const r=node.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2}})()`);if(!value)throw new Error(`Missing blocked control: ${selector}`);await send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:value.x,y:value.y}]});await send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await wait(220)}
 async function expect(expression,message){if(!await evaluate(expression))throw new Error(message)}
 
 await tap('[data-palace-dock] [data-v6-nav="daily"]');
@@ -35,11 +36,15 @@ await expect(`document.querySelector('.v6-command-room')?.dataset.v6Room==='time
 await tap('[data-v6-calendar-open="event-new"]');
 await expect(`!!document.querySelector('[data-v6-native-modal]')`,'Calendar modal did not open.');
 await tap('[data-v6-native-close]');
-await tap('[data-palace-dock] [data-v6-nav="boss"]');
+await evaluate(`(()=>{const leftover=document.createElement('div');leftover.className='detail-modal-backdrop';leftover.dataset.qaLeftover='';leftover.style.zIndex='1000';leftover.innerHTML='<section class="detail-modal" role="dialog"><button>Old popup</button></section>';document.body.append(leftover)})()`);await wait(100);
+await tapThroughBlocker('[data-palace-dock] [data-v6-nav="boss"]');
 await expect(`document.querySelector('.v6-command-room')?.dataset.v6Room==='boss'`,'Career did not open.');
+await expect(`!document.querySelector('[data-qa-leftover]')`,'Room navigation left an old modal over Career.');
 await tap('[data-v6-career-open="session-new"]');
 await expect(`!!document.querySelector('[data-v6-native-modal]')`,'Career modal did not open.');
 await tap('[data-v6-native-close]');
+await evaluate(`document.body.style.pointerEvents='none';document.dispatchEvent(new Event('touchstart',{bubbles:true}))`);await wait(100);
+await expect(`getComputedStyle(document.body).pointerEvents!=='none'`,'Touch-start recovery did not release a global pointer lock.');
 await tap('[data-palace-dock] [data-v6-nav="carriage-house"]');
 await expect(`document.querySelector('.v6-command-room')?.dataset.v6Room==='carriage'`,'Carriage House did not open.');
 await tap('[data-palace-rooms]');
@@ -49,5 +54,5 @@ await expect(`!document.querySelector('[data-palace-drawer]:not([hidden])')`,'Ro
 
 const final=await evaluate(`({build:document.querySelector('meta[name="sm-build"]')?.content,modalCount:document.querySelectorAll('.detail-modal-backdrop:not([hidden])').length,bodyPointer:getComputedStyle(document.body).pointerEvents,appPointer:getComputedStyle(document.querySelector('#app')).pointerEvents,dockPointer:getComputedStyle(document.querySelector('[data-palace-dock]')).pointerEvents})`);
 if(final.modalCount||final.bodyPointer==='none'||final.appPointer==='none'||final.dockPointer==='none')throw new Error(`Interaction locks remain: ${JSON.stringify(final)}`);
-console.log(JSON.stringify({checks:18,rooms:['daily','time','boss','carriage'],orphanBackdropRecovered:true,final},null,2));
+console.log(JSON.stringify({checks:22,rooms:['daily','time','boss','carriage'],orphanBackdropRecovered:true,navigationBackdropRecovered:true,touchLockRecovered:true,final},null,2));
 ws.close();
