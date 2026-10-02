@@ -1,5 +1,7 @@
 html[data-katos-version="6"] .v6-native-action-backdrop{z-index:1900;padding:clamp(14px,3vw,34px)}
 html[data-katos-version="6"] .detail-modal-backdrop[hidden],html[data-katos-version="6"] .detail-modal-backdrop[aria-hidden="true"],html[data-katos-version="6"] .palace-rooms-backdrop[hidden]{display:none!important;pointer-events:none!important}
+html[data-katos-version="6"] .v6-room-modal-backdrop{box-sizing:border-box;position:fixed!important;inset:0!important;z-index:4100;display:grid!important;width:100%!important;max-width:100%!important;height:100dvh!important;min-height:100dvh!important;place-items:center!important;padding:clamp(12px,3vw,36px);overflow:hidden!important;background:rgba(73,58,78,.27);backdrop-filter:blur(3px);overscroll-behavior:contain}
+html[data-katos-version="6"] .v6-room-modal-backdrop[hidden],html[data-katos-version="6"] .v6-room-modal-backdrop[aria-hidden="true"]{display:none!important;pointer-events:none!important}
 html[data-katos-version="6"] .v6-overview-mode>.v6-source-section,html[data-katos-version="6"] .v6-overview-mode>.v6-source-section *{pointer-events:none!important}
 html[data-katos-version="6"] .mochini-companion .mc-bubble:not(.is-open){pointer-events:none!important}
 html[data-katos-version="6"] .v6-native-action-modal{width:min(650px,calc(100vw - 28px));max-height:min(82vh,760px);overflow:auto;background:linear-gradient(165deg,#fffdfc 0%,#fff7fa 58%,#faf5ff 100%);border:1px solid rgba(184,102,145,.22);box-shadow:0 22px 60px rgba(86,48,80,.2)}
@@ -33,4 +35,76 @@ html[data-katos-version="6"] .v6-career-resource-columns .v6-native-form{margin-
 html[data-katos-version="6"] .v6-leaving-result{display:grid;gap:4px;padding:12px 14px;border-radius:13px;background:linear-gradient(135deg,#fff0f6,#f6efff);color:#694f68}
 html[data-katos-version="6"] .v6-leaving-result b{font-family:var(--font-display,Georgia,serif);color:#a33c68}
 html[data-katos-version="6"] .v6-leaving-result span{font-size:.8rem}
+
+/* Palace modal geometry
+   Keep every V6 popup on one set of gutters.  V5's compatibility stylesheet
+   intentionally uses a twelve-column record grid; plain V6 labels must span
+   that grid instead of collapsing into one tiny column. */
+html[data-katos-version="6"] .detail-modal{
+  --v6-modal-gutter:clamp(14px,2.2vw,20px);
+  padding:0 var(--v6-modal-gutter) var(--v6-modal-gutter)!important;
+}
+html[data-katos-version="6"] .detail-modal .v6-popup-header{
+  position:sticky;
+  top:0;
+  z-index:3;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin:0 calc(var(--v6-modal-gutter) * -1) 16px;
+  padding:14px var(--v6-modal-gutter) 13px;
+  border-bottom:1px solid rgba(217,196,245,.48);
+  border-radius:21px 21px 0 0;
+  background:var(--v6-gradient-dream,var(--v6-dream));
+}
+html[data-katos-version="6"] .detail-modal .v6-popup-header>div{flex:1;min-width:0}
+html[data-katos-version="6"] .detail-modal .v6-popup-header h2{margin:4px 0 5px;color:var(--v6-text,#594047);font:600 clamp(23px,2.3vw,28px)/1.08 var(--v6-serif,Georgia,serif)}
+html[data-katos-version="6"] .detail-modal .v6-popup-header p{max-width:54ch;margin:0;color:var(--v6-muted,#68566d);font-size:12px;line-height:1.4}
+html[data-katos-version="6"] .detail-modal .v6-popup-header .detail-modal-close{position:static!important;flex:0 0 36px;margin:0!important}
+html[data-katos-version="6"] .detail-modal>form,
+html[data-katos-version="6"] .detail-modal .v6-native-action-body,
+html[data-katos-version="6"] .detail-modal .v6-native-action-body>form{box-sizing:border-box;width:100%;min-width:0}
+html[data-katos-version="6"] .detail-modal .v6-native-action-body{padding:0 0 2px}
+html[data-katos-version="6"] .v6-kitchen-modal .detail-modal>form{display:grid;gap:12px}
+html[data-katos-version="6"] .detail-modal .room-detail-fields{width:100%;margin:0;gap:11px 12px!important}
+html[data-katos-version="6"] .detail-modal .room-detail-fields>label:not(.daily-field):not(.money-field){grid-column:span 6;display:grid;align-content:start;gap:5px;min-width:0;margin:0;color:var(--v6-muted,#694f68);font-size:12px;font-weight:650}
+html[data-katos-version="6"] .detail-modal .room-detail-fields>label.wide:not(.daily-field):not(.money-field){grid-column:1/-1}
+html[data-katos-version="6"] .detail-modal .room-detail-fields>.money-field.wide,
+html[data-katos-version="6"] .detail-modal .room-detail-fields>.daily-field.daily-field-wide{grid-column:1/-1!important}
+html[data-katos-version="6"] .detail-modal .room-detail-fields>label.check:not(.daily-field):not(.money-field){display:flex;align-items:center;gap:9px;min-height:42px;padding:8px 10px;border:1px solid rgba(217,196,245,.5);border-radius:12px;background:rgba(255,255,255,.68)}
+html[data-katos-version="6"] .detail-modal .room-detail-fields>label.check input{flex:0 0 auto;width:auto;min-height:0}
+html[data-katos-version="6"] .detail-modal :is(input:not([type=checkbox]):not([type=radio]),select,textarea){box-sizing:border-box;width:100%;min-width:0;max-width:100%}
+html[data-katos-version="6"] .detail-modal .room-detail-fields>label:not(.daily-field):not(.money-field)>:is(input:not([type=checkbox]):not([type=radio]),select,textarea){min-height:43px;padding:9px 11px;border:1px solid rgba(185,155,232,.58);border-radius:11px;background:#fff;color:var(--v6-text,#4f4050);font:400 14px/1.35 var(--v6-sans,"Avenir Next",Arial,sans-serif)}
+html[data-katos-version="6"] .detail-modal .room-detail-fields textarea{min-height:78px;resize:vertical}
+html[data-katos-version="6"] .v6-room-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;width:100%;min-width:0}
+html[data-katos-version="6"] .v6-room-form-grid>label{display:grid;align-content:start;gap:5px;min-width:0;margin:0;color:var(--v6-muted,#694f68);font-size:12px;font-weight:650}
+html[data-katos-version="6"] .v6-room-form-grid>label.wide{grid-column:1/-1}
+html[data-katos-version="6"] .v6-room-form-grid :is(input:not([type=checkbox]):not([type=radio]),select,textarea){box-sizing:border-box;width:100%;min-width:0;max-width:100%;min-height:43px;padding:9px 11px;border:1px solid rgba(185,155,232,.58);border-radius:11px;background:#fff;color:var(--v6-text,#4f4050);font:400 14px/1.35 var(--v6-sans,"Avenir Next",Arial,sans-serif)}
+html[data-katos-version="6"] .v6-room-form-grid textarea{min-height:78px;resize:vertical}
+html[data-katos-version="6"] .detail-modal>.button-row,
+html[data-katos-version="6"] .detail-modal>form>.button-row,
+html[data-katos-version="6"] .detail-modal .v6-native-action-body form>.button-row{display:flex;width:100%;flex-wrap:wrap;align-items:center;gap:8px;margin:0;padding-top:2px}
+
+/* Restore the widths each V6 popup family declares. Palace's legacy-safe base
+   width is intentionally strong, so these later scoped overrides are explicit. */
+html[data-katos-version="6"] .v6-native-action-modal{width:min(650px,calc(100vw - 28px))!important;max-width:650px!important}
+html[data-katos-version="6"] .v6-native-action-modal.is-wide{width:min(860px,calc(100vw - 28px))!important;max-width:860px!important}
+html[data-katos-version="6"] .v6-kitchen-modal .detail-modal{width:min(680px,calc(100vw - 28px))!important;max-width:680px!important}
+html[data-katos-version="6"] .money-modal .detail-modal{width:min(720px,calc(100vw - 28px))!important;max-width:720px!important}
+html[data-katos-version="6"] .money-modal .detail-modal>form{padding:0 0 2px!important}
+html[data-katos-version="6"] .v6-room-modal{width:min(760px,calc(100vw - 28px))!important;max-width:760px!important}
+html[data-katos-version="6"] .v6-room-modal.v6-room-modal-small{width:min(560px,calc(100vw - 28px))!important;max-width:560px!important}
+html[data-katos-version="6"] .v6-smart-modal{width:min(680px,calc(100vw - 28px))!important;max-width:680px!important}
+html[data-katos-version="6"] .v6-smart-modal.is-wide{width:min(940px,calc(100vw - 28px))!important;max-width:940px!important}
+
+@media(max-width:680px){
+  html[data-katos-version="6"] .detail-modal{--v6-modal-gutter:13px}
+  html[data-katos-version="6"] .detail-modal .v6-popup-header{gap:9px;margin-bottom:12px;padding-top:12px;padding-bottom:11px}
+  html[data-katos-version="6"] .detail-modal .v6-popup-header h2{font-size:23px}
+  html[data-katos-version="6"] .detail-modal .room-detail-fields>label:not(.daily-field):not(.money-field){grid-column:1/-1}
+  html[data-katos-version="6"] .v6-room-form-grid{grid-template-columns:1fr}
+  html[data-katos-version="6"] .v6-room-form-grid>label.wide{grid-column:auto}
+  html[data-katos-version="6"] .detail-modal :is(input:not([type=checkbox]):not([type=radio]),select,textarea){font-size:16px}
+}
 @media(max-width:760px){html[data-katos-version="6"] .v6-native-form,html[data-katos-version="6"] .v6-career-resource-columns{grid-template-columns:1fr}html[data-katos-version="6"] .v6-calendar-month{grid-template-columns:repeat(2,minmax(0,1fr))}html[data-katos-version="6"] .v6-session-hours{grid-template-columns:1fr}}
